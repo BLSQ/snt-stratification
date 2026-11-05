@@ -3,7 +3,7 @@
 # Description: Summary table, summary outputs and year-level chart helpers sourced by the
 #   reporting notebook.
 # Dependencies: data.table, arrow, ggplot2, gridExtra, scales, glue
-# Requires: code/snt_utils.r, loaded by the reporting notebook before this file.
+# Requires: shared/r/snt_utils.r, loaded by the reporting notebook before this file.
 # ================================================
 
 

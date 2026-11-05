@@ -3,7 +3,7 @@
 # Description: Selection of the MAP metrics to map and choropleth map helpers sourced by the
 #   reporting notebook.
 # Dependencies: dplyr, sf, ggplot2, gridExtra, glue
-# Requires: code/snt_utils.r, loaded by the reporting notebook before this file.
+# Requires: shared/r/snt_utils.r, loaded by the reporting notebook before this file.
 # ================================================
 
 

@@ -1,9 +1,9 @@
 # ================================================
 # Title: Main helpers for the Magic Glasses outliers imputation pipeline
 # Description: Loading, MAD and seasonal detection, and flag-combination helpers sourced by the
-#   pipeline notebook (imputation and output formatters: code/snt_utils.r).
+#   pipeline notebook (imputation and output formatters: shared/r/snt_utils.r).
 # Dependencies: data.table, glue, forecast, future.apply, stats
-# Requires: code/snt_utils.r, loaded by the notebook before this file.
+# Requires: shared/r/snt_utils.r, loaded by the notebook before this file.
 # ================================================
 
 

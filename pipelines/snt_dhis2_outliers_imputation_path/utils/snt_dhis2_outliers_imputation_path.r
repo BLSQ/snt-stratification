@@ -3,7 +3,7 @@
 # Description: Loading, deduplication, exception (stock-out, epidemic) and imputation helpers
 #   sourced by the pipeline notebook.
 # Dependencies: dplyr, tidyr, glue
-# Requires: code/snt_utils.r, loaded by the notebook before this file.
+# Requires: shared/r/snt_utils.r, loaded by the notebook before this file.
 # ================================================
 
 

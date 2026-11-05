@@ -1,5 +1,5 @@
 # Load base utils
-source(file.path("~/workspace/code", "snt_utils.r")) 
+source(file.path("~/workspace/shared/r", "snt_utils.r")) 
 
 # Load snt_palettes
-source(file.path("~/workspace/code", "snt_palettes.r"))
+source(file.path("~/workspace/shared/r", "snt_palettes.r"))

@@ -6,7 +6,7 @@ message("This step sets up the environment for the DHIS2 incidence pipeline, inc
 It basically handles all the boring stuff so that you can focus on the code that matters :)")
 
 # Load base functions
-source(file.path("~/workspace/code", "snt_utils.r"))
+source(file.path("~/workspace/shared/r", "snt_utils.r"))
 
 
 #' Resolve the routine data filename suffix

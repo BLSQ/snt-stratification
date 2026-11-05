@@ -1,9 +1,9 @@
 # ================================================
 # Title: Main helpers for the mean outliers imputation pipeline
 # Description: Routine data loading helper sourced by the pipeline notebook (imputation and output
-#   formatters: code/snt_utils.r).
+#   formatters: shared/r/snt_utils.r).
 # Dependencies: glue
-# Requires: code/snt_utils.r, loaded by the notebook before this file.
+# Requires: shared/r/snt_utils.r, loaded by the notebook before this file.
 # ================================================
 
 

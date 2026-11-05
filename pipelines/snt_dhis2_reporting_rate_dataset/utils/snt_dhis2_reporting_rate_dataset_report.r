@@ -3,7 +3,7 @@
 # Description: Reporting-rate categories, plot builders and plot export,
 #   sourced by the reporting notebook.
 # Dependencies: tidyverse (dplyr, ggplot2, forcats), sf, jsonlite, glue
-# Requires: code/snt_utils.r and code/snt_palettes.r, loaded by the reporting notebook before
+# Requires: shared/r/snt_utils.r and shared/r/snt_palettes.r, loaded by the reporting notebook before
 #   this file.
 # ================================================
 

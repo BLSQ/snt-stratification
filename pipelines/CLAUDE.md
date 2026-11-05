@@ -15,7 +15,7 @@ with the reasoning in [`../docs/CONVENTIONS.md`](../docs/CONVENTIONS.md).
 - Windows `*.ipynb:Zone.Identifier` sidecars are ignored — do not commit them; several are already
   tracked by mistake under `snt_dhis2_formatting/reporting/`.
 - **A notebook change needs a domain reviewer**, not just any reviewer: a change to
-  `pipelines/*/code/`, `pipelines/*/utils/` or `code/` should be reviewed by the person responsible
+  `pipelines/*/code/`, `pipelines/*/utils/` or `shared/r/` should be reviewed by the person responsible
   for that pipeline — [`docs/OWNERSHIP.md`](../docs/OWNERSHIP.md#2-pipeline-responsibilities).
   Convention only: nothing blocks an unreviewed merge
   ([ADR 0005](../docs/decisions/0005-no-codeowners.md)).

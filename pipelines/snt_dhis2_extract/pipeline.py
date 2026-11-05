@@ -1462,7 +1462,7 @@ def snt_folders_setup(root_path: Path) -> None:
     """
     folders_to_create = [
         "configuration",
-        "code",
+        "shared/r",
         "data",
         "pipelines",
         "results",

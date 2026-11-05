@@ -3,7 +3,7 @@
 # Description: Routine data typing, district-year aggregation, output saving and yearly maps,
 #   sourced by the pipeline notebook and the reporting notebook.
 # Dependencies: data.table, sf, dplyr, ggplot2, arrow, glue
-# Requires: code/snt_utils.r, loaded by the notebooks before this file.
+# Requires: shared/r/snt_utils.r, loaded by the notebooks before this file.
 # ================================================
 
 

@@ -1,7 +1,7 @@
 # Shared helpers for snt_dhis2_formatting reporting notebook.
 
 # Load base utils
-source(file.path("~/workspace/code", "snt_utils.r"))   
+source(file.path("~/workspace/shared/r", "snt_utils.r"))   
 
 #' Print the Dimensions of a Data Frame
 #'

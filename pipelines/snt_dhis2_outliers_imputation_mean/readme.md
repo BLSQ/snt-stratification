@@ -22,7 +22,7 @@ The **SNT DHIS2 Outliers Imputation (Mean)** pipeline flags outliers in the form
    3. Computes the ceiling-rounded **mean** and **SD** of `VALUE` **per `ADM1_ID` × `ADM2_ID` × `OU_ID` × `INDICATOR`, over the whole series** (all months, missing values ignored).
    4. Flags values outside **mean ± `DEVIATION_MEAN` × SD**; values that cannot be evaluated (missing value or SD) are not flagged.
    5. **Imputation:** replaces each flagged value with a centred 3-month moving mean (see Notes). **Removal:** sets each flagged value to missing.
-   6. Writes the detected, imputed and removed tables with the standard outliers formatters from `code/snt_utils.r` (see Outputs).
+   6. Writes the detected, imputed and removed tables with the standard outliers formatters from `shared/r/snt_utils.r` (see Outputs).
 3. **Output check:** stop with an error if any of the three Parquet files is missing or was not rewritten during this run. All outliers imputation pipelines write the same filenames, so this prevents publishing a file left by an earlier run of another method.
 4. **Publish:** save the pipeline parameters JSON (the injected notebook parameters) and upload the three Parquet files plus that JSON to **`DHIS2_OUTLIERS_IMPUTATION`**.
 5. **Database** (only when `push_db`): push the detection table to **`outliers_detected`**.
