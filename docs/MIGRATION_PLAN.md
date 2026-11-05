@@ -9,8 +9,9 @@
 > `[ ]` todo · `[~]` in progress · `[x]` done · `[-]` dropped.
 > New repo: **`BLSQ/snt-stratification`** (D-6). Owner: Giulia.
 >
-> **Where it lives:** `docs/MIGRATION_PLAN.md` in `snt_development` until the new repo exists. In
-> Phase 1 it moves to the new repo (same path), and this file becomes a one-line pointer to it.
+> **Where it lives:** here, `docs/MIGRATION_PLAN.md` in `BLSQ/snt-stratification`, since Phase 1
+> (2026-11-05). It was written in `snt_development`, whose copy is frozen at `94cfc38` and becomes a
+> one-line pointer to this one (P1-11).
 > **For agents:** read it only when working on the migration. It is not part of the routine reading
 > path.
 >
@@ -269,7 +270,7 @@ in **new test workspaces** (names TBD, e.g. `snt-mono-test`, `snt-mono-templates
       through the webapp proxy with `PIPELINES_READ`? Grep `reference/openhexa/schema.generated.graphql`
       first. → **yes**, 2026-11-03.
 - [ ] Spike S5 (optional, Phase 7 input) — `updateWebapp(files:)` with a CUSTOM-connection token.
-- [~] Pre-publication audit list (first pass done 2026-11-03; see findings): which files in the source trees are unfit for a public repo? Known
+- [x] Pre-publication audit list (first pass done 2026-11-03; second pass **passed** 2026-11-05, P1-7; see findings): which files in the source trees are unfit for a public repo? Known
       candidates: the persona questionnaire (`docs/research/personas/…`, answers from real people),
       country-specific `_<CC>` notebooks with DHIS2 UIDs, workspace slugs, Jira references,
       `ignore/` content (incl. the editor's NER draft configs).
@@ -378,6 +379,26 @@ locally). `snt_dhs_vaccination_computation.ipynb` was **tracked with its outputs
 `main`). It was stripped with `nbstripout` and merged to `main` on 2026-11-03 (branch
 `fix/strip-dhs-vaccination-outputs`).
 
+**Second pass (2026-11-05, P1-7): passed.** A scan of the staged `tree/` (289 files), after the
+leave-outs and redactions:
+- Notebooks with outputs: 0. `snt_seasonality_rainfall_report.ipynb` had only a stray
+  `execution_count` on `main`, with no output; stripped on import, no fix needed at the source.
+- UID-shaped tokens (mixed case with a digit): 0 outside `orchestrator_wireframe_cockpit_narrative.html`.
+  Its 345 hits are all inside embedded assets: 3 gzipped JS bundles (a generated runtime, React,
+  ReactDOM; decompressed and scanned: no slug, e-mail or UID) and 12 woff2 fonts. Single-case hits
+  are false positives (`dodgerblue4`, `geoalchemy2`, fragments of the encoded assets).
+- Editor UIDs: 13 distinct at the source, all redacted. The "18" in the table above adds up
+  per-file counts, and the same UID appears in several files.
+- E-mail addresses: only `git@github.com` (pip URLs) and the dummy `mario.rossi@example.org`.
+- Secrets: none. Live workspace URLs or `<cc>-snt-process` slugs: none left. Google links: only the
+  team glossary (kept, see the table).
+- Decimals with 6+ places: papermill timestamps in the cell metadata of the 4 reporting-rate
+  notebooks, not coordinates and not data.
+- The only binary, `webapps/orchestrator/design/pipeline_map_20260625.png`, is a dependency diagram
+  of pipeline names.
+
+Residual risk, accepted: a UID made only of letters cannot be told apart from a word by a regex.
+
 ### Phase 1 — Snapshot import + layout (behaviour-neutral)
 
 **Outcome:** `BLSQ/snt-stratification` holds every source tree in the §4.1 layout, landed through
@@ -460,30 +481,30 @@ yourself (R19). Give Giulia the exact commands.
 | `docs/SNT_config.skeleton.json`, `ignore/`, `LICENSE` | left out (D-11, D-7) |
 
 **Steps**
-- [ ] **P1-0 Close Phase 0.** Merge `plan/snt-single-repo` into `main`. The local spike code stays in
+- [x] **P1-0 Close Phase 0.** Merge `plan/snt-single-repo` into `main`. The local spike code stays in
       `ignore/spikes/` (git-ignored). Optional, not blocking: delete the spike pipelines and the
       template in `snt-testing` and `snt-development-sandbox`.
-- [ ] **P1-1 Land this runbook** in `snt_development` (branch `plan/phase-1-runbook`, commit
+- [x] **P1-1 Land this runbook** in `snt_development` (branch `plan/phase-1-runbook`, commit
       `plan: Phase 1 runbook`).
-- [ ] **P1-2 Create the repo** (GitHub UI, Giulia). Name `BLSQ/snt-stratification`, with **no**
+- [x] **P1-2 Create the repo** (GitHub UI, Giulia). Name `BLSQ/snt-stratification`, with **no**
       README, `.gitignore` or licence. Recommended visibility: **private until P1-10**, so that the
       second audit pass (P1-7) and DOC-5 come before anything is public. Clone it to
       `~/Bluesquare/snt-stratification`.
-- [ ] **P1-3 Seed `main`** by a direct push, before protection exists:
+- [x] **P1-3 Seed `main`** by a direct push, before protection exists:
   - a `README.md` stub;
   - `.claude/` from `snt_development` (`settings.json`, `hooks/block-destructive-git.py`,
     `README.md`, `skills/`; no `__pycache__/`).
 
   Test the guardrail as `.claude/README.md` describes. Commit:
   `chore: initialise snt-stratification with the R19 git guardrail`.
-- [ ] **P1-4 Protect** (GitHub settings):
+- [x] **P1-4 Protect** (GitHub settings):
   - Ruleset on `main`: require a pull request (0 approvals, so Giulia can merge her own PRs), block
     force pushes, block deletion.
   - Tag ruleset on `v*`: restrict updates and deletions, with an empty bypass list.
-- [ ] **P1-5 Record the source SHAs.** For each of the four source repos, confirm that `main` is clean,
+- [x] **P1-5 Record the source SHAs.** For each of the four source repos, confirm that `main` is clean,
       pushed and holds everything wanted. Then run `git -C ~/Bluesquare/<repo> fetch origin` and
       `git -C ~/Bluesquare/<repo> rev-parse origin/main`. Write the four SHAs into the Session log.
-- [ ] **P1-6 Stage the export** into `~/Bluesquare/_import_staging/` (outside every repo), using a
+- [x] **P1-6 Stage the export** into `~/Bluesquare/_import_staging/` (outside every repo), using a
       throwaway script `snt_development/ignore/phase1/stage_import.sh` that implements the mapping:
   1. For each repo, `git -C <repo> archive <sha>`, extracted into `src/<repo>/`.
   2. Copy into `tree/` according to the mapping.
@@ -499,7 +520,7 @@ yourself (R19). Give Giulia the exact commands.
   5. Run `nbstripout` on every `.ipynb` in `tree/`.
   6. Write `import_manifest.tsv` with target path, source repo, source path and sha256, and mark
      every redacted file `modified`.
-- [ ] **P1-7 Second audit pass** on `tree/`. Grep for:
+- [x] **P1-7 Second audit pass** on `tree/`. Grep for:
   - 11-character UID-shaped tokens (`\b[A-Za-z][A-Za-z0-9]{10}\b` that contain a digit; review the
     hits by hand);
   - `-snt-process`;
@@ -509,7 +530,7 @@ yourself (R19). Give Giulia the exact commands.
 
   Fix anything found in the script and rerun P1-6, never by hand. Record the result in the Phase 0
   audit table and close its `[~]` item.
-- [ ] **P1-8 Build the PR** on `phase-1/snapshot-import`, one commit per row, in this order:
+- [x] **P1-8 Build the PR** on `phase-1/snapshot-import`, one commit per row, in this order:
 
 | # | Content | Commit message |
 |---|---|---|
@@ -541,6 +562,53 @@ yourself (R19). Give Giulia the exact commands.
 
   From then on, plan updates happen in the new repo, and `snt_development` is maintenance-only (D-4).
 
+#### Phase 1 results
+
+P1-0 to P1-8 done on 2026-11-05; P1-9 to P1-11 follow the PR. Where the work differed from the
+runbook above, and what was found on the way:
+
+- **Staging (P1-6).** The throwaway scripts are Python, not shell: `stage_import.py`,
+  `audit_tree.py` (P1-7) and `fix_links.py` (commit 6), all in `snt_development/ignore/phase1/`
+  (git-ignored). Their outputs (`provenance.txt`, `import_manifest.tsv`, `left_out.tsv`) stay in
+  `~/Bluesquare/_import_staging/`.
+- **Placeholders (P1-6, step 4).** `REDACTEDUID` (11 characters, like a UID), `xxx-snt-process` and
+  `snt-xxx-files`, instead of `<DHIS2_UID>` / `<country-workspace>`: angle brackets break the HTML
+  wireframe, where the slug sits inside a JS string of HTML.
+- **NER-only block of `snt_dhis2_extract_report.r`.** `apply_ner_manual_geometry_fixes()` has no
+  caller in any tracked file, so removing it is behaviour-neutral.
+- **Commit 5 (shared R path).** 90 replacements in 60 notebooks, `.r` files and pipeline readmes,
+  across 4 forms: `file.path(ROOT_PATH|SNT_ROOT_PATH, "code", …)`, `CODE_PATH <- file.path(…, 'code')`,
+  `"~/workspace/code"` (8 occurrences, missing from the facts above) and
+  `file.path("~/workspace", "code", …)`. `folders_to_create` now creates `shared/r`.
+  - **Not done, unlike the table:** the bootstrap pipelines (`snt_pipeline_deployer`,
+    `snt_workspace_deployer`, `snt_workspace_checker`), their readmes and `tests/` still say
+    `code/`. They read v1 manifests, where the shared library *is* `code/`, so their wording changes
+    in Phase 4 with the manifest-v2 logic.
+  - Root `CLAUDE.md` and `docs/*` still say `code/` (Phase 2). `pipelines/registry.json` has `kind`
+    only; deploy routes come in Phase 3 (OD-4).
+- **Commit 6 (links).** 204 relative links in 41 Markdown files re-pointed through
+  `import_manifest.tsv`. The 7 links to material that was not imported (`deprecated/`, old
+  workflows) are pinned to the source SHA, and the persona questionnaire link is unlinked (text
+  kept). `.claude/` is not in the manifest, so its one broken link was fixed by hand. Orchestrator
+  paths now say `webapps/orchestrator/app/…`; the ADRs are left as written. A scan of every `.md`
+  file finds 0 broken relative links (777 checked).
+- **Commit 7 (ruff).** The env resolved ruff 0.17.3 (floor `>=0.16`). With `preview = true`:
+  - RUF201 rewrote the 30 rule codes in `pyproject.toml` to rule names, and RUF105 turned one
+    `# noqa` into `# ruff: ignore[…]`. ruff 0.16.5 reads both the same way.
+  - `ruff format` also formats Python code blocks in Markdown (3 files). Side effect: the old
+    `generate_manifest.py` quoted in `docs/bootstrap/HISTORY.md` is no longer verbatim (quote style
+    only).
+- **Commit 8 (path breakage).** Besides the test paths:
+  - The handover skill's `check_notebook_params.py` looked for `*/pipeline.py` at the root, found
+    none and reported "No ERRORs". It now reads `pipelines/*/pipeline.py`. The one ERROR it reports
+    in `snt_development` (`snt_seasonality_rainfall_NER.ipynb`) is absent here by design (D-13).
+  - The add-explorer-layer skill's `validate_metadata.py` read the skeleton from
+    `contracts/snt_config_json/`.
+  - The 5 findings left after commit 7 were fixed by hand, except N999 on `malariaAtlasProject`:
+    a per-file ignore, not a rename, because it is imported by that name and deployed.
+
+  Result: `ruff check .` and `ruff format --check .` clean, `pytest` 16 passed.
+
 ### Phase 2 — Docs and agent setup
 - [ ] Root `CLAUDE.md` router (≤15 KB) with the **merged Register**. Rules shared by all three repos
       (git guardrail, `[ERROR]`/`[WARNING]` prefixes, Python style) appear once. Webapp-only rules move
@@ -555,7 +623,9 @@ yourself (R19). Give Giulia the exact commands.
       and add an "old ID" column. Drop items this migration resolves: REPO-1/2, the multi-source
       roadmap §1, the CI path-filter typos.
 - [ ] Update the skills for the new paths. Add a `release` skill: checklist, cutting an rc,
-      verifying in the test workspace, then promoting.
+      verifying in the test workspace, then promoting. (The skills' scripts were fixed in Phase 1,
+      commit 8. Their text still says `code/*.r` and `contracts/snt_config_json/`, and
+      `validate_metadata.py` still says jsonschema is not in `dev/environment.yml`, which is now wrong.)
 - [ ] Sweep the local Claude memory and the `ignore/` plans of all source repos. Anything still true
       and useful goes **into the repo** (CLAUDE.md, ADR, BACKLOG, docs). Nothing may rely on local memory.
 
@@ -720,6 +790,7 @@ proceed in parallel against the new schema.
 | 2026-11-02 | Read md docs of snt_development, orchestrator, bootstrap, config editor. Agreed D-1…D-10 (D-10 = docs placement rule); plan made public in `docs/`; OD-4 has a leaning, not decided; S2(b) self-sync preferred | Phase 0: skeleton diff, spikes S1–S4, public-exposure audit |
 | 2026-11-03 | Phase 0, desk half: skeleton diff (dev copy wins; `null` vs `""` to settle), S1 read from the SDK source (recurses; extension allowlist excludes `.json`; ignores `.gitignore`), S3 and S4 schema checks, first-pass public audit. Toy pipeline `spike_monorepo_layout` written for S1/S2. Then on OpenHEXA: **S1, S2a, S2b and S4 passed**. S3 showed that the code comes from the source pipeline, not from the template name, with a random suffix on collision. Decided D-11 (`null`), D-12 (report-only, was OD-7), D-13 (keep Jira links + dev slugs, leave out country notebooks); D-5 confirmed; OD-10 opened (versioning country/analyst-edited notebooks) | Glossary link kept (public by choice); DHS notebook stripped on `main`. Left: delete the spike pipelines + template; second audit pass at the start of Phase 1 |
 | 2026-11-05 | Phase 1 prepared: checked the four source trees and `snt_lib` (no hardcoded shared `code/`, so the rename needs no release); wrote the Phase 1 runbook (mapping, steps P1-0…P1-11, commit sequence). Local spike code kept in `ignore/spikes/` | P1-0, then P1-1 (land the runbook), then P1-2 (create the repo) |
+| 2026-11-05 | Phase 1 executed, P1-0…P1-8. `BLSQ/snt-stratification` created **private**; `main` seeded with the README stub and `.claude/`, then protected (`main` and `v*` rulesets). Source SHAs (P1-5; full SHAs in the README Provenance table): `snt_development` `94cfc38`, `snt_webapp_orchestrator` `603a831`, `snt_workspace_bootstrap` `abbe8c0`, `openhexa-webapps-edit-snt-config-json` `bd0cbf9`. Second audit pass **passed**. Branch `phase-1/snapshot-import` built as commits 1–9. Deviations: [Phase 1 results](#phase-1-results) | P1-9 (verify, paste results into the PR description), push, open the PR; P1-10 merge with a merge commit, then decide on public (DOC-5); P1-11 pointer PR in `snt_development` |
 
 ---
 
