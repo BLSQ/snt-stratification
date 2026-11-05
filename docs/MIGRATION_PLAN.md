@@ -544,7 +544,7 @@ yourself (R19). Give Giulia the exact commands.
 | 8 | Bootstrap test paths (`pipelines/…`, `contracts/`), remaining path breakage, `pytest` green | `fix: test paths and path breakage after the import` |
 | 9 | This file: header ("Where it lives"), Phase 1 checkboxes, Session log | `plan: Phase 1 results` |
 
-- [ ] **P1-9 Verify** and paste the results into the PR description:
+- [x] **P1-9 Verify** and paste the results into the PR description:
   - `git ls-files --others --ignored --exclude-standard` is empty, or lists only files that should
     be ignored.
   - Each file from commit 2 matches `import_manifest.tsv` (same sha256, or marked `modified`).
@@ -552,20 +552,24 @@ yourself (R19). Give Giulia the exact commands.
   - No `ROOT_PATH, "code"` left in any `.ipynb` or `.r`.
   - `ruff check .` is clean and `pytest` is green.
   - State that nothing was run on OpenHEXA. That happens in Phase 4.
-- [ ] **P1-10 Merge** the PR with a merge commit. Then make the repo public if P1-7 passed and DOC-5
-      is settled.
-- [ ] **P1-11 Pointer PR in `snt_development`** (branch `docs/migration-plan-moved`):
+- [x] **P1-10 Merge** the PR with a merge commit. Then make the repo public if P1-7 passed and DOC-5
+      is settled. → Public since 2026-11-05. MIT is kept for now; DOC-5 stays open as a later
+      review, not a blocker.
+- [x] **P1-11 Pointer PR in `snt_development`** (branch `docs/migration-plan-moved`):
   - This file becomes a one-line pointer to the new repo's copy.
   - Drop the MIGRATION_PLAN row from CLAUDE.md "Where to find things", and the README and BACKLOG
     pointers.
   - Commit: `docs: MIGRATION_PLAN moved to BLSQ/snt-stratification`.
 
+  → Done 2026-11-05, with one change: the README and BACKLOG pointers were re-pointed to this repo
+  rather than dropped, so `snt_development` readers still learn that the code has moved.
+
   From then on, plan updates happen in the new repo, and `snt_development` is maintenance-only (D-4).
 
 #### Phase 1 results
 
-P1-0 to P1-8 done on 2026-11-05; P1-9 to P1-11 follow the PR. Where the work differed from the
-runbook above, and what was found on the way:
+P1-0 to P1-11 done on 2026-11-05. Where the work differed from the runbook above, and what was
+found on the way:
 
 - **Staging (P1-6).** The throwaway scripts are Python, not shell: `stage_import.py`,
   `audit_tree.py` (P1-7) and `fix_links.py` (commit 6), all in `snt_development/ignore/phase1/`
@@ -764,7 +768,8 @@ proceed in parallel against the new schema.
   mechanism and scopes are unverified (editor EXTERNAL_CHECKS item 4). Fold this into S5.
 - **`snt_lib@release-v1` is unpinned** (tag or branch is unverified). D-3 pins it.
 - **The tag ruleset is not yet on `BLSQ/snt_development`.** Set it on the new repo from day one.
-- **The licence is provisional** (DOC-5). Settle it before going public.
+- **The licence is provisional** (DOC-5). The repo went public under MIT on 2026-11-05; a later
+  change applies only to versions released after it, never to copies already taken under MIT.
 
 ---
 
@@ -791,6 +796,7 @@ proceed in parallel against the new schema.
 | 2026-11-03 | Phase 0, desk half: skeleton diff (dev copy wins; `null` vs `""` to settle), S1 read from the SDK source (recurses; extension allowlist excludes `.json`; ignores `.gitignore`), S3 and S4 schema checks, first-pass public audit. Toy pipeline `spike_monorepo_layout` written for S1/S2. Then on OpenHEXA: **S1, S2a, S2b and S4 passed**. S3 showed that the code comes from the source pipeline, not from the template name, with a random suffix on collision. Decided D-11 (`null`), D-12 (report-only, was OD-7), D-13 (keep Jira links + dev slugs, leave out country notebooks); D-5 confirmed; OD-10 opened (versioning country/analyst-edited notebooks) | Glossary link kept (public by choice); DHS notebook stripped on `main`. Left: delete the spike pipelines + template; second audit pass at the start of Phase 1 |
 | 2026-11-05 | Phase 1 prepared: checked the four source trees and `snt_lib` (no hardcoded shared `code/`, so the rename needs no release); wrote the Phase 1 runbook (mapping, steps P1-0…P1-11, commit sequence). Local spike code kept in `ignore/spikes/` | P1-0, then P1-1 (land the runbook), then P1-2 (create the repo) |
 | 2026-11-05 | Phase 1 executed, P1-0…P1-8. `BLSQ/snt-stratification` created **private**; `main` seeded with the README stub and `.claude/`, then protected (`main` and `v*` rulesets). Source SHAs (P1-5; full SHAs in the README Provenance table): `snt_development` `94cfc38`, `snt_webapp_orchestrator` `603a831`, `snt_workspace_bootstrap` `abbe8c0`, `openhexa-webapps-edit-snt-config-json` `bd0cbf9`. Second audit pass **passed**. Branch `phase-1/snapshot-import` built as commits 1–9. Deviations: [Phase 1 results](#phase-1-results) | P1-9 (verify, paste results into the PR description), push, open the PR; P1-10 merge with a merge commit, then decide on public (DOC-5); P1-11 pointer PR in `snt_development` |
+| 2026-11-05 | **Phase 1 closed.** P1-9 passed (results in the import PR description). Import PR merged with a merge commit. Repo made **public** under MIT; DOC-5 stays open as a later review (P1-10). `snt_development` pointer PR done (P1-11): its plan is now a pointer to this file, and it is maintenance-only (D-4) | Phase 2 — docs and agent setup |
 
 ---
 
