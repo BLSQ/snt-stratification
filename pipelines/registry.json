@@ -1,0 +1,85 @@
+{
+  "description": "One entry per pipelines/<name>/ folder (folder name = @pipeline id). CI (Phase 3) will fail on an unregistered folder or a registered folder that is missing. Deploy routes are added when Phase 3 builds the workflows from this file (OD-4 for bootstrap).",
+  "kinds": {
+    "snt": "SNT data pipeline, shipped with each release",
+    "support": "utility pipeline for the SNT workspaces (orchestrator cards, metadata trim)",
+    "bootstrap": "deploys or checks a release in a workspace"
+  },
+  "pipelines": {
+    "create_pipeline_cards": {
+      "kind": "support"
+    },
+    "snt_dhis2_extract": {
+      "kind": "snt"
+    },
+    "snt_dhis2_formatting": {
+      "kind": "snt"
+    },
+    "snt_dhis2_incidence": {
+      "kind": "snt"
+    },
+    "snt_dhis2_outliers_imputation_iqr": {
+      "kind": "snt"
+    },
+    "snt_dhis2_outliers_imputation_magic_glasses": {
+      "kind": "snt"
+    },
+    "snt_dhis2_outliers_imputation_mean": {
+      "kind": "snt"
+    },
+    "snt_dhis2_outliers_imputation_median": {
+      "kind": "snt"
+    },
+    "snt_dhis2_outliers_imputation_path": {
+      "kind": "snt"
+    },
+    "snt_dhis2_population_transformation": {
+      "kind": "snt"
+    },
+    "snt_dhis2_quality_of_care": {
+      "kind": "snt"
+    },
+    "snt_dhis2_reporting_rate_dataelement": {
+      "kind": "snt"
+    },
+    "snt_dhis2_reporting_rate_dataset": {
+      "kind": "snt"
+    },
+    "snt_dhs_indicators": {
+      "kind": "snt"
+    },
+    "snt_era5_climate_data": {
+      "kind": "snt"
+    },
+    "snt_healthcare_access": {
+      "kind": "snt"
+    },
+    "snt_map_extracts": {
+      "kind": "snt"
+    },
+    "snt_metadata_json_trim": {
+      "kind": "support"
+    },
+    "snt_pipeline_deployer": {
+      "kind": "bootstrap"
+    },
+    "snt_seasonality_cases": {
+      "kind": "snt"
+    },
+    "snt_seasonality_rainfall": {
+      "kind": "snt"
+    },
+    "snt_user_population": {
+      "kind": "snt"
+    },
+    "snt_workspace_checker": {
+      "kind": "bootstrap"
+    },
+    "snt_workspace_deployer": {
+      "kind": "bootstrap"
+    },
+    "snt_worldpop_extract": {
+      "kind": "snt"
+    }
+  }
+}

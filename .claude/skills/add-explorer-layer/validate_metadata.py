@@ -4,7 +4,7 @@ Runs the JSON Schema, plus the two checks JSON Schema cannot express on its own:
 
 - ``SCALE`` is in ascending order;
 - every ``SOURCE_DATA.DATASET.NAME`` is a key of ``SNT_DATASET_IDENTIFIERS`` in the config skeleton
-  (``contracts/snt_config_json/SNT_config.skeleton.json`` — the trusted key set; the archived
+  (``contracts/snt_config/SNT_config.skeleton.json`` — the trusted key set; the archived
   per-country copies were never verified).
 
 What it still cannot catch is listed in contracts/snt_metadata_json/README.md §5.
@@ -28,7 +28,7 @@ except ImportError:
 
 REPO = Path(__file__).resolve().parents[3]
 SCHEMA = REPO / "contracts/snt_metadata_json/snt_metadata.schema.json"
-CONFIG = REPO / "contracts/snt_config_json/SNT_config.skeleton.json"  # config to resolve NAME against
+CONFIG = REPO / "contracts/snt_config/SNT_config.skeleton.json"  # config to resolve NAME against
 DEFAULT = REPO / "catalogs/SNT_metadata_master.json"
 
 

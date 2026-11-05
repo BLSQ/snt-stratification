@@ -309,7 +309,7 @@ def check_pipeline(pipeline_dir: Path) -> tuple[list[str], int]:
 
     out, errors = [], 0
     for call in sorted(calls, key=lambda c: c.lineno):
-        where = f"{name}/pipeline.py:{call.lineno}"
+        where = f"pipelines/{name}/pipeline.py:{call.lineno}"
         scope = scopes.get(id(call), tree)
         params = kwarg(call, "parameters")
         keys, why = ([], "") if params is None else resolve_keys(params, scope, call.lineno)
@@ -369,9 +369,12 @@ def main(argv: list[str]) -> int:
         Process exit code.
     """
     if argv:
-        dirs = [REPO / (Path(a).parent.name if Path(a).name == "pipeline.py" else Path(a).name) for a in argv]
+        dirs = [
+            REPO / "pipelines" / (Path(a).parent.name if Path(a).name == "pipeline.py" else Path(a).name)
+            for a in argv
+        ]
     else:
-        dirs = sorted(p.parent for p in REPO.glob("*/pipeline.py"))
+        dirs = sorted(p.parent for p in REPO.glob("pipelines/*/pipeline.py"))
     total = 0
     for d in dirs:
         if not (d / "pipeline.py").is_file():

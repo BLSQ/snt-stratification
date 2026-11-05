@@ -10,7 +10,7 @@ you. The checklist is the source of truth; this file only says *how* to check ea
 every item as **pass / fail / not applicable / not verified** — never skip one silently, and never
 report a check you did not run.
 
-All commands run from the repo root, in the `snt_development` conda env.
+All commands run from the repo root, in the `snt-stratification` conda env.
 
 ## 1. Find the change
 

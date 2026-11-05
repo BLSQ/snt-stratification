@@ -1,0 +1,194 @@
+{
+    "POPULATION": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_DATASET_FORMATTED",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_population.csv",
+            "COLUMN": "POPULATION"
+        },
+        "LABEL": {
+            "EN": "Total population (DHIS2)",
+            "FR": "Population totale (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "Total number of people living in the administrative unit, as recorded in DHIS2.",
+            "FR": "Nombre total de personnes vivant dans l'unité administrative, tel qu'enregistré dans le DHIS2."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Number of people",
+            "FR": "Nombre de personnes"
+        },
+        "CATEGORY": {
+            "EN": "Population",
+            "FR": "Population"
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            50000,
+            100000,
+            200000,
+            300000,
+            400000,
+            500000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "INCIDENCE_CRUDE": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_INCIDENCE",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_incidence.csv",
+            "COLUMN": "INCIDENCE_CRUDE"
+        },
+        "LABEL": {
+            "EN": "Crude incidence (DHIS2)",
+            "FR": "Incidence brute (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "Number of confirmed malaria cases over the year, relative to the population.",
+            "FR": "Nombre de cas de paludisme confirmés sur l'année, rapporté à la population."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Cases per 1000 people per year",
+            "FR": "Cas pour 1000 personnes par an"
+        },
+        "CATEGORY": {
+            "EN": "Epidemiological indicators",
+            "FR": "Indicateurs épidémiologiques"
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            50,
+            150,
+            250,
+            350,
+            450,
+            1000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "REPORTING_RATE_DATAELEMENT": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_REPORTING_RATE",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_reporting_rate_dataelement_yearly.csv",
+            "COLUMN": "REPORTING_RATE"
+        },
+        "LABEL": {
+            "EN": "Yearly reporting rate, based on facility activity (DHIS2)",
+            "FR": "Taux de rapportage annuel, selon l'activité des FOSA (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "Share of expected facility-months in the year in which health facilities reported routine malaria data. Expected facilities are, depending on the pipeline settings, those that reported at least once during the year or those open according to the DHIS2 pyramid.",
+            "FR": "Proportion des mois-FOSA attendus dans l'année pour lesquels les formations sanitaires (FOSA) ont rapporté des données de routine sur le paludisme. Les FOSA attendues sont, selon les paramètres du pipeline, celles ayant rapporté au moins une fois dans l'année ou celles ouvertes selon la pyramide DHIS2."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Proportion",
+            "FR": "Proportion"
+        },
+        "CATEGORY": {
+            "EN": "Data quality",
+            "FR": "Qualité des données"
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            0.5,
+            0.8,
+            0.9,
+            0.95
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "REPORTING_RATE_DATASET": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_REPORTING_RATE",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_reporting_rate_dataset.csv",
+            "COLUMN": "REPORTING_RATE"
+        },
+        "LABEL": {
+            "EN": "Reporting rate, based on DHIS2 reports (DHIS2)",
+            "FR": "Taux de rapportage, selon les rapports DHIS2 (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "Number of reports received in the month, out of the number of reports expected, as recorded in DHIS2 for the selected data sets.",
+            "FR": "Nombre de rapports reçus dans le mois, sur le nombre total de rapports attendus, tel qu'enregistré dans le DHIS2 pour les formulaires sélectionnés."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Proportion",
+            "FR": "Proportion"
+        },
+        "CATEGORY": {
+            "EN": "Data quality",
+            "FR": "Qualité des données"
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            0.5,
+            0.8,
+            0.9,
+            0.95
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "SEASONALITY_RAINFALL": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "SNT_SEASONALITY_RAINFALL",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_rainfall_seasonality.csv",
+            "COLUMN": "SEASONALITY_RAINFALL"
+        },
+        "LABEL": {
+            "EN": "Seasonality of rainfall (ERA5)",
+            "FR": "Saisonnalité des précipitations (ERA5)"
+        },
+        "DESCRIPTION": {
+            "EN": "Classification of seasonal malaria transmission based on monthly rainfall: an administrative unit is seasonal when, in enough years, a block of a few consecutive months concentrates a large share of the rainfall. Used to identify administrative units eligible for seasonal interventions.",
+            "FR": "Classification de la transmission saisonnière du paludisme sur base des précipitations mensuelles : une unité administrative est saisonnière quand, pour suffisamment d'années, un bloc de quelques mois consécutifs concentre une grande part des précipitations. Sert à identifier les unités administratives éligibles pour des interventions saisonnières."
+        },
+        "SOURCE": {
+            "EN": "ERA5",
+            "FR": "ERA5"
+        },
+        "UNITS": {
+            "EN": "Not seasonal (0), Seasonal (1)",
+            "FR": "Pas saisonnier (0), Saisonnier (1)"
+        },
+        "CATEGORY": {
+            "EN": "Environmental indicators",
+            "FR": "Indicateurs environnementaux"
+        },
+        "TYPE": "Ordinal",
+        "SCALE": [
+            0,
+            1
+        ],
+        "UNIT_SYMBOL": null
+    }
+}
