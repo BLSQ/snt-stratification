@@ -1,0 +1,3319 @@
+{
+    "POPULATION": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_DATASET_FORMATTED",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_population.csv",
+            "COLUMN": "POPULATION"
+        },
+        "LABEL": {
+            "EN": "Total population (DHIS2)",
+            "FR": "Population totale (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "Total number of people living in the administrative unit, as recorded in DHIS2.",
+            "FR": "Nombre total de personnes vivant dans l'unité administrative, tel qu'enregistré dans le DHIS2."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Number of people",
+            "FR": "Nombre de personnes"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            50000,
+            100000,
+            200000,
+            300000,
+            400000,
+            500000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "POP_UNDER_5": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_DATASET_FORMATTED",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_population.csv",
+            "COLUMN": "POP_UNDER_5"
+        },
+        "LABEL": {
+            "EN": "Population under 5 years (DHIS2)",
+            "FR": "Population de moins de 5 ans (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "Number of children under 5 years old living in the administrative unit, as recorded in DHIS2.",
+            "FR": "Nombre d'enfants de moins de 5 ans vivant dans l'unité administrative, tel qu'enregistré dans le DHIS2."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Number of people",
+            "FR": "Nombre de personnes"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            30000,
+            60000,
+            90000,
+            120000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "POP_PREGNANT_WOMEN": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_DATASET_FORMATTED",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_population.csv",
+            "COLUMN": "POP_PREGNANT_WOMEN"
+        },
+        "LABEL": {
+            "EN": "Pregnant women (DHIS2)",
+            "FR": "Femmes enceintes (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "Number of pregnant women living in the administrative unit, as recorded in DHIS2.",
+            "FR": "Nombre de femmes enceintes vivant dans l'unité administrative, tel qu'enregistré dans le DHIS2."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Number of people",
+            "FR": "Nombre de personnes"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            10000,
+            20000,
+            30000,
+            40000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "POP_0_1_Y": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_DATASET_FORMATTED",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_population.csv",
+            "COLUMN": "POP_0_1_Y"
+        },
+        "LABEL": {
+            "EN": "Population aged 0-1 year (DHIS2)",
+            "FR": "Population de 0 à 1 an (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "Number of children aged 0 to 1 year living in the administrative unit, as recorded in DHIS2.",
+            "FR": "Nombre d'enfants âgés de 0 à 1 an vivant dans l'unité administrative, tel qu'enregistré dans le DHIS2."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Number of people",
+            "FR": "Nombre de personnes"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            5000,
+            10000,
+            20000,
+            40000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "POP_1_2_Y": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_DATASET_FORMATTED",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_population.csv",
+            "COLUMN": "POP_1_2_Y"
+        },
+        "LABEL": {
+            "EN": "Population aged 1-2 years (DHIS2)",
+            "FR": "Population de 1 à 2 ans (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "Number of children aged 1 to 2 years living in the administrative unit, as recorded in DHIS2.",
+            "FR": "Nombre d'enfants âgés de 1 à 2 ans vivant dans l'unité administrative, tel qu'enregistré dans le DHIS2."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Number of people",
+            "FR": "Nombre de personnes"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            5000,
+            10000,
+            20000,
+            40000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "POP_5_10_Y": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_DATASET_FORMATTED",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_population.csv",
+            "COLUMN": "POP_5_10_Y"
+        },
+        "LABEL": {
+            "EN": "Population aged 5-10 years (DHIS2)",
+            "FR": "Population de 5 à 10 ans (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "Number of children aged 5 to 10 years living in the administrative unit, as recorded in DHIS2.",
+            "FR": "Nombre d'enfants âgés de 5 à 10 ans vivant dans l'unité administrative, tel qu'enregistré dans le DHIS2."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Number of people",
+            "FR": "Nombre de personnes"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            5000,
+            10000,
+            20000,
+            40000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "POP_5_36_M": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_DATASET_FORMATTED",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_population.csv",
+            "COLUMN": "POP_5_36_M"
+        },
+        "LABEL": {
+            "EN": "Population aged 5-36 months (DHIS2)",
+            "FR": "Population de 5 à 36 mois (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "Number of children aged 5 to 36 months living in the administrative unit, as recorded in DHIS2.",
+            "FR": "Nombre d'enfants âgés de 5 à 36 mois vivant dans l'unité administrative, tel qu'enregistré dans le DHIS2."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Number of people",
+            "FR": "Nombre de personnes"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            5000,
+            10000,
+            20000,
+            40000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "POP_50_PLUS": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_DATASET_FORMATTED",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_population.csv",
+            "COLUMN": "POP_50_PLUS"
+        },
+        "LABEL": {
+            "EN": "Population aged 50 and over (DHIS2)",
+            "FR": "Population de 50 ans et plus (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "Number of people aged 50 years and over living in the administrative unit, as recorded in DHIS2.",
+            "FR": "Nombre de personnes âgées de 50 ans et plus vivant dans l'unité administrative, tel qu'enregistré dans le DHIS2."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Number of people",
+            "FR": "Nombre de personnes"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            5000,
+            10000,
+            20000,
+            40000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "POPULATION_TRANSFORMED": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_POPULATION_TRANSFORMATION",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_population.csv",
+            "COLUMN": "POPULATION"
+        },
+        "LABEL": {
+            "EN": "Total population (transformed)",
+            "FR": "Population totale (transformée)"
+        },
+        "DESCRIPTION": {
+            "EN": "Total number of people living in the administrative unit, after the population transformation: DHIS2 or user-provided figures, which may be rescaled to a national total, estimated as a fixed share of the total population, or projected to other years with a growth rate.",
+            "FR": "Nombre total de personnes vivant dans l'unité administrative, après la transformation de la population : chiffres du DHIS2 ou fournis par l'utilisateur, qui peuvent être ajustés à un total national, estimés comme une part fixe de la population totale, ou projetés sur d'autres années avec un taux de croissance."
+        },
+        "SOURCE": {
+            "EN": "",
+            "FR": ""
+        },
+        "UNITS": {
+            "EN": "Number of people",
+            "FR": "Nombre de personnes"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            50000,
+            100000,
+            200000,
+            300000,
+            400000,
+            500000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "POP_UNDER_5_TRANSFORMED": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_POPULATION_TRANSFORMATION",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_population.csv",
+            "COLUMN": "POP_UNDER_5"
+        },
+        "LABEL": {
+            "EN": "Population under 5 years (transformed)",
+            "FR": "Population de moins de 5 ans (transformée)"
+        },
+        "DESCRIPTION": {
+            "EN": "Number of children under 5 years old living in the administrative unit, after the population transformation: DHIS2 or user-provided figures, which may be rescaled to a national total, estimated as a fixed share of the total population, or projected to other years with a growth rate.",
+            "FR": "Nombre d'enfants de moins de 5 ans vivant dans l'unité administrative, après la transformation de la population : chiffres du DHIS2 ou fournis par l'utilisateur, qui peuvent être ajustés à un total national, estimés comme une part fixe de la population totale, ou projetés sur d'autres années avec un taux de croissance."
+        },
+        "SOURCE": {
+            "EN": "",
+            "FR": ""
+        },
+        "UNITS": {
+            "EN": "Number of people",
+            "FR": "Nombre de personnes"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            30000,
+            60000,
+            90000,
+            120000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "POP_PREGNANT_WOMEN_TRANSFORMED": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_POPULATION_TRANSFORMATION",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_population.csv",
+            "COLUMN": "POP_PREGNANT_WOMEN"
+        },
+        "LABEL": {
+            "EN": "Pregnant women (transformed)",
+            "FR": "Femmes enceintes (transformée)"
+        },
+        "DESCRIPTION": {
+            "EN": "Number of pregnant women living in the administrative unit, after the population transformation: DHIS2 or user-provided figures, which may be rescaled to a national total, estimated as a fixed share of the total population, or projected to other years with a growth rate.",
+            "FR": "Nombre de femmes enceintes vivant dans l'unité administrative, après la transformation de la population : chiffres du DHIS2 ou fournis par l'utilisateur, qui peuvent être ajustés à un total national, estimés comme une part fixe de la population totale, ou projetés sur d'autres années avec un taux de croissance."
+        },
+        "SOURCE": {
+            "EN": "",
+            "FR": ""
+        },
+        "UNITS": {
+            "EN": "Number of people",
+            "FR": "Nombre de personnes"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            10000,
+            20000,
+            30000,
+            40000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "POP_0_1_Y_TRANSFORMED": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_POPULATION_TRANSFORMATION",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_population.csv",
+            "COLUMN": "POP_0_1_Y"
+        },
+        "LABEL": {
+            "EN": "Population aged 0-1 year (transformed)",
+            "FR": "Population de 0 à 1 an (transformée)"
+        },
+        "DESCRIPTION": {
+            "EN": "Number of children aged 0 to 1 year living in the administrative unit, after the population transformation: DHIS2 or user-provided figures, which may be rescaled to a national total, estimated as a fixed share of the total population, or projected to other years with a growth rate.",
+            "FR": "Nombre d'enfants âgés de 0 à 1 an vivant dans l'unité administrative, après la transformation de la population : chiffres du DHIS2 ou fournis par l'utilisateur, qui peuvent être ajustés à un total national, estimés comme une part fixe de la population totale, ou projetés sur d'autres années avec un taux de croissance."
+        },
+        "SOURCE": {
+            "EN": "",
+            "FR": ""
+        },
+        "UNITS": {
+            "EN": "Number of people",
+            "FR": "Nombre de personnes"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            5000,
+            10000,
+            20000,
+            40000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "POP_1_2_Y_TRANSFORMED": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_POPULATION_TRANSFORMATION",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_population.csv",
+            "COLUMN": "POP_1_2_Y"
+        },
+        "LABEL": {
+            "EN": "Population aged 1-2 years (transformed)",
+            "FR": "Population de 1 à 2 ans (transformée)"
+        },
+        "DESCRIPTION": {
+            "EN": "Number of children aged 1 to 2 years living in the administrative unit, after the population transformation: DHIS2 or user-provided figures, which may be rescaled to a national total, estimated as a fixed share of the total population, or projected to other years with a growth rate.",
+            "FR": "Nombre d'enfants âgés de 1 à 2 ans vivant dans l'unité administrative, après la transformation de la population : chiffres du DHIS2 ou fournis par l'utilisateur, qui peuvent être ajustés à un total national, estimés comme une part fixe de la population totale, ou projetés sur d'autres années avec un taux de croissance."
+        },
+        "SOURCE": {
+            "EN": "",
+            "FR": ""
+        },
+        "UNITS": {
+            "EN": "Number of people",
+            "FR": "Nombre de personnes"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            5000,
+            10000,
+            20000,
+            40000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "POP_5_10_Y_TRANSFORMED": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_POPULATION_TRANSFORMATION",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_population.csv",
+            "COLUMN": "POP_5_10_Y"
+        },
+        "LABEL": {
+            "EN": "Population aged 5-10 years (transformed)",
+            "FR": "Population de 5 à 10 ans (transformée)"
+        },
+        "DESCRIPTION": {
+            "EN": "Number of children aged 5 to 10 years living in the administrative unit, after the population transformation: DHIS2 or user-provided figures, which may be rescaled to a national total, estimated as a fixed share of the total population, or projected to other years with a growth rate.",
+            "FR": "Nombre d'enfants âgés de 5 à 10 ans vivant dans l'unité administrative, après la transformation de la population : chiffres du DHIS2 ou fournis par l'utilisateur, qui peuvent être ajustés à un total national, estimés comme une part fixe de la population totale, ou projetés sur d'autres années avec un taux de croissance."
+        },
+        "SOURCE": {
+            "EN": "",
+            "FR": ""
+        },
+        "UNITS": {
+            "EN": "Number of people",
+            "FR": "Nombre de personnes"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            5000,
+            10000,
+            20000,
+            40000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "POP_5_36_M_TRANSFORMED": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_POPULATION_TRANSFORMATION",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_population.csv",
+            "COLUMN": "POP_5_36_M"
+        },
+        "LABEL": {
+            "EN": "Population aged 5-36 months (transformed)",
+            "FR": "Population de 5 à 36 mois (transformée)"
+        },
+        "DESCRIPTION": {
+            "EN": "Number of children aged 5 to 36 months living in the administrative unit, after the population transformation: DHIS2 or user-provided figures, which may be rescaled to a national total, estimated as a fixed share of the total population, or projected to other years with a growth rate.",
+            "FR": "Nombre d'enfants âgés de 5 à 36 mois vivant dans l'unité administrative, après la transformation de la population : chiffres du DHIS2 ou fournis par l'utilisateur, qui peuvent être ajustés à un total national, estimés comme une part fixe de la population totale, ou projetés sur d'autres années avec un taux de croissance."
+        },
+        "SOURCE": {
+            "EN": "",
+            "FR": ""
+        },
+        "UNITS": {
+            "EN": "Number of people",
+            "FR": "Nombre de personnes"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            5000,
+            10000,
+            20000,
+            40000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "POP_50_PLUS_TRANSFORMED": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_POPULATION_TRANSFORMATION",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_population.csv",
+            "COLUMN": "POP_50_PLUS"
+        },
+        "LABEL": {
+            "EN": "Population aged 50 and over (transformed)",
+            "FR": "Population de 50 ans et plus (transformée)"
+        },
+        "DESCRIPTION": {
+            "EN": "Number of people aged 50 years and over living in the administrative unit, after the population transformation: DHIS2 or user-provided figures, which may be rescaled to a national total, estimated as a fixed share of the total population, or projected to other years with a growth rate.",
+            "FR": "Nombre de personnes âgées de 50 ans et plus vivant dans l'unité administrative, après la transformation de la population : chiffres du DHIS2 ou fournis par l'utilisateur, qui peuvent être ajustés à un total national, estimés comme une part fixe de la population totale, ou projetés sur d'autres années avec un taux de croissance."
+        },
+        "SOURCE": {
+            "EN": "",
+            "FR": ""
+        },
+        "UNITS": {
+            "EN": "Number of people",
+            "FR": "Nombre de personnes"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            5000,
+            10000,
+            20000,
+            40000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "REPORTING_RATE_DATAELEMENT": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_REPORTING_RATE",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_reporting_rate_dataelement_yearly.csv",
+            "COLUMN": "REPORTING_RATE"
+        },
+        "LABEL": {
+            "EN": "Yearly reporting rate, based on facility activity (DHIS2)",
+            "FR": "Taux de rapportage annuel, selon l'activité des FOSA (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "Share of expected facility-months in the year in which health facilities reported routine malaria data. Expected facilities are, depending on the pipeline settings, those that reported at least once during the year or those open according to the DHIS2 pyramid. Depending on the pipeline settings, facilities can also be weighted by their volume of activity (cases).",
+            "FR": "Proportion des mois-FOSA attendus dans l'année pour lesquels les formations sanitaires (FOSA) ont rapporté des données de routine sur le paludisme. Les FOSA attendues sont, selon les paramètres du pipeline, celles ayant rapporté au moins une fois dans l'année ou celles ouvertes selon la pyramide DHIS2. Selon les paramètres du pipeline, les FOSA peuvent aussi être pondérées par leur volume d'activité (cas)."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Proportion",
+            "FR": "Proportion"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            0.5,
+            0.8,
+            0.9,
+            0.95
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "REPORTING_RATE_DATASET": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_REPORTING_RATE",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_reporting_rate_dataset_yearly.csv",
+            "COLUMN": "REPORTING_RATE"
+        },
+        "LABEL": {
+            "EN": "Yearly reporting rate, based on DHIS2 reports (DHIS2)",
+            "FR": "Taux de rapportage annuel, selon les rapports DHIS2 (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "Number of reports received in the year, out of the number of reports expected, as recorded in DHIS2 for the selected data sets.",
+            "FR": "Nombre de rapports reçus dans l'année, sur le nombre total de rapports attendus, tel qu'enregistré dans le DHIS2 pour les formulaires sélectionnés."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Proportion",
+            "FR": "Proportion"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            0.5,
+            0.8,
+            0.9,
+            0.95
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "POPULATION_INCIDENCE": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_INCIDENCE",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_incidence.csv",
+            "COLUMN": "POPULATION"
+        },
+        "LABEL": {
+            "EN": "Population used for incidence",
+            "FR": "Population utilisée pour l'incidence"
+        },
+        "DESCRIPTION": {
+            "EN": "Population used as the denominator of the incidence rates. By default the total population; the analyst can choose its source (DHIS2, user-provided or transformed) and a target group such as children under 5.",
+            "FR": "Population utilisée comme dénominateur des taux d'incidence. Par défaut la population totale ; l'analyste peut en choisir la source (DHIS2, fournie par l'utilisateur ou transformée) et un groupe cible comme les enfants de moins de 5 ans."
+        },
+        "SOURCE": {
+            "EN": "",
+            "FR": ""
+        },
+        "UNITS": {
+            "EN": "Number of people",
+            "FR": "Nombre de personnes"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            50000,
+            100000,
+            200000,
+            300000,
+            400000,
+            500000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "INCIDENCE_CRUDE": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_INCIDENCE",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_incidence.csv",
+            "COLUMN": "INCIDENCE_CRUDE"
+        },
+        "LABEL": {
+            "EN": "Crude incidence (DHIS2)",
+            "FR": "Incidence brute (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "Number of confirmed malaria cases over the year, relative to the population.",
+            "FR": "Nombre de cas de paludisme confirmés sur l'année, rapporté à la population."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Cases per 1000 people per year",
+            "FR": "Cas pour 1000 personnes par an"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            50,
+            150,
+            250,
+            350,
+            450,
+            1000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "INCIDENCE_ADJ_TESTING": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_INCIDENCE",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_incidence.csv",
+            "COLUMN": "INCIDENCE_ADJ_TESTING"
+        },
+        "LABEL": {
+            "EN": "Incidence adjusted for testing (DHIS2)",
+            "FR": "Incidence ajustée pour le dépistage (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "Number of malaria cases relative to the population, where confirmed cases are complemented by the untested cases expected to be positive, given the test positivity rate.",
+            "FR": "Nombre de cas de paludisme rapporté à la population, où les cas confirmés sont complétés par les cas non testés qui seraient positifs, selon le taux de positivité des tests."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Cases per 1000 people per year",
+            "FR": "Cas pour 1000 personnes par an"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            50,
+            150,
+            250,
+            350,
+            450,
+            1000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "INCIDENCE_ADJ_REPORTING": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_INCIDENCE",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_incidence.csv",
+            "COLUMN": "INCIDENCE_ADJ_REPORTING"
+        },
+        "LABEL": {
+            "EN": "Incidence adjusted for reporting rate (DHIS2)",
+            "FR": "Incidence ajustée pour le taux de rapportage (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "Incidence adjusted for testing, further adjusted for the reports that are missing, using the monthly reporting rate.",
+            "FR": "Incidence ajustée pour le dépistage, ajustée en plus pour les rapports manquants, selon le taux de rapportage mensuel."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Cases per 1000 people per year",
+            "FR": "Cas pour 1000 personnes par an"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            50,
+            150,
+            250,
+            350,
+            450,
+            1000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "INCIDENCE_ADJ_CARESEEKING": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_INCIDENCE",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_incidence.csv",
+            "COLUMN": "INCIDENCE_ADJ_CARESEEKING"
+        },
+        "LABEL": {
+            "EN": "Incidence adjusted for care-seeking (DHIS2)",
+            "FR": "Incidence ajustée pour la recherche de soins (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "Incidence adjusted for testing and reporting rate, further adjusted for people with fever who do not seek care in public health facilities. Empty when no care-seeking data is available.",
+            "FR": "Incidence ajustée pour le dépistage et le taux de rapportage, ajustée en plus pour les personnes avec de la fièvre qui ne recherchent pas de soins dans les formations sanitaires publiques. Vide si aucune donnée de recherche de soins n'est disponible."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Cases per 1000 people per year",
+            "FR": "Cas pour 1000 personnes par an"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            50,
+            150,
+            250,
+            350,
+            450,
+            1000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "TEST_QOC_IMPUTED": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_QUALITY_OF_CARE",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_quality_of_care_district_year_imputed.csv",
+            "COLUMN": "TEST"
+        },
+        "LABEL": {
+            "EN": "Suspected cases tested, outliers imputed (DHIS2)",
+            "FR": "Cas suspects testés, valeurs aberrantes imputées (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "Suspected cases tested in health facilities over the year, from routine data in which outliers were replaced by estimated values.",
+            "FR": "Cas suspects testés dans les formations sanitaires sur l'année, à partir des données de routine dans lesquelles les valeurs aberrantes ont été remplacées par des valeurs estimées."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Number of tests",
+            "FR": "Nombre de tests"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            10,
+            100,
+            1000,
+            10000,
+            100000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "SUSP_QOC_IMPUTED": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_QUALITY_OF_CARE",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_quality_of_care_district_year_imputed.csv",
+            "COLUMN": "SUSP"
+        },
+        "LABEL": {
+            "EN": "Suspected malaria cases, outliers imputed (DHIS2)",
+            "FR": "Cas suspects de paludisme, valeurs aberrantes imputées (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "Suspected malaria cases in health facilities over the year, from routine data in which outliers were replaced by estimated values.",
+            "FR": "Cas suspects de paludisme dans les formations sanitaires sur l'année, à partir des données de routine dans lesquelles les valeurs aberrantes ont été remplacées par des valeurs estimées."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Number of cases",
+            "FR": "Nombre de cas"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            10,
+            100,
+            1000,
+            10000,
+            100000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "MALTREAT_QOC_IMPUTED": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_QUALITY_OF_CARE",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_quality_of_care_district_year_imputed.csv",
+            "COLUMN": "MALTREAT"
+        },
+        "LABEL": {
+            "EN": "Malaria cases treated, outliers imputed (DHIS2)",
+            "FR": "Cas de paludisme traités, valeurs aberrantes imputées (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "Malaria cases treated in health facilities over the year, from routine data in which outliers were replaced by estimated values.",
+            "FR": "Cas de paludisme traités dans les formations sanitaires sur l'année, à partir des données de routine dans lesquelles les valeurs aberrantes ont été remplacées par des valeurs estimées."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Number of cases",
+            "FR": "Nombre de cas"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            10,
+            100,
+            1000,
+            10000,
+            100000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "CONF_QOC_IMPUTED": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_QUALITY_OF_CARE",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_quality_of_care_district_year_imputed.csv",
+            "COLUMN": "CONF"
+        },
+        "LABEL": {
+            "EN": "Confirmed malaria cases, outliers imputed (DHIS2)",
+            "FR": "Cas de paludisme confirmés, valeurs aberrantes imputées (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "Confirmed malaria cases in health facilities over the year, from routine data in which outliers were replaced by estimated values.",
+            "FR": "Cas de paludisme confirmés dans les formations sanitaires sur l'année, à partir des données de routine dans lesquelles les valeurs aberrantes ont été remplacées par des valeurs estimées."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Number of cases",
+            "FR": "Nombre de cas"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            10,
+            100,
+            1000,
+            10000,
+            100000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "MALDTH_QOC_IMPUTED": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_QUALITY_OF_CARE",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_quality_of_care_district_year_imputed.csv",
+            "COLUMN": "MALDTH"
+        },
+        "LABEL": {
+            "EN": "Malaria deaths, outliers imputed (DHIS2)",
+            "FR": "Décès dus au paludisme, valeurs aberrantes imputées (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "Malaria deaths in health facilities over the year, from routine data in which outliers were replaced by estimated values.",
+            "FR": "Décès dus au paludisme dans les formations sanitaires sur l'année, à partir des données de routine dans lesquelles les valeurs aberrantes ont été remplacées par des valeurs estimées."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Number of deaths",
+            "FR": "Nombre de décès"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            10,
+            100,
+            1000,
+            10000,
+            100000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "MALADM_QOC_IMPUTED": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_QUALITY_OF_CARE",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_quality_of_care_district_year_imputed.csv",
+            "COLUMN": "MALADM"
+        },
+        "LABEL": {
+            "EN": "Malaria admissions, outliers imputed (DHIS2)",
+            "FR": "Hospitalisations pour paludisme, valeurs aberrantes imputées (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "Malaria admissions in health facilities over the year, from routine data in which outliers were replaced by estimated values.",
+            "FR": "Hospitalisations pour paludisme dans les formations sanitaires sur l'année, à partir des données de routine dans lesquelles les valeurs aberrantes ont été remplacées par des valeurs estimées."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Number of admissions",
+            "FR": "Nombre d'hospitalisations"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            10,
+            100,
+            1000,
+            10000,
+            100000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "ALLADM_QOC_IMPUTED": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_QUALITY_OF_CARE",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_quality_of_care_district_year_imputed.csv",
+            "COLUMN": "ALLADM"
+        },
+        "LABEL": {
+            "EN": "All-cause admissions, outliers imputed (DHIS2)",
+            "FR": "Hospitalisations toutes causes, valeurs aberrantes imputées (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "All-cause admissions in health facilities over the year, from routine data in which outliers were replaced by estimated values.",
+            "FR": "Hospitalisations toutes causes dans les formations sanitaires sur l'année, à partir des données de routine dans lesquelles les valeurs aberrantes ont été remplacées par des valeurs estimées."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Number of admissions",
+            "FR": "Nombre d'hospitalisations"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            10,
+            100,
+            1000,
+            10000,
+            100000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "ALLDTH_QOC_IMPUTED": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_QUALITY_OF_CARE",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_quality_of_care_district_year_imputed.csv",
+            "COLUMN": "ALLDTH"
+        },
+        "LABEL": {
+            "EN": "All-cause deaths, outliers imputed (DHIS2)",
+            "FR": "Décès toutes causes, valeurs aberrantes imputées (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "All-cause deaths in health facilities over the year, from routine data in which outliers were replaced by estimated values.",
+            "FR": "Décès toutes causes dans les formations sanitaires sur l'année, à partir des données de routine dans lesquelles les valeurs aberrantes ont été remplacées par des valeurs estimées."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Number of deaths",
+            "FR": "Nombre de décès"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            10,
+            100,
+            1000,
+            10000,
+            100000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "ALLOUT_QOC_IMPUTED": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_QUALITY_OF_CARE",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_quality_of_care_district_year_imputed.csv",
+            "COLUMN": "ALLOUT"
+        },
+        "LABEL": {
+            "EN": "All-cause outpatient consultations, outliers imputed (DHIS2)",
+            "FR": "Consultations externes toutes causes, valeurs aberrantes imputées (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "All-cause outpatient consultations in health facilities over the year, from routine data in which outliers were replaced by estimated values.",
+            "FR": "Consultations externes toutes causes dans les formations sanitaires sur l'année, à partir des données de routine dans lesquelles les valeurs aberrantes ont été remplacées par des valeurs estimées."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Number of consultations",
+            "FR": "Nombre de consultations"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            10,
+            100,
+            1000,
+            10000,
+            100000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "PRES_QOC_IMPUTED": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_QUALITY_OF_CARE",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_quality_of_care_district_year_imputed.csv",
+            "COLUMN": "PRES"
+        },
+        "LABEL": {
+            "EN": "Presumed malaria cases (not tested), outliers imputed (DHIS2)",
+            "FR": "Cas de paludisme présumés (non testés), valeurs aberrantes imputées (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "Presumed malaria cases (not tested) in health facilities over the year, from routine data in which outliers were replaced by estimated values.",
+            "FR": "Cas de paludisme présumés (non testés) dans les formations sanitaires sur l'année, à partir des données de routine dans lesquelles les valeurs aberrantes ont été remplacées par des valeurs estimées."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Number of cases",
+            "FR": "Nombre de cas"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            10,
+            100,
+            1000,
+            10000,
+            100000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "TEST_QOC_REMOVED": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_QUALITY_OF_CARE",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_quality_of_care_district_year_removed.csv",
+            "COLUMN": "TEST"
+        },
+        "LABEL": {
+            "EN": "Suspected cases tested, outliers removed (DHIS2)",
+            "FR": "Cas suspects testés, valeurs aberrantes supprimées (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "Suspected cases tested in health facilities over the year, from routine data from which outliers were removed.",
+            "FR": "Cas suspects testés dans les formations sanitaires sur l'année, à partir des données de routine dont les valeurs aberrantes ont été supprimées."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Number of tests",
+            "FR": "Nombre de tests"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            10,
+            100,
+            1000,
+            10000,
+            100000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "SUSP_QOC_REMOVED": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_QUALITY_OF_CARE",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_quality_of_care_district_year_removed.csv",
+            "COLUMN": "SUSP"
+        },
+        "LABEL": {
+            "EN": "Suspected malaria cases, outliers removed (DHIS2)",
+            "FR": "Cas suspects de paludisme, valeurs aberrantes supprimées (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "Suspected malaria cases in health facilities over the year, from routine data from which outliers were removed.",
+            "FR": "Cas suspects de paludisme dans les formations sanitaires sur l'année, à partir des données de routine dont les valeurs aberrantes ont été supprimées."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Number of cases",
+            "FR": "Nombre de cas"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            10,
+            100,
+            1000,
+            10000,
+            100000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "MALTREAT_QOC_REMOVED": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_QUALITY_OF_CARE",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_quality_of_care_district_year_removed.csv",
+            "COLUMN": "MALTREAT"
+        },
+        "LABEL": {
+            "EN": "Malaria cases treated, outliers removed (DHIS2)",
+            "FR": "Cas de paludisme traités, valeurs aberrantes supprimées (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "Malaria cases treated in health facilities over the year, from routine data from which outliers were removed.",
+            "FR": "Cas de paludisme traités dans les formations sanitaires sur l'année, à partir des données de routine dont les valeurs aberrantes ont été supprimées."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Number of cases",
+            "FR": "Nombre de cas"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            10,
+            100,
+            1000,
+            10000,
+            100000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "CONF_QOC_REMOVED": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_QUALITY_OF_CARE",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_quality_of_care_district_year_removed.csv",
+            "COLUMN": "CONF"
+        },
+        "LABEL": {
+            "EN": "Confirmed malaria cases, outliers removed (DHIS2)",
+            "FR": "Cas de paludisme confirmés, valeurs aberrantes supprimées (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "Confirmed malaria cases in health facilities over the year, from routine data from which outliers were removed.",
+            "FR": "Cas de paludisme confirmés dans les formations sanitaires sur l'année, à partir des données de routine dont les valeurs aberrantes ont été supprimées."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Number of cases",
+            "FR": "Nombre de cas"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            10,
+            100,
+            1000,
+            10000,
+            100000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "MALDTH_QOC_REMOVED": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_QUALITY_OF_CARE",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_quality_of_care_district_year_removed.csv",
+            "COLUMN": "MALDTH"
+        },
+        "LABEL": {
+            "EN": "Malaria deaths, outliers removed (DHIS2)",
+            "FR": "Décès dus au paludisme, valeurs aberrantes supprimées (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "Malaria deaths in health facilities over the year, from routine data from which outliers were removed.",
+            "FR": "Décès dus au paludisme dans les formations sanitaires sur l'année, à partir des données de routine dont les valeurs aberrantes ont été supprimées."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Number of deaths",
+            "FR": "Nombre de décès"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            10,
+            100,
+            1000,
+            10000,
+            100000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "MALADM_QOC_REMOVED": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_QUALITY_OF_CARE",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_quality_of_care_district_year_removed.csv",
+            "COLUMN": "MALADM"
+        },
+        "LABEL": {
+            "EN": "Malaria admissions, outliers removed (DHIS2)",
+            "FR": "Hospitalisations pour paludisme, valeurs aberrantes supprimées (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "Malaria admissions in health facilities over the year, from routine data from which outliers were removed.",
+            "FR": "Hospitalisations pour paludisme dans les formations sanitaires sur l'année, à partir des données de routine dont les valeurs aberrantes ont été supprimées."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Number of admissions",
+            "FR": "Nombre d'hospitalisations"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            10,
+            100,
+            1000,
+            10000,
+            100000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "ALLADM_QOC_REMOVED": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_QUALITY_OF_CARE",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_quality_of_care_district_year_removed.csv",
+            "COLUMN": "ALLADM"
+        },
+        "LABEL": {
+            "EN": "All-cause admissions, outliers removed (DHIS2)",
+            "FR": "Hospitalisations toutes causes, valeurs aberrantes supprimées (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "All-cause admissions in health facilities over the year, from routine data from which outliers were removed.",
+            "FR": "Hospitalisations toutes causes dans les formations sanitaires sur l'année, à partir des données de routine dont les valeurs aberrantes ont été supprimées."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Number of admissions",
+            "FR": "Nombre d'hospitalisations"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            10,
+            100,
+            1000,
+            10000,
+            100000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "ALLDTH_QOC_REMOVED": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_QUALITY_OF_CARE",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_quality_of_care_district_year_removed.csv",
+            "COLUMN": "ALLDTH"
+        },
+        "LABEL": {
+            "EN": "All-cause deaths, outliers removed (DHIS2)",
+            "FR": "Décès toutes causes, valeurs aberrantes supprimées (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "All-cause deaths in health facilities over the year, from routine data from which outliers were removed.",
+            "FR": "Décès toutes causes dans les formations sanitaires sur l'année, à partir des données de routine dont les valeurs aberrantes ont été supprimées."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Number of deaths",
+            "FR": "Nombre de décès"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            10,
+            100,
+            1000,
+            10000,
+            100000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "ALLOUT_QOC_REMOVED": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_QUALITY_OF_CARE",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_quality_of_care_district_year_removed.csv",
+            "COLUMN": "ALLOUT"
+        },
+        "LABEL": {
+            "EN": "All-cause outpatient consultations, outliers removed (DHIS2)",
+            "FR": "Consultations externes toutes causes, valeurs aberrantes supprimées (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "All-cause outpatient consultations in health facilities over the year, from routine data from which outliers were removed.",
+            "FR": "Consultations externes toutes causes dans les formations sanitaires sur l'année, à partir des données de routine dont les valeurs aberrantes ont été supprimées."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Number of consultations",
+            "FR": "Nombre de consultations"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            10,
+            100,
+            1000,
+            10000,
+            100000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "PRES_QOC_REMOVED": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHIS2_QUALITY_OF_CARE",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_quality_of_care_district_year_removed.csv",
+            "COLUMN": "PRES"
+        },
+        "LABEL": {
+            "EN": "Presumed malaria cases (not tested), outliers removed (DHIS2)",
+            "FR": "Cas de paludisme présumés (non testés), valeurs aberrantes supprimées (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "Presumed malaria cases (not tested) in health facilities over the year, from routine data from which outliers were removed.",
+            "FR": "Cas de paludisme présumés (non testés) dans les formations sanitaires sur l'année, à partir des données de routine dont les valeurs aberrantes ont été supprimées."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Number of cases",
+            "FR": "Nombre de cas"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            10,
+            100,
+            1000,
+            10000,
+            100000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "SEASONALITY_CASES": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "SNT_SEASONALITY_CASES",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_cases_seasonality.csv",
+            "COLUMN": "SEASONALITY_CASES"
+        },
+        "LABEL": {
+            "EN": "Seasonality of cases (DHIS2)",
+            "FR": "Saisonnalité des cas (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "Classification of seasonal malaria transmission based on monthly confirmed malaria cases: an administrative unit is seasonal when, in enough years, a block of a few consecutive months concentrates a large share of the cases. Used to identify administrative units eligible for seasonal interventions.",
+            "FR": "Classification de la transmission saisonnière du paludisme sur base des cas de paludisme confirmés mensuels : une unité administrative est saisonnière quand, pour suffisamment d'années, un bloc de quelques mois consécutifs concentre une grande part des cas. Sert à identifier les unités administratives éligibles pour des interventions saisonnières."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Not seasonal (0), Seasonal (1)",
+            "FR": "Pas saisonnier (0), Saisonnier (1)"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Ordinal",
+        "SCALE": [
+            0,
+            1
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "SEASONAL_BLOCK_DURATION_CASES": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "SNT_SEASONALITY_CASES",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_cases_seasonality.csv",
+            "COLUMN": "SEASONAL_BLOCK_DURATION_CASES"
+        },
+        "LABEL": {
+            "EN": "Duration of the seasonal block, cases (DHIS2)",
+            "FR": "Durée du bloc saisonnier, cas (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "Shortest number of consecutive months that concentrates a large share of the cases. Empty for non-seasonal administrative units.",
+            "FR": "Plus petit nombre de mois consécutifs concentrant une grande part des cas. Vide pour les unités administratives non saisonnières."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Number of months",
+            "FR": "Nombre de mois"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Ordinal",
+        "SCALE": [
+            3,
+            4,
+            5
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "SEASONAL_BLOCK_START_MONTH_CASES": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "SNT_SEASONALITY_CASES",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_cases_seasonality.csv",
+            "COLUMN": "SEASONAL_BLOCK_START_MONTH_CASES"
+        },
+        "LABEL": {
+            "EN": "Start month of the seasonal block, cases (DHIS2)",
+            "FR": "Mois de début du bloc saisonnier, cas (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "Calendar month in which the seasonal block of confirmed malaria cases most often starts. Empty for non-seasonal administrative units.",
+            "FR": "Mois calendaire où le bloc saisonnier de cas de paludisme confirmés commence le plus souvent. Vide pour les unités administratives non saisonnières."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Month (1 = January … 12 = December)",
+            "FR": "Mois (1 = janvier … 12 = décembre)"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Ordinal",
+        "SCALE": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "CASES_PROPORTION": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "SNT_SEASONALITY_CASES",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_cases_seasonality.csv",
+            "COLUMN": "CASES_PROPORTION"
+        },
+        "LABEL": {
+            "EN": "Share of cases in the seasonal block (DHIS2)",
+            "FR": "Part des cas dans le bloc saisonnier (DHIS2)"
+        },
+        "DESCRIPTION": {
+            "EN": "Average share of each year's monthly confirmed malaria cases that falls within the peak seasonal block. Empty for non-seasonal administrative units.",
+            "FR": "Part moyenne des cas de paludisme confirmés mensuels de chaque année tombant dans le bloc saisonnier de pic. Vide pour les unités administratives non saisonnières."
+        },
+        "SOURCE": {
+            "EN": "DHIS2",
+            "FR": "DHIS2"
+        },
+        "UNITS": {
+            "EN": "Proportion",
+            "FR": "Proportion"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            0.5,
+            0.6,
+            0.7,
+            0.8
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "SEASONALITY_RAINFALL": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "SNT_SEASONALITY_RAINFALL",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_rainfall_seasonality.csv",
+            "COLUMN": "SEASONALITY_RAINFALL"
+        },
+        "LABEL": {
+            "EN": "Seasonality of rainfall (ERA5)",
+            "FR": "Saisonnalité des précipitations (ERA5)"
+        },
+        "DESCRIPTION": {
+            "EN": "Classification of seasonal malaria transmission based on monthly rainfall: an administrative unit is seasonal when, in enough years, a block of a few consecutive months concentrates a large share of the rainfall. Used to identify administrative units eligible for seasonal interventions.",
+            "FR": "Classification de la transmission saisonnière du paludisme sur base des précipitations mensuelles : une unité administrative est saisonnière quand, pour suffisamment d'années, un bloc de quelques mois consécutifs concentre une grande part des précipitations. Sert à identifier les unités administratives éligibles pour des interventions saisonnières."
+        },
+        "SOURCE": {
+            "EN": "ERA5",
+            "FR": "ERA5"
+        },
+        "UNITS": {
+            "EN": "Not seasonal (0), Seasonal (1)",
+            "FR": "Pas saisonnier (0), Saisonnier (1)"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Ordinal",
+        "SCALE": [
+            0,
+            1
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "SEASONAL_BLOCK_DURATION_RAINFALL": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "SNT_SEASONALITY_RAINFALL",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_rainfall_seasonality.csv",
+            "COLUMN": "SEASONAL_BLOCK_DURATION_RAINFALL"
+        },
+        "LABEL": {
+            "EN": "Duration of the seasonal block, rainfall (ERA5)",
+            "FR": "Durée du bloc saisonnier, précipitations (ERA5)"
+        },
+        "DESCRIPTION": {
+            "EN": "Shortest number of consecutive months that concentrates a large share of the rainfall. Empty for non-seasonal administrative units.",
+            "FR": "Plus petit nombre de mois consécutifs concentrant une grande part des précipitations. Vide pour les unités administratives non saisonnières."
+        },
+        "SOURCE": {
+            "EN": "ERA5",
+            "FR": "ERA5"
+        },
+        "UNITS": {
+            "EN": "Number of months",
+            "FR": "Nombre de mois"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Ordinal",
+        "SCALE": [
+            3,
+            4,
+            5
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "SEASONAL_BLOCK_START_MONTH_RAINFALL": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "SNT_SEASONALITY_RAINFALL",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_rainfall_seasonality.csv",
+            "COLUMN": "SEASONAL_BLOCK_START_MONTH_RAINFALL"
+        },
+        "LABEL": {
+            "EN": "Start month of the seasonal block, rainfall (ERA5)",
+            "FR": "Mois de début du bloc saisonnier, précipitations (ERA5)"
+        },
+        "DESCRIPTION": {
+            "EN": "Calendar month in which the seasonal rainfall block most often starts each year. Empty for non-seasonal administrative units.",
+            "FR": "Mois calendaire où le bloc saisonnier de précipitations commence le plus souvent chaque année. Vide pour les unités administratives non saisonnières."
+        },
+        "SOURCE": {
+            "EN": "ERA5",
+            "FR": "ERA5"
+        },
+        "UNITS": {
+            "EN": "Month (1 = January … 12 = December)",
+            "FR": "Mois (1 = janvier … 12 = décembre)"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Ordinal",
+        "SCALE": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "RAIN_PROPORTION": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "SNT_SEASONALITY_RAINFALL",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_rainfall_seasonality.csv",
+            "COLUMN": "RAIN_PROPORTION"
+        },
+        "LABEL": {
+            "EN": "Share of rainfall in the seasonal block (ERA5)",
+            "FR": "Part des précipitations dans le bloc saisonnier (ERA5)"
+        },
+        "DESCRIPTION": {
+            "EN": "Average share of each year's monthly rainfall that falls within the peak seasonal block. Empty for non-seasonal administrative units.",
+            "FR": "Part moyenne des précipitations mensuelles de chaque année tombant dans le bloc saisonnier de pic. Vide pour les unités administratives non saisonnières."
+        },
+        "SOURCE": {
+            "EN": "ERA5",
+            "FR": "ERA5"
+        },
+        "UNITS": {
+            "EN": "Proportion",
+            "FR": "Proportion"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            0.5,
+            0.6,
+            0.7,
+            0.8
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "PRECIPITATION_MEAN": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "ERA5_DATASET_CLIMATE",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_total_precipitation_monthly.parquet",
+            "COLUMN": "MEAN"
+        },
+        "LABEL": {
+            "EN": "Monthly rainfall, average over the administrative unit (ERA5)",
+            "FR": "Précipitations mensuelles, moyenne sur l'unité administrative (ERA5)"
+        },
+        "DESCRIPTION": {
+            "EN": "Total rainfall over the month, averaged over the administrative unit, from the ERA5-Land climate reanalysis.",
+            "FR": "Précipitations totales sur le mois, en moyenne sur l'unité administrative, selon la réanalyse climatique ERA5-Land."
+        },
+        "SOURCE": {
+            "EN": "ERA5",
+            "FR": "ERA5"
+        },
+        "UNITS": {
+            "EN": "Millimetres per month",
+            "FR": "Millimètres par mois"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            25,
+            50,
+            100,
+            200,
+            300
+        ],
+        "UNIT_SYMBOL": "mm"
+    },
+    "PRECIPITATION_MIN": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "ERA5_DATASET_CLIMATE",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_total_precipitation_monthly.parquet",
+            "COLUMN": "MIN"
+        },
+        "LABEL": {
+            "EN": "Monthly rainfall, minimum over the administrative unit (ERA5)",
+            "FR": "Précipitations mensuelles, minimum sur l'unité administrative (ERA5)"
+        },
+        "DESCRIPTION": {
+            "EN": "Rainfall at the driest location in the administrative unit at each time step, summed over the month, from the ERA5-Land climate reanalysis.",
+            "FR": "Précipitations à l'endroit le plus sec de l'unité administrative à chaque pas de temps, additionnées sur le mois, selon la réanalyse climatique ERA5-Land."
+        },
+        "SOURCE": {
+            "EN": "ERA5",
+            "FR": "ERA5"
+        },
+        "UNITS": {
+            "EN": "Millimetres per month",
+            "FR": "Millimètres par mois"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            25,
+            50,
+            100,
+            200,
+            300
+        ],
+        "UNIT_SYMBOL": "mm"
+    },
+    "PRECIPITATION_MAX": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "ERA5_DATASET_CLIMATE",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_total_precipitation_monthly.parquet",
+            "COLUMN": "MAX"
+        },
+        "LABEL": {
+            "EN": "Monthly rainfall, maximum over the administrative unit (ERA5)",
+            "FR": "Précipitations mensuelles, maximum sur l'unité administrative (ERA5)"
+        },
+        "DESCRIPTION": {
+            "EN": "Rainfall at the wettest location in the administrative unit at each time step, summed over the month, from the ERA5-Land climate reanalysis.",
+            "FR": "Précipitations à l'endroit le plus humide de l'unité administrative à chaque pas de temps, additionnées sur le mois, selon la réanalyse climatique ERA5-Land."
+        },
+        "SOURCE": {
+            "EN": "ERA5",
+            "FR": "ERA5"
+        },
+        "UNITS": {
+            "EN": "Millimetres per month",
+            "FR": "Millimètres par mois"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            25,
+            50,
+            100,
+            200,
+            300
+        ],
+        "UNIT_SYMBOL": "mm"
+    },
+    "POPULATION_WORLDPOP": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "WORLDPOP_DATASET_EXTRACT",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_worldpop_population.csv",
+            "COLUMN": "POPULATION"
+        },
+        "LABEL": {
+            "EN": "Total population (WorldPop)",
+            "FR": "Population totale (WorldPop)"
+        },
+        "DESCRIPTION": {
+            "EN": "Estimated number of people living in the administrative unit, from WorldPop modelled population estimates.",
+            "FR": "Nombre estimé de personnes vivant dans l'unité administrative, selon les estimations modélisées de WorldPop."
+        },
+        "SOURCE": {
+            "EN": "WorldPop",
+            "FR": "WorldPop"
+        },
+        "UNITS": {
+            "EN": "Number of people",
+            "FR": "Nombre de personnes"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            50000,
+            100000,
+            200000,
+            300000,
+            400000,
+            500000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "POP_TOTAL": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "SNT_HEALTHCARE_ACCESS",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_population_covered_health.csv",
+            "COLUMN": "POP_TOTAL"
+        },
+        "LABEL": {
+            "EN": "Total population, health care access (WorldPop)",
+            "FR": "Population totale, accès aux soins (WorldPop)"
+        },
+        "DESCRIPTION": {
+            "EN": "Estimated number of people living in the administrative unit (WorldPop), for the year used in the health care access analysis.",
+            "FR": "Nombre estimé de personnes vivant dans l'unité administrative (WorldPop), pour l'année utilisée dans l'analyse de l'accès aux soins."
+        },
+        "SOURCE": {
+            "EN": "WorldPop",
+            "FR": "WorldPop"
+        },
+        "UNITS": {
+            "EN": "Number of people",
+            "FR": "Nombre de personnes"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            50000,
+            100000,
+            200000,
+            300000,
+            400000,
+            500000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "POP_COVERED": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "SNT_HEALTHCARE_ACCESS",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_population_covered_health.csv",
+            "COLUMN": "POP_COVERED"
+        },
+        "LABEL": {
+            "EN": "Population (WorldPop) within 5 km of a health facility",
+            "FR": "Population (WorldPop) à moins de 5 km d'une FOSA"
+        },
+        "DESCRIPTION": {
+            "EN": "Estimated number of people (WorldPop) living within 5 km, in a straight line, of a health facility.",
+            "FR": "Nombre estimé de personnes (WorldPop) vivant à moins de 5 km, à vol d'oiseau, d'une formation sanitaire (FOSA)."
+        },
+        "SOURCE": {
+            "EN": "",
+            "FR": ""
+        },
+        "UNITS": {
+            "EN": "Number of people",
+            "FR": "Nombre de personnes"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            50000,
+            100000,
+            200000,
+            300000,
+            400000,
+            500000
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "PCT_HEALTH_ACCESS": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "SNT_HEALTHCARE_ACCESS",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_population_covered_health.csv",
+            "COLUMN": "PCT_HEALTH_ACCESS"
+        },
+        "LABEL": {
+            "EN": "Health care access (5 km)",
+            "FR": "Accès aux soins (5 km)"
+        },
+        "DESCRIPTION": {
+            "EN": "Percentage of the population of the administrative unit living within 5 km, in a straight line, of a health facility (about one hour's walk).",
+            "FR": "Pourcentage de la population de l'unité administrative vivant à moins de 5 km, à vol d'oiseau, d'une formation sanitaire (FOSA), soit environ une heure de marche."
+        },
+        "SOURCE": {
+            "EN": "",
+            "FR": ""
+        },
+        "UNITS": {
+            "EN": "Percentage of the population",
+            "FR": "Pourcentage de la population"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            25,
+            50,
+            75
+        ],
+        "UNIT_SYMBOL": "%"
+    },
+    "U5MR_PERMIL_SAMPLE_AVERAGE": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHS_INDICATORS",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_DHS_ADM2_U5MR_PERMIL.csv",
+            "COLUMN": "U5MR_PERMIL_SAMPLE_AVERAGE"
+        },
+        "LABEL": {
+            "EN": "Under-5 mortality (DHS)",
+            "FR": "Mortalité infanto-juvénile (DHS)"
+        },
+        "DESCRIPTION": {
+            "EN": "Probability that a child dies before their 5th birthday (all causes), over the 10 years before the survey. Estimated per ADM1 from the latest DHS survey; every ADM2 within an ADM1 shares its value.",
+            "FR": "Probabilité qu'un enfant décède avant son 5e anniversaire (toutes causes), sur les 10 années précédant l'enquête. Estimé par ADM1 à partir de la dernière enquête EDS (DHS) ; toutes les unités ADM2 d'une même ADM1 partagent cette valeur."
+        },
+        "SOURCE": {
+            "EN": "DHS",
+            "FR": "DHS"
+        },
+        "UNITS": {
+            "EN": "Deaths per 1000 live births",
+            "FR": "Décès pour 1000 naissances vivantes"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            25,
+            50,
+            75,
+            100,
+            125,
+            150,
+            175
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "PCT_PUBLIC_CARE_SAMPLE_AVERAGE": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHS_INDICATORS",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_DHS_ADM2_PCT_PUBLIC_CARE.csv",
+            "COLUMN": "PCT_PUBLIC_CARE_SAMPLE_AVERAGE"
+        },
+        "LABEL": {
+            "EN": "Care-seeking in the public sector (DHS)",
+            "FR": "Recherche de soins dans le secteur public (DHS)"
+        },
+        "DESCRIPTION": {
+            "EN": "Percentage of children under 5 with fever in the 2 weeks before the survey, for whom advice or treatment was sought in the public sector. Estimated per ADM1 from the latest DHS survey; every ADM2 within an ADM1 shares its value.",
+            "FR": "Pourcentage des enfants de moins de 5 ans ayant eu de la fièvre dans les 2 semaines précédant l'enquête, pour lesquels des conseils ou un traitement ont été recherchés dans le secteur public. Estimé par ADM1 à partir de la dernière enquête EDS (DHS) ; toutes les unités ADM2 d'une même ADM1 partagent cette valeur."
+        },
+        "SOURCE": {
+            "EN": "DHS",
+            "FR": "DHS"
+        },
+        "UNITS": {
+            "EN": "Percentage of children",
+            "FR": "Pourcentage des enfants"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            20,
+            40,
+            60,
+            80
+        ],
+        "UNIT_SYMBOL": "%"
+    },
+    "PCT_PRIVATE_CARE_SAMPLE_AVERAGE": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHS_INDICATORS",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_DHS_ADM2_PCT_PRIVATE_CARE.csv",
+            "COLUMN": "PCT_PRIVATE_CARE_SAMPLE_AVERAGE"
+        },
+        "LABEL": {
+            "EN": "Care-seeking in the private sector (DHS)",
+            "FR": "Recherche de soins dans le secteur privé (DHS)"
+        },
+        "DESCRIPTION": {
+            "EN": "Percentage of children under 5 with fever in the 2 weeks before the survey, for whom advice or treatment was sought in the private sector. Estimated per ADM1 from the latest DHS survey; every ADM2 within an ADM1 shares its value.",
+            "FR": "Pourcentage des enfants de moins de 5 ans ayant eu de la fièvre dans les 2 semaines précédant l'enquête, pour lesquels des conseils ou un traitement ont été recherchés dans le secteur privé. Estimé par ADM1 à partir de la dernière enquête EDS (DHS) ; toutes les unités ADM2 d'une même ADM1 partagent cette valeur."
+        },
+        "SOURCE": {
+            "EN": "DHS",
+            "FR": "DHS"
+        },
+        "UNITS": {
+            "EN": "Percentage of children",
+            "FR": "Pourcentage des enfants"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            20,
+            40,
+            60,
+            80
+        ],
+        "UNIT_SYMBOL": "%"
+    },
+    "PCT_NO_CARE_SAMPLE_AVERAGE": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHS_INDICATORS",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_DHS_ADM2_PCT_NO_CARE.csv",
+            "COLUMN": "PCT_NO_CARE_SAMPLE_AVERAGE"
+        },
+        "LABEL": {
+            "EN": "No care-seeking (DHS)",
+            "FR": "Absence de recherche de soins (DHS)"
+        },
+        "DESCRIPTION": {
+            "EN": "Percentage of children under 5 with fever in the 2 weeks before the survey, for whom no advice or treatment was sought. Estimated per ADM1 from the latest DHS survey; every ADM2 within an ADM1 shares its value.",
+            "FR": "Pourcentage des enfants de moins de 5 ans ayant eu de la fièvre dans les 2 semaines précédant l'enquête, pour lesquels aucun conseil ni traitement n'a été recherché. Estimé par ADM1 à partir de la dernière enquête EDS (DHS) ; toutes les unités ADM2 d'une même ADM1 partagent cette valeur."
+        },
+        "SOURCE": {
+            "EN": "DHS",
+            "FR": "DHS"
+        },
+        "UNITS": {
+            "EN": "Percentage of children",
+            "FR": "Pourcentage des enfants"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            20,
+            40,
+            60,
+            80
+        ],
+        "UNIT_SYMBOL": "%"
+    },
+    "PCT_U5_PREV_RDT_SAMPLE_AVERAGE": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHS_INDICATORS",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_DHS_ADM2_PCT_U5_PREV_RDT.csv",
+            "COLUMN": "PCT_U5_PREV_RDT_SAMPLE_AVERAGE"
+        },
+        "LABEL": {
+            "EN": "Malaria prevalence in children 6-59 months, by RDT (DHS)",
+            "FR": "Prévalence du paludisme chez les enfants de 6 à 59 mois, par TDR (DHS)"
+        },
+        "DESCRIPTION": {
+            "EN": "Percentage of children aged 6 to 59 months who tested positive for malaria with a rapid diagnostic test (RDT) during the survey. Estimated per ADM1 from the latest DHS survey; every ADM2 within an ADM1 shares its value.",
+            "FR": "Pourcentage des enfants de 6 à 59 mois testés positifs au paludisme par test de diagnostic rapide (TDR) lors de l'enquête. Estimé par ADM1 à partir de la dernière enquête EDS (DHS) ; toutes les unités ADM2 d'une même ADM1 partagent cette valeur."
+        },
+        "SOURCE": {
+            "EN": "DHS",
+            "FR": "DHS"
+        },
+        "UNITS": {
+            "EN": "Percentage of children",
+            "FR": "Pourcentage des enfants"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            20,
+            40,
+            60,
+            80
+        ],
+        "UNIT_SYMBOL": "%"
+    },
+    "PCT_DTP1_SAMPLE_AVERAGE": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHS_INDICATORS",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_DHS_ADM2_PCT_DTP1.csv",
+            "COLUMN": "PCT_DTP1_SAMPLE_AVERAGE"
+        },
+        "LABEL": {
+            "EN": "DTP1 vaccination (DHS)",
+            "FR": "Vaccination DTC1 (DHS)"
+        },
+        "DESCRIPTION": {
+            "EN": "Percentage of children aged 12 to 35 months who received the first dose of the Diphtheria-Tetanus-Pertussis (DTP) vaccine. Estimated per ADM1 from the latest DHS survey; every ADM2 within an ADM1 shares its value.",
+            "FR": "Pourcentage des enfants de 12 à 35 mois ayant reçu la première dose du vaccin Diphtérie-Tétanos-Coqueluche (DTC). Estimé par ADM1 à partir de la dernière enquête EDS (DHS) ; toutes les unités ADM2 d'une même ADM1 partagent cette valeur."
+        },
+        "SOURCE": {
+            "EN": "DHS",
+            "FR": "DHS"
+        },
+        "UNITS": {
+            "EN": "Percentage of children",
+            "FR": "Pourcentage des enfants"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            20,
+            40,
+            60,
+            80
+        ],
+        "UNIT_SYMBOL": "%"
+    },
+    "PCT_DTP2_SAMPLE_AVERAGE": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHS_INDICATORS",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_DHS_ADM2_PCT_DTP2.csv",
+            "COLUMN": "PCT_DTP2_SAMPLE_AVERAGE"
+        },
+        "LABEL": {
+            "EN": "DTP2 vaccination (DHS)",
+            "FR": "Vaccination DTC2 (DHS)"
+        },
+        "DESCRIPTION": {
+            "EN": "Percentage of children aged 12 to 35 months who received the second dose of the Diphtheria-Tetanus-Pertussis (DTP) vaccine. Estimated per ADM1 from the latest DHS survey; every ADM2 within an ADM1 shares its value.",
+            "FR": "Pourcentage des enfants de 12 à 35 mois ayant reçu la deuxième dose du vaccin Diphtérie-Tétanos-Coqueluche (DTC). Estimé par ADM1 à partir de la dernière enquête EDS (DHS) ; toutes les unités ADM2 d'une même ADM1 partagent cette valeur."
+        },
+        "SOURCE": {
+            "EN": "DHS",
+            "FR": "DHS"
+        },
+        "UNITS": {
+            "EN": "Percentage of children",
+            "FR": "Pourcentage des enfants"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            20,
+            40,
+            60,
+            80
+        ],
+        "UNIT_SYMBOL": "%"
+    },
+    "PCT_DTP3_SAMPLE_AVERAGE": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHS_INDICATORS",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_DHS_ADM2_PCT_DTP3.csv",
+            "COLUMN": "PCT_DTP3_SAMPLE_AVERAGE"
+        },
+        "LABEL": {
+            "EN": "DTP3 vaccination (DHS)",
+            "FR": "Vaccination DTC3 (DHS)"
+        },
+        "DESCRIPTION": {
+            "EN": "Percentage of children aged 12 to 35 months who received the third dose of the Diphtheria-Tetanus-Pertussis (DTP) vaccine. Estimated per ADM1 from the latest DHS survey; every ADM2 within an ADM1 shares its value.",
+            "FR": "Pourcentage des enfants de 12 à 35 mois ayant reçu la troisième dose du vaccin Diphtérie-Tétanos-Coqueluche (DTC). Estimé par ADM1 à partir de la dernière enquête EDS (DHS) ; toutes les unités ADM2 d'une même ADM1 partagent cette valeur."
+        },
+        "SOURCE": {
+            "EN": "DHS",
+            "FR": "DHS"
+        },
+        "UNITS": {
+            "EN": "Percentage of children",
+            "FR": "Pourcentage des enfants"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            20,
+            40,
+            60,
+            80
+        ],
+        "UNIT_SYMBOL": "%"
+    },
+    "PCT_DROPOUT_DTP_1_2": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHS_INDICATORS",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_DHS_ADM2_PCT_DROPOUT_DTP.csv",
+            "COLUMN": "PCT_DROPOUT_DTP_1_2"
+        },
+        "LABEL": {
+            "EN": "DTP1-DTP2 dropout (DHS)",
+            "FR": "Abandon vaccinal DTC1-DTC2 (DHS)"
+        },
+        "DESCRIPTION": {
+            "EN": "Percentage of children aged 12 to 35 months who received DTP1 but not DTP2, relative to those who received DTP1. Estimated per ADM1 from the latest DHS survey; every ADM2 within an ADM1 shares its value.",
+            "FR": "Pourcentage des enfants de 12 à 35 mois ayant reçu le DTC1 mais pas le DTC2, parmi ceux ayant reçu le DTC1. Estimé par ADM1 à partir de la dernière enquête EDS (DHS) ; toutes les unités ADM2 d'une même ADM1 partagent cette valeur."
+        },
+        "SOURCE": {
+            "EN": "DHS",
+            "FR": "DHS"
+        },
+        "UNITS": {
+            "EN": "Percentage of children",
+            "FR": "Pourcentage des enfants"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            20,
+            40,
+            60,
+            80
+        ],
+        "UNIT_SYMBOL": "%"
+    },
+    "PCT_DROPOUT_DTP_2_3": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHS_INDICATORS",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_DHS_ADM2_PCT_DROPOUT_DTP.csv",
+            "COLUMN": "PCT_DROPOUT_DTP_2_3"
+        },
+        "LABEL": {
+            "EN": "DTP2-DTP3 dropout (DHS)",
+            "FR": "Abandon vaccinal DTC2-DTC3 (DHS)"
+        },
+        "DESCRIPTION": {
+            "EN": "Percentage of children aged 12 to 35 months who received DTP2 but not DTP3, relative to those who received DTP2. Estimated per ADM1 from the latest DHS survey; every ADM2 within an ADM1 shares its value.",
+            "FR": "Pourcentage des enfants de 12 à 35 mois ayant reçu le DTC2 mais pas le DTC3, parmi ceux ayant reçu le DTC2. Estimé par ADM1 à partir de la dernière enquête EDS (DHS) ; toutes les unités ADM2 d'une même ADM1 partagent cette valeur."
+        },
+        "SOURCE": {
+            "EN": "DHS",
+            "FR": "DHS"
+        },
+        "UNITS": {
+            "EN": "Percentage of children",
+            "FR": "Pourcentage des enfants"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            20,
+            40,
+            60,
+            80
+        ],
+        "UNIT_SYMBOL": "%"
+    },
+    "PCT_DROPOUT_DTP_1_3": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHS_INDICATORS",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_DHS_ADM2_PCT_DROPOUT_DTP.csv",
+            "COLUMN": "PCT_DROPOUT_DTP_1_3"
+        },
+        "LABEL": {
+            "EN": "DTP1-DTP3 dropout (DHS)",
+            "FR": "Abandon vaccinal DTC1-DTC3 (DHS)"
+        },
+        "DESCRIPTION": {
+            "EN": "Percentage of children aged 12 to 35 months who received DTP1 but not DTP3, relative to those who received DTP1. Estimated per ADM1 from the latest DHS survey; every ADM2 within an ADM1 shares its value.",
+            "FR": "Pourcentage des enfants de 12 à 35 mois ayant reçu le DTC1 mais pas le DTC3, parmi ceux ayant reçu le DTC1. Estimé par ADM1 à partir de la dernière enquête EDS (DHS) ; toutes les unités ADM2 d'une même ADM1 partagent cette valeur."
+        },
+        "SOURCE": {
+            "EN": "DHS",
+            "FR": "DHS"
+        },
+        "UNITS": {
+            "EN": "Percentage of children",
+            "FR": "Pourcentage des enfants"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            20,
+            40,
+            60,
+            80
+        ],
+        "UNIT_SYMBOL": "%"
+    },
+    "PCT_ITN_ACCESS_SAMPLE_AVERAGE": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHS_INDICATORS",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_DHS_ADM2_PCT_ITN_ACCESS.csv",
+            "COLUMN": "PCT_ITN_ACCESS_SAMPLE_AVERAGE"
+        },
+        "LABEL": {
+            "EN": "Access to insecticide-treated nets (DHS)",
+            "FR": "Accès aux moustiquaires imprégnées d'insecticide (DHS)"
+        },
+        "DESCRIPTION": {
+            "EN": "Percentage of the population who could sleep under an insecticide-treated net (ITN) in their household, assuming each ITN is used by up to two people. Estimated per ADM1 from the latest DHS survey; every ADM2 within an ADM1 shares its value.",
+            "FR": "Pourcentage de la population pouvant dormir sous une moustiquaire imprégnée d'insecticide (MII) du ménage, en supposant que chaque MII est utilisée par deux personnes au plus. Estimé par ADM1 à partir de la dernière enquête EDS (DHS) ; toutes les unités ADM2 d'une même ADM1 partagent cette valeur."
+        },
+        "SOURCE": {
+            "EN": "DHS",
+            "FR": "DHS"
+        },
+        "UNITS": {
+            "EN": "Percentage of the population",
+            "FR": "Pourcentage de la population"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            20,
+            40,
+            60,
+            80
+        ],
+        "UNIT_SYMBOL": "%"
+    },
+    "PCT_ITN_USE_SAMPLE_AVERAGE": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "DHS_INDICATORS",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_DHS_ADM2_PCT_ITN_USE.csv",
+            "COLUMN": "PCT_ITN_USE_SAMPLE_AVERAGE"
+        },
+        "LABEL": {
+            "EN": "Use of insecticide-treated nets (DHS)",
+            "FR": "Utilisation des moustiquaires imprégnées d'insecticide (DHS)"
+        },
+        "DESCRIPTION": {
+            "EN": "Percentage of the population who slept under an insecticide-treated net (ITN) the night before the survey. Estimated per ADM1 from the latest DHS survey; every ADM2 within an ADM1 shares its value.",
+            "FR": "Pourcentage de la population ayant dormi sous une moustiquaire imprégnée d'insecticide (MII) la nuit précédant l'enquête. Estimé par ADM1 à partir de la dernière enquête EDS (DHS) ; toutes les unités ADM2 d'une même ADM1 partagent cette valeur."
+        },
+        "SOURCE": {
+            "EN": "DHS",
+            "FR": "DHS"
+        },
+        "UNITS": {
+            "EN": "Percentage of the population",
+            "FR": "Pourcentage de la population"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            20,
+            40,
+            60,
+            80
+        ],
+        "UNIT_SYMBOL": "%"
+    },
+    "PF_PARASITE_RATE": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "SNT_MAP_EXTRACTS",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_map_data.csv",
+            "COLUMN": "PF_PARASITE_RATE"
+        },
+        "LABEL": {
+            "EN": "Plasmodium falciparum prevalence in children aged 2-10 (MAP)",
+            "FR": "Prévalence de Plasmodium falciparum chez les enfants de 2 à 10 ans (MAP)"
+        },
+        "DESCRIPTION": {
+            "EN": "Percentage of children aged 2 to 10 infected with Plasmodium falciparum, in a given year. Median of the MAP raster pixels within the ADM2.",
+            "FR": "Pourcentage des enfants de 2 à 10 ans infectés par Plasmodium falciparum, au cours d'une année donnée. Médiane des pixels du raster MAP dans l'ADM2."
+        },
+        "SOURCE": {
+            "EN": "MAP",
+            "FR": "MAP"
+        },
+        "UNITS": {
+            "EN": "Per 100 children",
+            "FR": "Pour 100 enfants"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            20,
+            40,
+            60,
+            80
+        ],
+        "UNIT_SYMBOL": "%"
+    },
+    "PF_PARASITE_RATE_POP_W": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "SNT_MAP_EXTRACTS",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_map_data.csv",
+            "COLUMN": "PF_PARASITE_RATE_POP_W"
+        },
+        "LABEL": {
+            "EN": "Plasmodium falciparum prevalence in children aged 2-10, population-weighted (MAP)",
+            "FR": "Prévalence de Plasmodium falciparum chez les enfants de 2 à 10 ans, pondérée par la population (MAP)"
+        },
+        "DESCRIPTION": {
+            "EN": "Percentage of children aged 2 to 10 infected with Plasmodium falciparum, in a given year. Median of the MAP raster pixels within the ADM2, weighted by WorldPop population.",
+            "FR": "Pourcentage des enfants de 2 à 10 ans infectés par Plasmodium falciparum, au cours d'une année donnée. Médiane des pixels du raster MAP dans l'ADM2, pondérée par la population WorldPop."
+        },
+        "SOURCE": {
+            "EN": "MAP",
+            "FR": "MAP"
+        },
+        "UNITS": {
+            "EN": "Per 100 children",
+            "FR": "Pour 100 enfants"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            20,
+            40,
+            60,
+            80
+        ],
+        "UNIT_SYMBOL": "%"
+    },
+    "PF_INCIDENCE_RATE": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "SNT_MAP_EXTRACTS",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_map_data.csv",
+            "COLUMN": "PF_INCIDENCE_RATE"
+        },
+        "LABEL": {
+            "EN": "Plasmodium falciparum incidence (MAP)",
+            "FR": "Incidence de Plasmodium falciparum (MAP)"
+        },
+        "DESCRIPTION": {
+            "EN": "Number of new Plasmodium falciparum cases per 1,000 people per year, in a given year. Median of the MAP raster pixels within the ADM2.",
+            "FR": "Nombre de nouveaux cas de Plasmodium falciparum pour 1 000 personnes par an, au cours d'une année donnée. Médiane des pixels du raster MAP dans l'ADM2."
+        },
+        "SOURCE": {
+            "EN": "MAP",
+            "FR": "MAP"
+        },
+        "UNITS": {
+            "EN": "Per 1,000 people",
+            "FR": "Pour 1 000 personnes"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            150,
+            250,
+            350,
+            450
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "PF_INCIDENCE_RATE_POP_W": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "SNT_MAP_EXTRACTS",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_map_data.csv",
+            "COLUMN": "PF_INCIDENCE_RATE_POP_W"
+        },
+        "LABEL": {
+            "EN": "Plasmodium falciparum incidence, population-weighted (MAP)",
+            "FR": "Incidence de Plasmodium falciparum, pondérée par la population (MAP)"
+        },
+        "DESCRIPTION": {
+            "EN": "Number of new Plasmodium falciparum cases per 1,000 people per year, in a given year. Median of the MAP raster pixels within the ADM2, weighted by WorldPop population.",
+            "FR": "Nombre de nouveaux cas de Plasmodium falciparum pour 1 000 personnes par an, au cours d'une année donnée. Médiane des pixels du raster MAP dans l'ADM2, pondérée par la population WorldPop."
+        },
+        "SOURCE": {
+            "EN": "MAP",
+            "FR": "MAP"
+        },
+        "UNITS": {
+            "EN": "Per 1,000 people",
+            "FR": "Pour 1 000 personnes"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            150,
+            250,
+            350,
+            450
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "PF_MORTALITY_RATE": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "SNT_MAP_EXTRACTS",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_map_data.csv",
+            "COLUMN": "PF_MORTALITY_RATE"
+        },
+        "LABEL": {
+            "EN": "Plasmodium falciparum mortality rate (MAP)",
+            "FR": "Taux de mortalité par Plasmodium falciparum (MAP)"
+        },
+        "DESCRIPTION": {
+            "EN": "Number of deaths due to Plasmodium falciparum per 100,000 people per year, in a given year. Median of the MAP raster pixels within the ADM2.",
+            "FR": "Nombre de décès dus à Plasmodium falciparum pour 100 000 personnes par an, au cours d'une année donnée. Médiane des pixels du raster MAP dans l'ADM2."
+        },
+        "SOURCE": {
+            "EN": "MAP",
+            "FR": "MAP"
+        },
+        "UNITS": {
+            "EN": "Per 100,000 people",
+            "FR": "Pour 100 000 personnes"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            50,
+            100,
+            200,
+            300
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "PF_MORTALITY_RATE_POP_W": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "SNT_MAP_EXTRACTS",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_map_data.csv",
+            "COLUMN": "PF_MORTALITY_RATE_POP_W"
+        },
+        "LABEL": {
+            "EN": "Plasmodium falciparum mortality rate, population-weighted (MAP)",
+            "FR": "Taux de mortalité par Plasmodium falciparum, pondérée par la population (MAP)"
+        },
+        "DESCRIPTION": {
+            "EN": "Number of deaths due to Plasmodium falciparum per 100,000 people per year, in a given year. Median of the MAP raster pixels within the ADM2, weighted by WorldPop population.",
+            "FR": "Nombre de décès dus à Plasmodium falciparum pour 100 000 personnes par an, au cours d'une année donnée. Médiane des pixels du raster MAP dans l'ADM2, pondérée par la population WorldPop."
+        },
+        "SOURCE": {
+            "EN": "MAP",
+            "FR": "MAP"
+        },
+        "UNITS": {
+            "EN": "Per 100,000 people",
+            "FR": "Pour 100 000 personnes"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            50,
+            100,
+            200,
+            300
+        ],
+        "UNIT_SYMBOL": null
+    },
+    "INSECTICIDE_TREATED_NET_ACCESS": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "SNT_MAP_EXTRACTS",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_map_data.csv",
+            "COLUMN": "INSECTICIDE_TREATED_NET_ACCESS"
+        },
+        "LABEL": {
+            "EN": "Access to insecticide-treated nets (MAP)",
+            "FR": "Accès aux moustiquaires imprégnées d'insecticide (MAP)"
+        },
+        "DESCRIPTION": {
+            "EN": "Percentage of the population with access to an insecticide-treated net (ITN) in their household, in a given year. Median of the MAP raster pixels within the ADM2.",
+            "FR": "Pourcentage de la population ayant accès à une moustiquaire imprégnée d'insecticide (MII) dans le ménage, au cours d'une année donnée. Médiane des pixels du raster MAP dans l'ADM2."
+        },
+        "SOURCE": {
+            "EN": "MAP",
+            "FR": "MAP"
+        },
+        "UNITS": {
+            "EN": "Per 100 people",
+            "FR": "Pour 100 personnes"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            10,
+            20,
+            30,
+            40,
+            50,
+            60,
+            70,
+            80
+        ],
+        "UNIT_SYMBOL": "%"
+    },
+    "INSECTICIDE_TREATED_NET_ACCESS_POP_W": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "SNT_MAP_EXTRACTS",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_map_data.csv",
+            "COLUMN": "INSECTICIDE_TREATED_NET_ACCESS_POP_W"
+        },
+        "LABEL": {
+            "EN": "Access to insecticide-treated nets, population-weighted (MAP)",
+            "FR": "Accès aux moustiquaires imprégnées d'insecticide, pondérée par la population (MAP)"
+        },
+        "DESCRIPTION": {
+            "EN": "Percentage of the population with access to an insecticide-treated net (ITN) in their household, in a given year. Median of the MAP raster pixels within the ADM2, weighted by WorldPop population.",
+            "FR": "Pourcentage de la population ayant accès à une moustiquaire imprégnée d'insecticide (MII) dans le ménage, au cours d'une année donnée. Médiane des pixels du raster MAP dans l'ADM2, pondérée par la population WorldPop."
+        },
+        "SOURCE": {
+            "EN": "MAP",
+            "FR": "MAP"
+        },
+        "UNITS": {
+            "EN": "Per 100 people",
+            "FR": "Pour 100 personnes"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            10,
+            20,
+            30,
+            40,
+            50,
+            60,
+            70,
+            80
+        ],
+        "UNIT_SYMBOL": "%"
+    },
+    "INSECTICIDE_TREATED_NET_USE_RATE": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "SNT_MAP_EXTRACTS",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_map_data.csv",
+            "COLUMN": "INSECTICIDE_TREATED_NET_USE_RATE"
+        },
+        "LABEL": {
+            "EN": "Use of insecticide-treated nets (MAP)",
+            "FR": "Utilisation des moustiquaires imprégnées d'insecticide (MAP)"
+        },
+        "DESCRIPTION": {
+            "EN": "Percentage of people who slept under an insecticide-treated net (ITN), among those with access to one in their household, in a given year. Median of the MAP raster pixels within the ADM2.",
+            "FR": "Pourcentage des personnes ayant dormi sous une moustiquaire imprégnée d'insecticide (MII), parmi celles y ayant accès dans le ménage, au cours d'une année donnée. Médiane des pixels du raster MAP dans l'ADM2."
+        },
+        "SOURCE": {
+            "EN": "MAP",
+            "FR": "MAP"
+        },
+        "UNITS": {
+            "EN": "Per 100 people",
+            "FR": "Pour 100 personnes"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            10,
+            20,
+            30,
+            40,
+            50,
+            60,
+            70,
+            80
+        ],
+        "UNIT_SYMBOL": "%"
+    },
+    "INSECTICIDE_TREATED_NET_USE_RATE_POP_W": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "SNT_MAP_EXTRACTS",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_map_data.csv",
+            "COLUMN": "INSECTICIDE_TREATED_NET_USE_RATE_POP_W"
+        },
+        "LABEL": {
+            "EN": "Use of insecticide-treated nets, population-weighted (MAP)",
+            "FR": "Utilisation des moustiquaires imprégnées d'insecticide, pondérée par la population (MAP)"
+        },
+        "DESCRIPTION": {
+            "EN": "Percentage of people who slept under an insecticide-treated net (ITN), among those with access to one in their household, in a given year. Median of the MAP raster pixels within the ADM2, weighted by WorldPop population.",
+            "FR": "Pourcentage des personnes ayant dormi sous une moustiquaire imprégnée d'insecticide (MII), parmi celles y ayant accès dans le ménage, au cours d'une année donnée. Médiane des pixels du raster MAP dans l'ADM2, pondérée par la population WorldPop."
+        },
+        "SOURCE": {
+            "EN": "MAP",
+            "FR": "MAP"
+        },
+        "UNITS": {
+            "EN": "Per 100 people",
+            "FR": "Pour 100 personnes"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            10,
+            20,
+            30,
+            40,
+            50,
+            60,
+            70,
+            80
+        ],
+        "UNIT_SYMBOL": "%"
+    },
+    "IRS_COVERAGE": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "SNT_MAP_EXTRACTS",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_map_data.csv",
+            "COLUMN": "IRS_COVERAGE"
+        },
+        "LABEL": {
+            "EN": "Indoor residual spraying coverage (MAP)",
+            "FR": "Couverture de la pulvérisation intra-domiciliaire (MAP)"
+        },
+        "DESCRIPTION": {
+            "EN": "Percentage of households covered by indoor residual spraying (IRS), in a given year. Median of the MAP raster pixels within the ADM2.",
+            "FR": "Pourcentage des ménages couverts par la pulvérisation intra-domiciliaire (PID), au cours d'une année donnée. Médiane des pixels du raster MAP dans l'ADM2."
+        },
+        "SOURCE": {
+            "EN": "MAP",
+            "FR": "MAP"
+        },
+        "UNITS": {
+            "EN": "Per 100 households",
+            "FR": "Pour 100 ménages"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            10,
+            20,
+            30,
+            40,
+            50,
+            60,
+            70,
+            80
+        ],
+        "UNIT_SYMBOL": "%"
+    },
+    "IRS_COVERAGE_POP_W": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "SNT_MAP_EXTRACTS",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_map_data.csv",
+            "COLUMN": "IRS_COVERAGE_POP_W"
+        },
+        "LABEL": {
+            "EN": "Indoor residual spraying coverage, population-weighted (MAP)",
+            "FR": "Couverture de la pulvérisation intra-domiciliaire, pondérée par la population (MAP)"
+        },
+        "DESCRIPTION": {
+            "EN": "Percentage of households covered by indoor residual spraying (IRS), in a given year. Median of the MAP raster pixels within the ADM2, weighted by WorldPop population.",
+            "FR": "Pourcentage des ménages couverts par la pulvérisation intra-domiciliaire (PID), au cours d'une année donnée. Médiane des pixels du raster MAP dans l'ADM2, pondérée par la population WorldPop."
+        },
+        "SOURCE": {
+            "EN": "MAP",
+            "FR": "MAP"
+        },
+        "UNITS": {
+            "EN": "Per 100 households",
+            "FR": "Pour 100 ménages"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            10,
+            20,
+            30,
+            40,
+            50,
+            60,
+            70,
+            80
+        ],
+        "UNIT_SYMBOL": "%"
+    },
+    "ANTIMALARIAL_EFFECTIVE_TREATMENT": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "SNT_MAP_EXTRACTS",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_map_data.csv",
+            "COLUMN": "ANTIMALARIAL_EFFECTIVE_TREATMENT"
+        },
+        "LABEL": {
+            "EN": "Effective antimalarial treatment (MAP)",
+            "FR": "Traitement antipaludique efficace (MAP)"
+        },
+        "DESCRIPTION": {
+            "EN": "Percentage of malaria cases that receive effective treatment with an antimalarial medicine, in a given year. Median of the MAP raster pixels within the ADM2.",
+            "FR": "Pourcentage des cas de paludisme recevant un traitement efficace par un médicament antipaludique, au cours d'une année donnée. Médiane des pixels du raster MAP dans l'ADM2."
+        },
+        "SOURCE": {
+            "EN": "MAP",
+            "FR": "MAP"
+        },
+        "UNITS": {
+            "EN": "Per 100 cases",
+            "FR": "Pour 100 cas"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            10,
+            20,
+            30,
+            40,
+            50,
+            60,
+            70,
+            80
+        ],
+        "UNIT_SYMBOL": "%"
+    },
+    "ANTIMALARIAL_EFFECTIVE_TREATMENT_POP_W": {
+        "SOURCE_DATA": {
+            "DATASET": {
+                "NAME": "SNT_MAP_EXTRACTS",
+                "VERSION": "latest"
+            },
+            "FILENAME": "{COUNTRY_CODE}_map_data.csv",
+            "COLUMN": "ANTIMALARIAL_EFFECTIVE_TREATMENT_POP_W"
+        },
+        "LABEL": {
+            "EN": "Effective antimalarial treatment, population-weighted (MAP)",
+            "FR": "Traitement antipaludique efficace, pondérée par la population (MAP)"
+        },
+        "DESCRIPTION": {
+            "EN": "Percentage of malaria cases that receive effective treatment with an antimalarial medicine, in a given year. Median of the MAP raster pixels within the ADM2, weighted by WorldPop population.",
+            "FR": "Pourcentage des cas de paludisme recevant un traitement efficace par un médicament antipaludique, au cours d'une année donnée. Médiane des pixels du raster MAP dans l'ADM2, pondérée par la population WorldPop."
+        },
+        "SOURCE": {
+            "EN": "MAP",
+            "FR": "MAP"
+        },
+        "UNITS": {
+            "EN": "Per 100 cases",
+            "FR": "Pour 100 cas"
+        },
+        "CATEGORY": {
+            "EN": "",
+            "FR": ""
+        },
+        "TYPE": "Threshold",
+        "SCALE": [
+            10,
+            20,
+            30,
+            40,
+            50,
+            60,
+            70,
+            80
+        ],
+        "UNIT_SYMBOL": "%"
+    }
+}

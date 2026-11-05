@@ -1,0 +1,2401 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SNT Config Editor — prototype</title>
+    <style>
+      :root {
+        --bg: #f6f7f9;
+        --panel: #fff;
+        --ink: #161a1d;
+        --muted: #5d6b78;
+        --line: #dfe4ea;
+        --accent: #1f5f8b;
+        --accent-soft: #e8f1f8;
+        --err: #b3261e;
+        --err-bg: #fdecea;
+        --warn: #8a5a00;
+        --warn-bg: #fdf3e0;
+        --info: #1f5f8b;
+        --info-bg: #eaf2f8;
+        --ok: #1e6b3f;
+        --ok-bg: #e8f5ec;
+        --radius: 8px;
+        --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --bg: #14181c;
+          --panel: #1b2126;
+          --ink: #e7edf2;
+          --muted: #9aabb8;
+          --line: #2c353d;
+          --accent: #6db3e0;
+          --accent-soft: #1d2b36;
+          --err: #ff8a80;
+          --err-bg: #33201e;
+          --warn: #f0c060;
+          --warn-bg: #332a17;
+          --info: #6db3e0;
+          --info-bg: #18262f;
+          --ok: #7fd6a0;
+          --ok-bg: #182a20;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font:
+          14px/1.5 system-ui,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+      }
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        font-weight: 640;
+        letter-spacing: -0.01em;
+      }
+      a {
+        color: var(--accent);
+      }
+      code,
+      .mono {
+        font-family: var(--mono);
+        font-size: 0.92em;
+      }
+
+      /* ---------- banner ---------- */
+      .proto {
+        background: #3b2f00;
+        color: #ffd97a;
+        padding: 6px 20px;
+        font-size: 12.5px;
+        display: flex;
+        gap: 14px;
+        align-items: center;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      @media (prefers-color-scheme: light) {
+        .proto {
+          background: #fff4cc;
+          color: #5a4500;
+        }
+      }
+      .proto select {
+        font: inherit;
+        padding: 2px 5px;
+        border-radius: 5px;
+        border: 1px solid currentColor;
+        background: transparent;
+        color: inherit;
+      }
+
+      /* ---------- header ---------- */
+      header {
+        background: var(--panel);
+        border-bottom: 1px solid var(--line);
+        padding: 14px 20px;
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        flex-wrap: wrap;
+        position: sticky;
+        top: 0;
+        z-index: 20;
+      }
+      header h1 {
+        font-size: 16px;
+      }
+      .badge {
+        font-size: 11.5px;
+        font-weight: 600;
+        padding: 3px 9px;
+        border-radius: 99px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .badge.draft {
+        background: var(--warn-bg);
+        color: var(--warn);
+      }
+      .badge.valid {
+        background: var(--ok-bg);
+        color: var(--ok);
+      }
+      .spacer {
+        flex: 1;
+      }
+      button {
+        font: inherit;
+        border: 1px solid var(--line);
+        background: var(--panel);
+        color: var(--ink);
+        padding: 7px 13px;
+        border-radius: var(--radius);
+        cursor: pointer;
+      }
+      button:hover {
+        border-color: var(--accent);
+      }
+      button.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+      button.primary:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        border-color: var(--line);
+        background: var(--muted);
+      }
+      button.ghost {
+        background: transparent;
+      }
+      button.mini {
+        padding: 1px 7px;
+        font-size: 11.5px;
+      }
+
+      /* ---------- layout ---------- */
+      .wrap {
+        display: grid;
+        grid-template-columns: 190px minmax(0, 1fr) 340px;
+        gap: 20px;
+        max-width: 1440px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      @media (max-width: 1080px) {
+        .wrap {
+          grid-template-columns: 1fr;
+        }
+      }
+      nav {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        position: sticky;
+        top: 76px;
+        align-self: start;
+      }
+      @media (max-width: 1080px) {
+        nav {
+          position: static;
+          flex-direction: row;
+          flex-wrap: wrap;
+        }
+      }
+      nav button {
+        text-align: left;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        border-color: transparent;
+      }
+      nav button.on {
+        background: var(--accent-soft);
+        border-color: var(--accent);
+        font-weight: 600;
+      }
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex: none;
+        background: var(--muted);
+      }
+      .dot.err {
+        background: var(--err);
+      }
+      .dot.warn {
+        background: var(--warn);
+      }
+      .dot.ok {
+        background: var(--ok);
+      }
+
+      main {
+        min-width: 0;
+      }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 18px;
+        margin-bottom: 16px;
+      }
+      .card > h2 {
+        font-size: 15px;
+        margin-bottom: 4px;
+      }
+      .card > .sub {
+        color: var(--muted);
+        font-size: 13px;
+        margin-bottom: 16px;
+      }
+
+      /* ---------- fields ---------- */
+      .field {
+        margin-bottom: 18px;
+      }
+      .field label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 3px;
+      }
+      .field .hint {
+        color: var(--muted);
+        font-size: 12.5px;
+        margin-bottom: 6px;
+      }
+      .req {
+        color: var(--err);
+        font-weight: 700;
+      }
+      input[type="text"],
+      input[type="number"],
+      select,
+      textarea {
+        width: 100%;
+        padding: 7px 9px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--bg);
+        color: var(--ink);
+        font: inherit;
+      }
+      input:disabled,
+      select:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+      input:focus,
+      select:focus,
+      textarea:focus {
+        outline: 2px solid var(--accent);
+        outline-offset: -1px;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      @media (max-width: 600px) {
+        .row {
+          grid-template-columns: 1fr;
+        }
+      }
+      .inline-err {
+        color: var(--err);
+        font-size: 12.5px;
+        margin-top: 4px;
+      }
+      .inline-warn {
+        color: var(--warn);
+        font-size: 12.5px;
+        margin-top: 4px;
+      }
+      .callout {
+        border-left: 3px solid;
+        padding: 10px 12px;
+        border-radius: 0 6px 6px 0;
+        font-size: 12.8px;
+        margin: 10px 0;
+      }
+      .c-warn {
+        border-color: var(--warn);
+        background: var(--warn-bg);
+        color: var(--warn);
+      }
+      .c-info {
+        border-color: var(--info);
+        background: var(--info-bg);
+        color: var(--info);
+      }
+      .c-ok {
+        border-color: var(--ok);
+        background: var(--ok-bg);
+        color: var(--ok);
+      }
+
+      /* ---------- uid chips ---------- */
+      .uidrow {
+        display: grid;
+        grid-template-columns: 190px minmax(0, 1fr);
+        gap: 12px;
+        padding: 11px 0;
+        border-top: 1px solid var(--line);
+        align-items: start;
+      }
+      @media (max-width: 700px) {
+        .uidrow {
+          grid-template-columns: 1fr;
+          gap: 5px;
+        }
+      }
+      .uidrow:first-of-type {
+        border-top: none;
+      }
+      .keyname {
+        font-family: var(--mono);
+        font-weight: 600;
+        font-size: 13px;
+        word-break: break-all;
+      }
+      .keynote {
+        color: var(--muted);
+        font-size: 11.5px;
+        font-family: system-ui;
+        font-weight: 400;
+        margin-top: 2px;
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        align-items: center;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 5px;
+        background: var(--bg);
+        min-height: 36px;
+      }
+      .chip {
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+        background: var(--accent-soft);
+        color: var(--accent);
+        border-radius: 5px;
+        padding: 2px 5px 2px 8px;
+        font-family: var(--mono);
+        font-size: 12px;
+      }
+      .chip.bad {
+        background: var(--err-bg);
+        color: var(--err);
+      }
+      .chip button {
+        border: none;
+        background: none;
+        color: inherit;
+        padding: 0 2px;
+        font-size: 14px;
+        line-height: 1;
+        cursor: pointer;
+      }
+      .chips input {
+        border: none;
+        background: none;
+        color: var(--ink);
+        flex: 1;
+        min-width: 130px;
+        padding: 3px;
+        font-family: var(--mono);
+      }
+      ::placeholder {
+        color: var(--muted);
+        opacity: 1;
+      }
+      .chips input:focus {
+        outline: none;
+      }
+      .groupttl {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        font-weight: 700;
+        margin: 22px 0 6px;
+      }
+      .groupttl:first-child {
+        margin-top: 0;
+      }
+
+      /* ---------- validation panel ---------- */
+      aside {
+        position: sticky;
+        top: 76px;
+        align-self: start;
+        max-height: calc(100vh - 96px);
+        overflow: auto;
+      }
+      @media (max-width: 1080px) {
+        aside {
+          position: static;
+          max-height: none;
+        }
+      }
+      .vgroup {
+        margin-bottom: 14px;
+      }
+      .vgroup h3 {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 6px;
+      }
+      .vitem {
+        border-left: 3px solid;
+        padding: 7px 10px;
+        border-radius: 0 6px 6px 0;
+        margin-bottom: 5px;
+        font-size: 12.8px;
+      }
+      .vitem .p {
+        font-family: var(--mono);
+        font-size: 11.5px;
+        opacity: 0.8;
+        display: block;
+      }
+      .v-err {
+        border-color: var(--err);
+        background: var(--err-bg);
+        color: var(--err);
+      }
+      .v-warn {
+        border-color: var(--warn);
+        background: var(--warn-bg);
+        color: var(--warn);
+      }
+      .v-info {
+        border-color: var(--info);
+        background: var(--info-bg);
+        color: var(--info);
+      }
+      .v-ok {
+        border-color: var(--ok);
+        background: var(--ok-bg);
+        color: var(--ok);
+        padding: 10px;
+      }
+      details summary {
+        cursor: pointer;
+        color: var(--muted);
+        font-size: 12.5px;
+        padding: 4px 0;
+      }
+      .readonly {
+        font-family: var(--mono);
+        font-size: 11.5px;
+        color: var(--muted);
+        white-space: pre-wrap;
+        background: var(--bg);
+        border-radius: 6px;
+        padding: 10px;
+        max-height: 190px;
+        overflow: auto;
+      }
+      pre.json {
+        font-family: var(--mono);
+        font-size: 11.5px;
+        background: var(--bg);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 12px;
+        overflow: auto;
+        max-height: 440px;
+        margin: 0;
+      }
+      .saves {
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+        margin-top: 12px;
+      }
+      .tiny {
+        color: var(--muted);
+        font-size: 11.5px;
+      }
+      .hist {
+        font-family: var(--mono);
+        font-size: 11.5px;
+        border-top: 1px solid var(--line);
+        padding: 6px 0;
+      }
+      .ackbox {
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+        font-size: 12.5px;
+        background: var(--warn-bg);
+        color: var(--warn);
+        padding: 8px 10px;
+        border-radius: 6px;
+      }
+      .ackbox input {
+        margin-top: 3px;
+      }
+      .radio {
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+        padding: 8px 10px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        margin-bottom: 6px;
+        cursor: pointer;
+      }
+      .radio.on {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+      }
+      .radio input {
+        margin-top: 3px;
+      }
+      .hash {
+        font-family: var(--mono);
+        font-size: 11.5px;
+        color: var(--muted);
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-top: 8px;
+      }
+      .hidden {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="proto">
+      <span>Prototype — UX review only. Not the real app.</span>
+      <label
+        >Simulated runtime:
+        <select id="runtime" onchange="setRuntime(this.value)">
+          <option value="step1">
+            v1 step 1 — LocalStore (download only, no workspace)
+          </option>
+          <option value="ws">
+            v1 step 2 — workspace with 2 DHIS2 connections
+          </option>
+          <option value="ws_empty">
+            v1 step 2 — workspace with no DHIS2 connection
+          </option>
+        </select>
+      </label>
+    </div>
+
+    <header>
+      <h1>SNT Config Editor</h1>
+      <span id="ctry" class="mono tiny"></span>
+      <span id="status" class="badge draft">Draft</span>
+      <div class="spacer"></div>
+      <button class="ghost" onclick="reopenDraft()">Reopen draft</button>
+      <button
+        class="ghost"
+        onclick="document.getElementById('draftFile').click()"
+      >
+        Load draft file…
+      </button>
+      <input
+        type="file"
+        id="draftFile"
+        accept=".json,application/json"
+        class="hidden"
+        onchange="
+          loadDraftFile(this.files[0]);
+          this.value = '';
+        "
+      />
+      <button class="ghost" onclick="resetAll()">Reset</button>
+      <button onclick="saveDraft()">Save draft</button>
+      <button id="btnExport" class="primary" onclick="publish()">
+        Export SNT_config.json
+      </button>
+    </header>
+
+    <div class="wrap">
+      <nav id="nav"></nav>
+      <main>
+        <!-- STEP 1 -->
+        <section class="card step" data-step="1">
+          <h2>1 · Country and DHIS2 instance</h2>
+          <p class="sub">
+            The instance comes first: it frames every UID entered afterwards.
+            Identity and the three administrative levels follow. All but the
+            name are required.
+          </p>
+
+          <div class="field">
+            <label>DHIS2 instance the UIDs come from</label>
+            <div class="hint">
+              UIDs are specific to the instance they come from. Data elements in
+              a national HMIS and in a malaria registry have different UIDs even
+              when they hold the same data. This is <b>provenance only</b> — it
+              is recorded in the save log and never written into
+              <code>SNT_config.json</code>. The app reads the workspace's
+              connection <i>list</i>; it never opens a connection and never
+              contacts DHIS2.
+            </div>
+            <select id="connSel" onchange="pickConnection(this.value)"></select>
+            <div id="connNote"></div>
+            <div id="w11" class="hidden"></div>
+          </div>
+
+          <div class="row">
+            <div class="field">
+              <label>COUNTRY_CODE <span class="req">*</span></label>
+              <div class="hint">
+                ISO3, uppercase. Prefixes every output file
+                (<code>NER_routine.parquet</code>). Changing it later renames
+                every downstream artefact.
+              </div>
+              <input
+                type="text"
+                id="COUNTRY_CODE"
+                maxlength="3"
+                placeholder="NER"
+                oninput="
+                  this.value = this.value.toUpperCase();
+                  set('cfg', 'COUNTRY_CODE', this.value);
+                "
+              />
+              <div class="inline-err" id="e_COUNTRY_CODE"></div>
+              <div class="inline-warn" id="w_cc"></div>
+            </div>
+            <div class="field">
+              <label>COUNTRY_NAME</label>
+              <div class="hint">
+                Display only — reaches report titles. Not validated by the
+                pipelines.
+              </div>
+              <input
+                type="text"
+                id="COUNTRY_NAME"
+                placeholder="NIGER"
+                oninput="set('cfg', 'COUNTRY_NAME', this.value)"
+              />
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="field">
+              <label>DHIS2_ADMINISTRATION_1 <span class="req">*</span></label>
+              <div class="hint">Usually (but not necessarily) Level 2.</div>
+              <select
+                id="DHIS2_ADMINISTRATION_1"
+                onchange="set('cfg', 'DHIS2_ADMINISTRATION_1', this.value)"
+              ></select>
+              <div class="inline-err" id="e_DHIS2_ADMINISTRATION_1"></div>
+            </div>
+            <div class="field">
+              <label>DHIS2_ADMINISTRATION_2 <span class="req">*</span></label>
+              <div class="hint">
+                The the resolution of the whole results table, and the join key
+                for population, shapes and reporting rates.
+              </div>
+              <select
+                id="DHIS2_ADMINISTRATION_2"
+                onchange="set('cfg', 'DHIS2_ADMINISTRATION_2', this.value)"
+              ></select>
+              <div class="inline-err" id="e_DHIS2_ADMINISTRATION_2"></div>
+            </div>
+          </div>
+
+          <div class="field" style="max-width: 340px">
+            <label>ANALYTICS_ORG_UNITS_LEVEL <span class="req">*</span></label>
+            <div class="hint">
+              The <b>facility</b> level routine data is pulled at. Must be lower
+              than ADM2.
+            </div>
+            <input
+              type="number"
+              id="ANALYTICS_ORG_UNITS_LEVEL"
+              min="1"
+              max="8"
+              placeholder="6"
+              oninput="
+                set(
+                  'cfg',
+                  'ANALYTICS_ORG_UNITS_LEVEL',
+                  this.value === '' ? null : +this.value,
+                )
+              "
+            />
+            <div class="inline-err" id="e_ANALYTICS_ORG_UNITS_LEVEL"></div>
+            <div class="inline-warn" id="w_levels"></div>
+          </div>
+
+          <details>
+            <summary>
+              SNT_DATASET_IDENTIFIERS — 15 values, identical in every country,
+              pre-filled
+            </summary>
+            <div class="readonly" id="dsids"></div>
+          </details>
+        </section>
+
+        <!-- STEP 2 -->
+        <section class="card step hidden" data-step="2">
+          <h2>2 · Population indicators</h2>
+          <p class="sub">
+            Fixed 8-key vocabulary. Only <code>POPULATION</code> has a real
+            consumer today. An empty key produces <b>no column at all</b> —
+            unlike routine indicators, which produce an empty one. Several UIDs
+            in one key are summed.
+          </p>
+          <div id="popRows"></div>
+        </section>
+
+        <!-- STEP 3 -->
+        <section class="card step hidden" data-step="3">
+          <h2>3 · Routine indicators</h2>
+          <p class="sub">
+            Each key becomes a column in <code>{CC}_routine.parquet</code>.
+            Several UIDs are <b>summed</b>. A bare UID totals every category
+            combo; <code>UID.COC</code> narrows to one. At least one UID overall
+            is required.
+          </p>
+          <div id="connEcho"></div>
+          <div id="indRows"></div>
+
+          <div class="groupttl">Other key — escape hatch</div>
+          <p class="tiny" style="margin: 0 0 8px">
+            Adds a key outside the controlled vocabulary. It will be extracted
+            and become a column, but <b>no active pipeline reads it</b>.
+          </p>
+          <div style="display: flex; gap: 8px">
+            <input
+              type="text"
+              id="extraKey"
+              placeholder="MALSIMP"
+              style="max-width: 240px"
+              oninput="
+                this.value = this.value.toUpperCase().replace(/[^A-Z0-9_]/g, '')
+              "
+            />
+            <button onclick="addExtra()">Add key</button>
+          </div>
+          <div class="inline-err" id="extraErr"></div>
+          <div id="extraRows" style="margin-top: 12px"></div>
+        </section>
+
+        <!-- STEP 4 -->
+        <section class="card step hidden" data-step="4">
+          <h2>4 · Reporting rates</h2>
+          <p class="sub">
+            The extract code checks the dataset branch first and only falls
+            through to indicators, so the two are mutually exclusive. "None" is
+            legitimate.
+          </p>
+
+          <div id="repModes"></div>
+
+          <div id="repDatasets" class="hidden" style="margin-top: 16px">
+            <div class="groupttl">Dataset UIDs</div>
+            <p class="tiny" style="margin: 0 0 6px">
+              One DHIS2 dataset UID per chip. The <code>METRICS</code> type
+              block is fixed and added automatically.
+            </p>
+            <div id="repDsChips"></div>
+          </div>
+
+          <div id="repIndicators" class="hidden" style="margin-top: 16px">
+            <div class="row">
+              <div class="field">
+                <label>ACTUAL_REPORTS</label>
+                <input
+                  type="text"
+                  id="rep_actual"
+                  placeholder="REDACTEDUID"
+                  oninput="set('repind', 'ACTUAL_REPORTS', this.value.trim())"
+                />
+              </div>
+              <div class="field">
+                <label>EXPECTED_REPORTS</label>
+                <input
+                  type="text"
+                  id="rep_expected"
+                  placeholder="REDACTEDUID"
+                  oninput="set('repind', 'EXPECTED_REPORTS', this.value.trim())"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="field" style="margin-top: 20px">
+            <label>REPORTING_RATE_PRODUCT_UID</label>
+            <div class="hint">
+              ⚠️ Semantics unresolved — some countries hold dataset UIDs here,
+              one holds indicator UIDs. Collected as a free list until the SNT
+              team decides. Not validated by the pipelines; a wrong value
+              degrades silently.
+            </div>
+            <div id="prodChips"></div>
+          </div>
+        </section>
+
+        <!-- STEP 5 -->
+        <section class="card step hidden" data-step="5">
+          <h2>5 · Review &amp; save</h2>
+          <p class="sub">What gets written, and where.</p>
+
+          <div class="row">
+            <div class="field">
+              <label>Your name</label>
+              <div class="hint" id="authHint">Recorded in the save log.</div>
+              <input
+                type="text"
+                id="authName"
+                oninput="setAuthor('name', this.value)"
+              />
+            </div>
+            <div class="field">
+              <label>Email</label>
+              <input
+                type="text"
+                id="authEmail"
+                oninput="setAuthor('email', this.value)"
+              />
+            </div>
+          </div>
+          <div class="field">
+            <label>Note for the next session</label>
+            <div class="hint">
+              Free text, stored in the draft's <code>_EDITOR_METADATA</code>.
+            </div>
+            <textarea
+              id="note"
+              rows="2"
+              placeholder="Still need the ALLADM UIDs from the national team"
+              oninput="
+                state.meta.note = this.value;
+                render();
+              "
+            ></textarea>
+          </div>
+
+          <div class="groupttl">Output preview</div>
+          <div
+            style="display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap"
+          >
+            <button id="tabFinal" class="primary" onclick="setPreview('final')">
+              SNT_config.json
+            </button>
+            <button id="tabDraft" onclick="setPreview('draft')">
+              draft (with _EDITOR_METADATA)
+            </button>
+            <button id="tabLog" onclick="setPreview('log')">
+              .log.json sidecar
+            </button>
+          </div>
+          <pre class="json" id="preview"></pre>
+          <div class="hash">
+            <span>config_sha256</span><b id="hashShort">…</b>
+            <button class="mini" onclick="copyHash()">copy full</button>
+            <span class="tiny"
+              >payload without <code>_EDITOR_METADATA</code> — stable across
+              draft → valid promotion</span
+            >
+          </div>
+
+          <div class="groupttl">Saves this session</div>
+          <p class="tiny" style="margin: 0 0 6px" id="histWhere"></p>
+          <div id="history"></div>
+        </section>
+      </main>
+
+      <aside>
+        <div class="card" style="margin-bottom: 12px">
+          <h2 style="font-size: 14px; margin-bottom: 10px">Validation</h2>
+          <div id="vpanel"></div>
+          <div class="saves">
+            <div id="ackWrap"></div>
+            <button onclick="saveDraft()">Save draft</button>
+            <button id="btnExport2" class="primary" onclick="publish()">
+              Export SNT_config.json
+            </button>
+            <div class="tiny" id="savehint"></div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <script>
+      /* ==================================================================
+   Prototype of the SNT Config Editor (ticket SNT25-661).
+   Mirrors docs/PRODUCT_SPEC.md; schema facts live in
+   docs/config_analysis_notes.md and are not restated here.
+   ================================================================== */
+
+      /* ============================ constants ============================ */
+      const EDITOR_VERSION = "0.2.0-prototype";
+      const LEVELS = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => `level_${n}_name`);
+
+      const DATASET_IDS = {
+        DHIS2_DATASET_EXTRACTS: "snt-dhis2-extracts",
+        DHIS2_DATASET_FORMATTED: "snt-dhis2-formatted",
+        DHIS2_POPULATION_TRANSFORMATION: "snt-dhis2-pop-transformation",
+        DHIS2_REPORTING_RATE: "snt-dhis2-reporting-rate",
+        DHIS2_OUTLIERS_IMPUTATION: "snt-dhis2-outliers-imputation",
+        DHIS2_INCIDENCE: "snt-dhis2-incidence",
+        DHIS2_QUALITY_OF_CARE: "snt-dhis2-quality-of-care",
+        DHS_INDICATORS: "snt-dhs-indicators",
+        WORLDPOP_DATASET_EXTRACT: "snt-worldpop-extract",
+        ERA5_DATASET_CLIMATE: "snt-era5-climate",
+        SNT_HEALTHCARE_ACCESS: "snt-healthcare-access",
+        SNT_SEASONALITY_RAINFALL: "snt-seasonality-rainfall",
+        SNT_SEASONALITY_CASES: "snt-seasonality-cases",
+        SNT_MAP_EXTRACTS: "snt-map-extracts",
+        SNT_RESULTS: "snt-results",
+      };
+
+      const POP_KEYS = [
+        [
+          "POPULATION",
+          "Required to exist. The only population key any pipeline consumes today.",
+        ],
+        ["POP_UNDER_5", "Read only via the incidence disaggregation feature."],
+        [
+          "POP_PREGNANT_WOMEN",
+          "Plural here — the routine indicator is singular. That mismatch is currently correct.",
+        ],
+        ["POP_0_1_Y", "years"],
+        ["POP_1_2_Y", "years"],
+        ["POP_5_10_Y", "years — empty in all five countries so far"],
+        ["POP_5_36_M", "⚠️ months, not years — 5 to 36 months"],
+        ["POP_50_PLUS", "years"],
+      ];
+      const POP_TYPES = ["dataElement", "indicator"];
+
+      const IND_GROUPS = [
+        {
+          title: "Core — required",
+          keys: [
+            [
+              "SUSP",
+              "Suspected cases. Incidence, quality of care, outlier reports.",
+              "",
+            ],
+            [
+              "TEST",
+              "Tested. Incidence, quality of care, outlier reports.",
+              "",
+            ],
+            [
+              "CONF",
+              "Confirmed. Incidence, QoC, outlier reports, seasonality.",
+              "",
+            ],
+          ],
+        },
+        {
+          title: "Core — optional (empty = you lose an indicator)",
+          keys: [
+            ["PRES", "Presumed.", "Incidence cannot run with N1_METHOD = PRES"],
+            [
+              "MALTREAT",
+              "Malaria treated.",
+              "Quality of care will not produce the treatment rate",
+            ],
+            [
+              "MALADM",
+              "Malaria admissions.",
+              "No case_fatality_rate, no prop_adm_malaria",
+            ],
+            [
+              "MALDTH",
+              "Malaria deaths.",
+              "No case_fatality_rate, no prop_malaria_deaths",
+            ],
+            [
+              "ALLOUT",
+              "All-cause outpatient.",
+              "Quality of care loses its all-cause outpatient denominator",
+            ],
+            [
+              "ALLADM",
+              "All-cause admissions.",
+              "No prop_adm_malaria (needs both MALADM and ALLADM)",
+            ],
+            ["ALLDTH", "All-cause deaths.", "No prop_malaria_deaths"],
+          ],
+        },
+        {
+          title:
+            "Disaggregations — incidence needs TEST + CONF + one of SUSP/PRES",
+          keys: [
+            ["SUSP_UNDER_5", "", ""],
+            ["TEST_UNDER_5", "", ""],
+            ["CONF_UNDER_5", "", ""],
+            ["PRES_UNDER_5", "", ""],
+            ["SUSP_PREGNANT_WOMAN", "", ""],
+            ["TEST_PREGNANT_WOMAN", "", ""],
+            ["CONF_PREGNANT_WOMAN", "", ""],
+            ["PRES_PREGNANT_WOMAN", "", ""],
+          ],
+        },
+      ];
+      const IND_KEYS = IND_GROUPS.flatMap((g) => g.keys.map((k) => k[0]));
+      const LOSS = Object.fromEntries(
+        IND_GROUPS.flatMap((g) => g.keys)
+          .filter((k) => k[2])
+          .map((k) => [k[0], k[2]]),
+      );
+
+      const UID_RE = /^[A-Za-z0-9]{11}$/;
+      const UID_COC_RE = /^[A-Za-z0-9]{11}\.[A-Za-z0-9]{11}$/;
+      const okUid = (u) => UID_RE.test(u) || UID_COC_RE.test(u);
+
+      /* ============================ SHA-256 (spec §6.6) ============================
+   crypto.subtle where available, pure-JS fallback for file:// origins where
+   secure-context rules vary by browser. */
+      function sha256js(bytes) {
+        const primes = [];
+        for (let n = 2; primes.length < 64; n++) {
+          let p = true;
+          for (let d = 2; d * d <= n; d++)
+            if (n % d === 0) {
+              p = false;
+              break;
+            }
+          if (p) primes.push(n);
+        }
+        const frac = (x) => Math.floor((x - Math.floor(x)) * 4294967296) >>> 0;
+        const K = primes.map((p) => frac(Math.cbrt(p)));
+        let H = primes.slice(0, 8).map((p) => frac(Math.sqrt(p)));
+        const l = bytes.length,
+          pad = (56 - ((l + 1) % 64) + 64) % 64,
+          total = l + 1 + pad + 8;
+        const m = new Uint8Array(total);
+        m.set(bytes);
+        m[l] = 0x80;
+        const dv = new DataView(m.buffer);
+        dv.setUint32(total - 8, Math.floor(l / 536870912));
+        dv.setUint32(total - 4, (l * 8) >>> 0);
+        const w = new Uint32Array(64),
+          rr = (x, n) => ((x >>> n) | (x << (32 - n))) >>> 0;
+        for (let i = 0; i < total; i += 64) {
+          for (let t = 0; t < 16; t++) w[t] = dv.getUint32(i + t * 4);
+          for (let t = 16; t < 64; t++) {
+            const a1 = w[t - 15],
+              a2 = w[t - 2];
+            const s0 = (rr(a1, 7) ^ rr(a1, 18) ^ (a1 >>> 3)) >>> 0;
+            const s1 = (rr(a2, 17) ^ rr(a2, 19) ^ (a2 >>> 10)) >>> 0;
+            w[t] = (w[t - 16] + s0 + w[t - 7] + s1) >>> 0;
+          }
+          let [a, b, c, d, e, f, g, h] = H;
+          for (let t = 0; t < 64; t++) {
+            const S1 = (rr(e, 6) ^ rr(e, 11) ^ rr(e, 25)) >>> 0,
+              ch = ((e & f) ^ (~e & g)) >>> 0;
+            const t1 = (h + S1 + ch + K[t] + w[t]) >>> 0;
+            const S0 = (rr(a, 2) ^ rr(a, 13) ^ rr(a, 22)) >>> 0,
+              mj = ((a & b) ^ (a & c) ^ (b & c)) >>> 0;
+            const t2 = (S0 + mj) >>> 0;
+            h = g;
+            g = f;
+            f = e;
+            e = (d + t1) >>> 0;
+            d = c;
+            c = b;
+            b = a;
+            a = (t1 + t2) >>> 0;
+          }
+          const v = [a, b, c, d, e, f, g, h];
+          H = H.map((x, j) => (x + v[j]) >>> 0);
+        }
+        return H.map((x) => x.toString(16).padStart(8, "0")).join("");
+      }
+      async function sha256(text) {
+        const bytes = new TextEncoder().encode(text);
+        if (window.crypto && crypto.subtle) {
+          try {
+            const buf = await crypto.subtle.digest("SHA-256", bytes);
+            return [...new Uint8Array(buf)]
+              .map((b) => b.toString(16).padStart(2, "0"))
+              .join("");
+          } catch (e) {
+            /* insecure context — fall through */
+          }
+        }
+        return sha256js(bytes);
+      }
+      /* Canonical serialisation, spec §6.6: metadata stripped, skeleton key order,
+   2-space indent, \n endings, no trailing newline. One shared function. */
+      const canonical = (doc) => {
+        const { _EDITOR_METADATA, ...payload } = doc;
+        return JSON.stringify(payload, null, 2);
+      };
+      const configSha256 = (doc) => sha256(canonical(doc));
+      const fileSha256 = (text) => sha256(text);
+
+      /* ============================ WorkspaceContext (spec §7.1) ============================
+   null  = this build cannot see a workspace (no dropdown, and NO W10)
+   []    = the workspace has no DHIS2 connection (W10)
+   Filtering by type happens HERE, in the adapter — never in the form. */
+      const FAKE_WORKSPACES = {
+        step1: null,
+        ws: [
+          { slug: "snis-ner", name: "SNIS Niger", type: "DHIS2" },
+          {
+            slug: "nmdr-ner",
+            name: "NMDR Niger (malaria registry)",
+            type: "DHIS2",
+          },
+          { slug: "snt-warehouse", name: "SNT warehouse", type: "POSTGRESQL" },
+          { slug: "snt-bucket", name: "snt-xxx-files", type: "S3" },
+        ],
+        ws_empty: [
+          { slug: "snt-warehouse", name: "SNT warehouse", type: "POSTGRESQL" },
+          { slug: "iaso-ner", name: "IASO Niger", type: "IASO" },
+        ],
+      };
+      let runtime = "step1";
+      const ctx = {
+        listDhis2Connections() {
+          const all = FAKE_WORKSPACES[runtime];
+          if (all === null) return null; // not knowable, ≠ empty
+          return all
+            .filter((c) => c.type === "DHIS2")
+            .map(({ slug, name }) => ({ slug, name }));
+        },
+        currentUser() {
+          return runtime === "step1"
+            ? null
+            : { name: "Mario Rossi", email: "mario.rossi@example.org" };
+        },
+      };
+
+      /* ============================ ConfigStore (spec §7) ============================
+   No form or validation code below touches localStorage directly. */
+      const K_DRAFT = "snt_config_editor.draft_v2";
+      const K_HIST = "snt_config_editor.history_v2";
+      const LocalStore = {
+        name: "LocalStore",
+        /* the single resumable working draft — snt_config_draft.json */
+        autosave(docWithMeta, ui) {
+          try {
+            localStorage.setItem(
+              K_DRAFT,
+              JSON.stringify({ doc: docWithMeta, ui }),
+            );
+          } catch (e) {}
+        },
+        loadDraft() {
+          try {
+            const raw = localStorage.getItem(K_DRAFT);
+            return raw ? JSON.parse(raw) : null;
+          } catch (e) {
+            return null;
+          }
+        },
+        async saveDraft(docWithMeta, log) {
+          const base = fileBase("DRAFT");
+          this.autosave(docWithMeta, { step });
+          this._push({
+            file: `snt_config_history/${base}.json`,
+            log: `${base}.log.json`,
+            status: "DRAFT",
+            sha: log.config_sha256,
+          });
+          return {
+            files: [`${base}.json`, `${base}.log.json`],
+            downloadable: true,
+          };
+        },
+        async publishValid(doc, log) {
+          const base = fileBase("VALID");
+          this._push({
+            file: "SNT_config.json (live)",
+            log: `${base}.log.json`,
+            status: "VALID",
+            sha: log.config_sha256,
+          });
+          return {
+            files: ["SNT_config.json", `${base}.json`, `${base}.log.json`],
+            downloadable: true,
+          };
+        },
+        listHistory() {
+          try {
+            return JSON.parse(localStorage.getItem(K_HIST) || "[]");
+          } catch (e) {
+            return [];
+          }
+        },
+        _push(entry) {
+          const h = this.listHistory();
+          h.unshift({ ...entry, at: nowUTC() });
+          try {
+            localStorage.setItem(K_HIST, JSON.stringify(h.slice(0, 40)));
+          } catch (e) {}
+        },
+        clear() {
+          try {
+            localStorage.removeItem(K_DRAFT);
+            localStorage.removeItem(K_HIST);
+          } catch (e) {}
+        },
+      };
+      const store = LocalStore; // WorkspaceStore lands here in v1 step 2
+
+      /* ============================ state ============================ */
+      function blank() {
+        return {
+          cfg: {
+            COUNTRY_CODE: "",
+            COUNTRY_NAME: "",
+            DHIS2_ADMINISTRATION_1: "",
+            DHIS2_ADMINISTRATION_2: "",
+            ANALYTICS_ORG_UNITS_LEVEL: null,
+          },
+          productUids: [],
+          pop: Object.fromEntries(
+            POP_KEYS.map(([k]) => [k, { ids: [], type: "dataElement" }]),
+          ),
+          ind: Object.fromEntries(IND_KEYS.map((k) => [k, []])),
+          extra: {},
+          rep: {
+            mode: "none",
+            datasets: [],
+            indicators: { ACTUAL_REPORTS: "", EXPECTED_REPORTS: "" },
+          },
+          conn: null, // {slug,name} — provenance only, never in the payload
+          connSource: "unavailable", // "openhexa" | "unavailable"
+          meta: { author: { name: "", email: "", source: "manual" }, note: "" },
+          ack: "",
+          loadNote: "",
+        };
+      }
+      let state = blank();
+      let step = 1,
+        previewMode = "final",
+        pendingW11 = null,
+        lastHash = "";
+
+      const set = (sec, key, val) => {
+        if (sec === "cfg") state.cfg[key] = val;
+        if (sec === "repind") state.rep.indicators[key] = val;
+        render();
+      };
+      const setAuthor = (k, v) => {
+        state.meta.author[k] = v;
+        state.meta.author.source = "manual";
+        render();
+      };
+      const countUids = () =>
+        IND_KEYS.reduce((n, k) => n + state.ind[k].length, 0) +
+        Object.values(state.extra).reduce((n, v) => n + v.length, 0) +
+        POP_KEYS.reduce((n, [k]) => n + state.pop[k].ids.length, 0);
+
+      /* ============================ document assembly ============================ */
+      function buildDoc() {
+        const ind = {};
+        IND_KEYS.forEach((k) => (ind[k] = state.ind[k].slice()));
+        Object.keys(state.extra).forEach(
+          (k) => (ind[k] = state.extra[k].slice()),
+        );
+        const rep = { REPORTING_DATASETS: [], REPORTING_INDICATORS: {} };
+        if (state.rep.mode === "datasets") {
+          rep.REPORTING_DATASETS = state.rep.datasets.map((d) => ({
+            DATASET: d,
+            METRICS: { ACTUAL_REPORTS: "float", EXPECTED_REPORTS: "float" },
+          }));
+        } else if (state.rep.mode === "indicators") {
+          rep.REPORTING_INDICATORS = { ...state.rep.indicators };
+        }
+        return {
+          SNT_CONFIG: {
+            COUNTRY_CODE: state.cfg.COUNTRY_CODE.trim(),
+            COUNTRY_NAME: state.cfg.COUNTRY_NAME.trim(),
+            DHIS2_ADMINISTRATION_1: state.cfg.DHIS2_ADMINISTRATION_1,
+            DHIS2_ADMINISTRATION_2: state.cfg.DHIS2_ADMINISTRATION_2,
+            ANALYTICS_ORG_UNITS_LEVEL: state.cfg.ANALYTICS_ORG_UNITS_LEVEL,
+            REPORTING_RATE_PRODUCT_UID: state.productUids.slice(),
+          },
+          SNT_DATASET_IDENTIFIERS: { ...DATASET_IDS },
+          DHIS2_DATA_DEFINITIONS: {
+            POPULATION_INDICATOR_DEFINITIONS: Object.fromEntries(
+              POP_KEYS.map(([k]) => [
+                k,
+                { ids: state.pop[k].ids.slice(), type: state.pop[k].type },
+              ]),
+            ),
+            DHIS2_INDICATOR_DEFINITIONS: ind,
+            DHIS2_REPORTING_RATES: rep,
+          },
+        };
+      }
+
+      /* Read a draft this app wrote back into state (spec §7, acceptance 4 & 5). */
+      function stateFromDoc(doc) {
+        const s = blank();
+        const c = doc.SNT_CONFIG || {};
+        s.cfg.COUNTRY_CODE = c.COUNTRY_CODE || "";
+        s.cfg.COUNTRY_NAME = c.COUNTRY_NAME || "";
+        s.cfg.DHIS2_ADMINISTRATION_1 = c.DHIS2_ADMINISTRATION_1 || "";
+        s.cfg.DHIS2_ADMINISTRATION_2 = c.DHIS2_ADMINISTRATION_2 || "";
+        s.cfg.ANALYTICS_ORG_UNITS_LEVEL = c.ANALYTICS_ORG_UNITS_LEVEL ?? null;
+        s.productUids = Array.isArray(c.REPORTING_RATE_PRODUCT_UID)
+          ? c.REPORTING_RATE_PRODUCT_UID.slice()
+          : [];
+        const dd = doc.DHIS2_DATA_DEFINITIONS || {};
+        Object.entries(dd.POPULATION_INDICATOR_DEFINITIONS || {}).forEach(
+          ([k, v]) => {
+            if (s.pop[k])
+              s.pop[k] = {
+                ids: Array.isArray(v.ids) ? v.ids.slice() : [],
+                type: POP_TYPES.includes(v.type) ? v.type : "dataElement",
+              };
+          },
+        );
+        Object.entries(dd.DHIS2_INDICATOR_DEFINITIONS || {}).forEach(
+          ([k, v]) => {
+            const list = Array.isArray(v)
+              ? v.slice()
+              : typeof v === "string"
+                ? [v]
+                : [];
+            if (IND_KEYS.includes(k)) s.ind[k] = list;
+            else s.extra[k] = list;
+          },
+        );
+        const rr = dd.DHIS2_REPORTING_RATES || {};
+        if ((rr.REPORTING_DATASETS || []).length) {
+          s.rep.mode = "datasets";
+          s.rep.datasets = rr.REPORTING_DATASETS.map(
+            (d) => d && d.DATASET,
+          ).filter(Boolean);
+        } else if (Object.values(rr.REPORTING_INDICATORS || {}).some(Boolean)) {
+          s.rep.mode = "indicators";
+          s.rep.indicators = {
+            ACTUAL_REPORTS: rr.REPORTING_INDICATORS.ACTUAL_REPORTS || "",
+            EXPECTED_REPORTS: rr.REPORTING_INDICATORS.EXPECTED_REPORTS || "",
+          };
+        }
+        const m = doc._EDITOR_METADATA;
+        if (m) {
+          s.meta.author = {
+            name: (m.author && m.author.name) || "",
+            email: (m.author && m.author.email) || "",
+            source: (m.author && m.author.source) || "manual",
+          };
+          s.meta.note = m.note || "";
+          if (m.dhis2_connection && m.dhis2_connection.slug) {
+            s.conn = {
+              slug: m.dhis2_connection.slug,
+              name: m.dhis2_connection.name || m.dhis2_connection.slug,
+            };
+            s.connSource = m.dhis2_connection.source || "openhexa";
+          }
+        }
+        return s;
+      }
+
+      const nowUTC = () => new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
+      function editorMeta(status, sha) {
+        return {
+          editor_version: EDITOR_VERSION,
+          schema_source: "SNT_config.skeleton.json",
+          status,
+          saved_at: nowUTC(),
+          author: { ...state.meta.author },
+          country_code: state.cfg.COUNTRY_CODE.trim() || null,
+          dhis2_connection: state.conn
+            ? {
+                slug: state.conn.slug,
+                name: state.conn.name,
+                source: state.connSource,
+              }
+            : { source: "unavailable" },
+          note: state.meta.note,
+          config_sha256: sha || lastHash || null,
+        };
+      }
+      function sidecar(status, v, sha, fileName) {
+        return {
+          ...editorMeta(status, sha),
+          file_sha256: null, // filled in at write time — hash of the exact bytes
+          file_name: fileName,
+          validation: {
+            is_valid: v.is_valid,
+            blocking: v.blocking,
+            warnings: v.warnings,
+            empty_optional: v.empty,
+            lost_capabilities: v.lost,
+          },
+          diff_from_previous: diffFromPrevious(),
+        };
+      }
+
+      /* ---- diff_from_previous (spec §6.5, nice-to-have) ---- */
+      let previousPayload = null,
+        previousFile = null;
+      function flat(o, p = "", out = {}) {
+        if (o && typeof o === "object" && !Array.isArray(o))
+          Object.entries(o).forEach(([k, v]) =>
+            flat(v, p ? `${p}.${k}` : k, out),
+          );
+        else out[p] = JSON.stringify(o);
+        return out;
+      }
+      function diffFromPrevious() {
+        if (!previousPayload) return null;
+        const a = flat(previousPayload),
+          b = flat(buildDoc());
+        const changed = [
+          ...new Set([...Object.keys(a), ...Object.keys(b)]),
+        ].filter((k) => a[k] !== b[k]);
+        return { changed, previous_file: previousFile };
+      }
+
+      /* ============================ validation ============================ */
+      function validate() {
+        const c = state.cfg,
+          blocking = [],
+          warnings = [],
+          empty = [],
+          lost = [];
+        const E = (path, message) => blocking.push({ path, message });
+        const W = (path, message) => warnings.push({ path, message });
+        const I = (text) => lost.push(text);
+
+        /* ---- §5.1 rules 1–4: the validate_config() gate ---- */
+        const cc = c.COUNTRY_CODE.trim();
+        if (!cc) E("SNT_CONFIG.COUNTRY_CODE", "is missing or empty");
+        else if (!/^[A-Z]{3}$/.test(cc))
+          E(
+            "SNT_CONFIG.COUNTRY_CODE",
+            "must be a 3-letter uppercase ISO3 code",
+          );
+        if (!c.DHIS2_ADMINISTRATION_1)
+          E("SNT_CONFIG.DHIS2_ADMINISTRATION_1", "is missing or empty");
+        if (!c.DHIS2_ADMINISTRATION_2)
+          E("SNT_CONFIG.DHIS2_ADMINISTRATION_2", "is missing or empty");
+        if (
+          c.ANALYTICS_ORG_UNITS_LEVEL == null ||
+          c.ANALYTICS_ORG_UNITS_LEVEL === ""
+        )
+          E("SNT_CONFIG.ANALYTICS_ORG_UNITS_LEVEL", "is missing or empty");
+
+        /* ---- §5.1 rule 5: assert the 15, do not ask ---- */
+        const missingDs = Object.entries(DATASET_IDS)
+          .filter(([, v]) => !v)
+          .map(([k]) => k);
+        if (missingDs.length || Object.keys(DATASET_IDS).length !== 15)
+          E(
+            "SNT_DATASET_IDENTIFIERS",
+            `internal error — expected 15 non-empty identifiers (${missingDs.join(", ")})`,
+          );
+
+        /* ---- W3 / W2 ---- */
+        const lv = (s) => (s ? +s.match(/level_(\d+)_/)[1] : null);
+        const a1 = lv(c.DHIS2_ADMINISTRATION_1),
+          a2 = lv(c.DHIS2_ADMINISTRATION_2),
+          an = c.ANALYTICS_ORG_UNITS_LEVEL;
+        if (a1 && a2 && a1 >= a2)
+          W(
+            "SNT_CONFIG.DHIS2_ADMINISTRATION_1",
+            `Region (${c.DHIS2_ADMINISTRATION_1}) is not above district (${c.DHIS2_ADMINISTRATION_2}) — these look swapped. Region should be the smaller level number. So far ADM1 has been level 2 and ADM2 level 3 or 4.`,
+          );
+        if (a2 && an && an <= a2)
+          W(
+            "SNT_CONFIG.ANALYTICS_ORG_UNITS_LEVEL",
+            `Routine data is pulled at level ${an} and then rolled up to districts at level ${a2}. Since ${an} is not below ${a2}, there is nothing to roll up. Health facilities are usually 1–3 levels below the district.`,
+          );
+
+        /* ---- population ---- */
+        POP_KEYS.forEach(([k]) => {
+          const e = state.pop[k];
+          e.ids.forEach((u) => {
+            if (!okUid(u))
+              E(
+                `POPULATION_INDICATOR_DEFINITIONS.${k}`,
+                `malformed UID "${u}"`,
+              );
+          });
+          if (new Set(e.ids).size !== e.ids.length)
+            E(`POPULATION_INDICATOR_DEFINITIONS.${k}`, "duplicate UID in list");
+          if (!POP_TYPES.includes(e.type))
+            E(
+              `POPULATION_INDICATOR_DEFINITIONS.${k}.type`,
+              "must be 'dataElement' or 'indicator'",
+            );
+          if (!e.ids.length) {
+            empty.push(`POPULATION_INDICATOR_DEFINITIONS.${k}`);
+            if (k !== "POPULATION")
+              I(`${k}: no column is produced at all — the key is filtered out`);
+          }
+        });
+        /* W8 */
+        if (!state.pop.POPULATION.ids.length)
+          W(
+            "POPULATION_INDICATOR_DEFINITIONS.POPULATION",
+            "Leaving POPULATION empty is technically accepted, but population data will not be extracted and incidence cannot be computed. This is the one population key that is really used today.",
+          );
+
+        /* ---- routine indicators ---- */
+        const allInd = {
+          ...Object.fromEntries(IND_KEYS.map((k) => [k, state.ind[k]])),
+          ...state.extra,
+        };
+        let total = 0;
+        Object.entries(allInd).forEach(([k, ids]) => {
+          total += ids.length;
+          ids.forEach((u) => {
+            if (!okUid(u))
+              E(`DHIS2_INDICATOR_DEFINITIONS.${k}`, `malformed UID "${u}"`);
+          });
+          if (new Set(ids).size !== ids.length)
+            E(`DHIS2_INDICATOR_DEFINITIONS.${k}`, "duplicate UID in list");
+          /* W1 — double counting */
+          const bare = new Set(ids.filter((u) => UID_RE.test(u)));
+          ids
+            .filter((u) => UID_COC_RE.test(u))
+            .forEach((u) => {
+              const de = u.split(".")[0];
+              if (bare.has(de))
+                W(
+                  `DHIS2_INDICATOR_DEFINITIONS.${k}`,
+                  `${de} already includes every category combo of that data element. Adding ${u} counts that slice twice. Keep the bare UID for the total, and put the slice under a *_UNDER_5 / *_PREGNANT_WOMAN key instead.`,
+                );
+            });
+          /* W5 — hand-enumerated lists */
+          if (
+            ids.length > 10 &&
+            ids.filter((u) => UID_COC_RE.test(u)).length > ids.length / 2
+          )
+            W(
+              `DHIS2_INDICATOR_DEFINITIONS.${k}`,
+              `${ids.length} category combos listed by hand. If DHIS2 adds a new category option it will be missing from this column and nobody will be told. Where possible use the bare data element for the total and a single UID.COC for the slice you need.`,
+            );
+          if (!ids.length) {
+            empty.push(`DHIS2_INDICATOR_DEFINITIONS.${k}`);
+            if (LOSS[k]) I(`${k}: ${LOSS[k]}`);
+          }
+        });
+        if (total === 0)
+          E(
+            "DHIS2_DATA_DEFINITIONS.DHIS2_INDICATOR_DEFINITIONS",
+            "has no indicators defined",
+          );
+        /* W6 */
+        Object.keys(state.extra).forEach((k) =>
+          W(
+            `DHIS2_INDICATOR_DEFINITIONS.${k}`,
+            `${k} will be downloaded and added as a column, but no current pipeline reads it. Add it only if you plan to use the routine data directly for ad-hoc analysis.`,
+          ),
+        );
+
+        /* ---- W4 — INFO, not a warning (spec §5.2 W4, corrected 2026-09-10).
+         Three columns per set, not four; SUSP vs PRES is chosen by the
+         N1_METHOD run parameter, which is not a config field. Nothing blocks
+         until EXTERNAL_CHECKS item 1 is answered. ---- */
+        [
+          ["UNDER_5", "under-5s"],
+          ["PREGNANT_WOMAN", "pregnant women"],
+        ].forEach(([sel, label]) => {
+          const grp = ["SUSP", "PRES", "TEST", "CONF"].map(
+            (p) => `${p}_${sel}`,
+          );
+          const filled = grp.filter((k) => state.ind[k] && state.ind[k].length);
+          if (!filled.length) return;
+          const missing = grp.filter((k) => !filled.includes(k));
+          const needN1 =
+            !state.ind[`SUSP_${sel}`].length &&
+            !state.ind[`PRES_${sel}`].length;
+          const needTC = grp.slice(2).filter((k) => !state.ind[k].length);
+          if (missing.length && (needN1 || needTC.length))
+            I(
+              `${filled.join(", ")} filled but ${missing.join(", ")} empty. Incidence by ${label} also needs ` +
+                [
+                  ...needTC,
+                  needN1
+                    ? `one of SUSP_${sel} / PRES_${sel} (which one depends on the N1_METHOD chosen when the pipeline is run)`
+                    : "",
+                ]
+                  .filter(Boolean)
+                  .join(" and ") +
+                `. Left as they are, the ${label} incidence columns will be empty rather than wrong.`,
+            );
+        });
+
+        /* ---- reporting rates ---- */
+        if (state.rep.mode === "datasets") {
+          state.rep.datasets.forEach((u) => {
+            if (!UID_RE.test(u))
+              E(
+                "DHIS2_REPORTING_RATES.REPORTING_DATASETS",
+                `malformed UID "${u}"`,
+              );
+          });
+          if (new Set(state.rep.datasets).size !== state.rep.datasets.length)
+            E(
+              "DHIS2_REPORTING_RATES.REPORTING_DATASETS",
+              "duplicate dataset UID",
+            );
+          /* W9 */
+          if (!state.rep.datasets.length)
+            W(
+              "DHIS2_REPORTING_RATES.REPORTING_DATASETS",
+              "You chose 'by dataset' but listed no dataset UID. The extract will log \"No reporting rates to download.\" — the same outcome as 'None', while the config looks configured. Add a dataset UID, or switch to 'None'.",
+            );
+        }
+        if (state.rep.mode === "indicators") {
+          const ri = state.rep.indicators;
+          Object.entries(ri).forEach(([k, u]) => {
+            if (u && !UID_RE.test(u))
+              E(
+                `DHIS2_REPORTING_RATES.REPORTING_INDICATORS.${k}`,
+                `malformed UID "${u}"`,
+              );
+          });
+          /* W9 */
+          const miss = Object.entries(ri)
+            .filter(([, u]) => !u)
+            .map(([k]) => k);
+          if (miss.length)
+            W(
+              "DHIS2_REPORTING_RATES.REPORTING_INDICATORS",
+              `You chose 'by indicator' but ${miss.join(" and ")} ${miss.length > 1 ? "are" : "is"} empty. Reporting rates need both an actual and an expected count. Fill ${miss.join(" and ")}, or switch to 'None'.`,
+            );
+        }
+        state.productUids.forEach((u) => {
+          if (!okUid(u))
+            E("SNT_CONFIG.REPORTING_RATE_PRODUCT_UID", `malformed UID "${u}"`);
+        });
+        /* W7 */
+        if (state.productUids.length && state.rep.mode === "none")
+          W(
+            "SNT_CONFIG.REPORTING_RATE_PRODUCT_UID",
+            "You have listed product UIDs to filter on, but reporting rates are set to 'None', so nothing will be downloaded to filter. Either choose a reporting-rate source, or clear this list.",
+          );
+
+        /* ---- W10 — workspace has no DHIS2 connection. Step 2 only:
+         null (cannot know) must never fire this. ---- */
+        const conns = ctx.listDhis2Connections();
+        if (conns !== null && conns.length === 0)
+          W(
+            "workspace.connections",
+            "This workspace has no DHIS2 connection defined. You can still fill in and save this configuration, but the extraction pipeline cannot run without one — someone with workspace admin rights needs to add it before the config is usable.",
+          );
+
+        /* ---- W11 — connection changed after UIDs were entered ---- */
+        if (pendingW11)
+          W(
+            "_EDITOR_METADATA.dhis2_connection",
+            `You entered these UIDs against ${pendingW11.from}. ${pendingW11.to} is a different DHIS2 instance and uses different UIDs for the same data elements — switching will not translate them, and every UID here will need to be looked up again. Choose "keep" or "clear" on step 1.`,
+          );
+
+        /* ---- plainly list every non-mandatory field left empty ---- */
+        if (!c.COUNTRY_NAME.trim()) empty.push("SNT_CONFIG.COUNTRY_NAME");
+        if (!state.productUids.length)
+          empty.push("SNT_CONFIG.REPORTING_RATE_PRODUCT_UID");
+        if (state.rep.mode === "none")
+          empty.push("DHIS2_DATA_DEFINITIONS.DHIS2_REPORTING_RATES");
+        if (!state.conn)
+          empty.push(
+            "_EDITOR_METADATA.dhis2_connection (provenance, not part of the config)",
+          );
+
+        return {
+          blocking,
+          warnings,
+          empty,
+          lost,
+          is_valid: blocking.length === 0,
+        };
+      }
+      const ackKeyOf = (v) =>
+        v.warnings
+          .map((w) => w.path + "|" + w.message)
+          .sort()
+          .join("§");
+
+      /* ============================ chip inputs ============================ */
+      let refocus = null; // which chip box should regain the caret after a re-render
+      function chipInput(host, list, onChange, allowCoc = true) {
+        const tag =
+          host.dataset.pop || host.dataset.ind || host.dataset.extra || host.id;
+        host.innerHTML = "";
+        const box = document.createElement("div");
+        box.className = "chips";
+        list.forEach((u, i) => {
+          const bad = allowCoc ? !okUid(u) : !UID_RE.test(u);
+          const c = document.createElement("span");
+          c.className = "chip" + (bad ? " bad" : "");
+          c.innerHTML = `<span>${u}</span>`;
+          const x = document.createElement("button");
+          x.textContent = "×";
+          x.title = "Remove";
+          x.onclick = () => {
+            list.splice(i, 1);
+            onChange();
+            render();
+          };
+          c.appendChild(x);
+          box.appendChild(c);
+        });
+        const inp = document.createElement("input");
+        inp.type = "text";
+        inp.placeholder = list.length
+          ? ""
+          : allowCoc
+            ? "UID or UID.COC — Enter to add"
+            : "UID — Enter to add";
+        const commit = (keepFocus) => {
+          inp.value
+            .split(/[\s,;]+/)
+            .map((s) => s.trim())
+            .filter(Boolean)
+            .forEach((v) => list.push(v));
+          inp.value = "";
+          if (keepFocus) refocus = tag;
+          onChange();
+          render();
+        };
+        inp.onkeydown = (e) => {
+          if (e.key === "Enter" || e.key === ",") {
+            e.preventDefault();
+            commit(true);
+          }
+          if (e.key === "Backspace" && !inp.value && list.length) {
+            list.pop();
+            refocus = tag;
+            onChange();
+            render();
+          }
+        };
+        inp.onblur = () => {
+          if (inp.value.trim()) commit(false);
+        };
+        box.appendChild(inp);
+        box.onclick = (e) => {
+          if (e.target === box) inp.focus();
+        };
+        host.appendChild(box);
+        if (refocus === tag) {
+          refocus = null;
+          inp.focus();
+        }
+      }
+
+      /* ============================ rendering ============================ */
+      function buildStatic() {
+        /* nav labels are the section headings themselves, so the two cannot drift */
+        const esc = (s) =>
+          s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        document.getElementById("nav").innerHTML = [
+          ...document.querySelectorAll(".step"),
+        ]
+          .map((sec) => {
+            const n = sec.dataset.step;
+            const t = esc(sec.querySelector("h2").textContent.trim());
+            return `<button onclick="goto(${n})" data-nav="${n}">
+      <span class="dot" data-navdot="${n}"></span><span>${t}</span></button>`;
+          })
+          .join("");
+        [1, 2].forEach((n) => {
+          const s = document.getElementById(`DHIS2_ADMINISTRATION_${n}`);
+          s.innerHTML =
+            `<option value="">— select —</option>` +
+            LEVELS.map((l) => `<option>${l}</option>`).join("");
+        });
+        document.getElementById("dsids").textContent = Object.entries(
+          DATASET_IDS,
+        )
+          .map(([k, v]) => `${k.padEnd(34)}${v}`)
+          .join("\n");
+        document.getElementById("repModes").innerHTML = [
+          [
+            "datasets",
+            "By DHIS2 dataset",
+            "One entry per dataset UID. The extract code checks this branch first — if any dataset is set, the indicator branch is ignored entirely.",
+          ],
+          [
+            "indicators",
+            "By DHIS2 indicator",
+            "One UID for ACTUAL_REPORTS and one for EXPECTED_REPORTS.",
+          ],
+          [
+            "none",
+            "None",
+            'Legitimate. The pipeline logs "No reporting rates to download."',
+          ],
+        ]
+          .map(
+            ([v, t, d]) => `<label class="radio" data-mode="${v}">
+      <input type="radio" name="repmode" value="${v}" onchange="state.rep.mode='${v}';render()">
+      <span><b>${t}</b><br><span class="tiny">${d}</span></span></label>`,
+          )
+          .join("");
+        document.getElementById("popRows").innerHTML = POP_KEYS.map(
+          ([k, note]) => `
+    <div class="uidrow">
+      <div><div class="keyname">${k}</div><div class="keynote">${note}</div>
+        <select style="margin-top:5px;font-size:12px" onchange="state.pop['${k}'].type=this.value;render()"
+                data-poptype="${k}">
+          ${POP_TYPES.map((t) => `<option value="${t}">${t}</option>`).join("")}
+        </select></div>
+      <div data-pop="${k}"></div>
+    </div>`,
+        ).join("");
+        document.getElementById("indRows").innerHTML = IND_GROUPS.map(
+          (g) =>
+            `<div class="groupttl">${g.title}</div>` +
+            g.keys
+              .map(
+                ([k, note, loss]) => `
+      <div class="uidrow">
+        <div><div class="keyname">${k}</div>
+          <div class="keynote">${note}${loss ? `<br><i>empty → ${loss}</i>` : ""}</div></div>
+        <div data-ind="${k}"></div>
+      </div>`,
+              )
+              .join(""),
+        ).join("");
+      }
+
+      function renderConnection() {
+        const sel = document.getElementById("connSel"),
+          note = document.getElementById("connNote");
+        const conns = ctx.listDhis2Connections();
+        if (conns === null) {
+          sel.disabled = true;
+          sel.innerHTML = `<option>Available when running in OpenHEXA</option>`;
+          note.innerHTML = `<div class="callout c-info">This build cannot see a workspace, so there is no
+      connection list to choose from. The save log will record
+      <code>{"source":"unavailable"}</code>. A draft started here and reopened in the OpenHEXA build
+      will ask which instance these UIDs came from — only you know.
+      <b>No warning is raised</b>: "cannot know" is not the same as "none defined".</div>`;
+        } else {
+          sel.disabled = false;
+          sel.innerHTML =
+            `<option value="">— select the instance —</option>` +
+            conns
+              .map(
+                (c) =>
+                  `<option value="${c.slug}">${c.name} · ${c.slug}</option>`,
+              )
+              .join("");
+          sel.value = state.conn ? state.conn.slug : "";
+          note.innerHTML = conns.length
+            ? state.conn
+              ? `<div class="callout c-ok">Recorded as provenance: <b>${state.conn.name}</b>
+             (<code>${state.conn.slug}</code>). The exported <code>SNT_config.json</code> and its
+             <code>config_sha256</code> are unchanged by this choice.</div>`
+              : `<div class="callout c-info">Pick the instance before entering UIDs — it frames every UID
+             that follows. Only DHIS2-typed connections are listed; the workspace's PostgreSQL, S3 and
+             IASO connections are filtered out by the adapter, not by this form.</div>`
+            : "";
+        }
+        /* W11 keep / clear */
+        const w = document.getElementById("w11");
+        if (pendingW11) {
+          w.className = "callout c-warn";
+          w.innerHTML = `<b>These UIDs were entered against ${pendingW11.from}.</b><br>
+      ${pendingW11.to} is a different DHIS2 instance and uses different UIDs for the same data
+      elements — switching will not translate them, and every UID here will need to be looked up
+      again.<br><br>
+      <button class="mini" onclick="resolveW11('keep')">Keep the UIDs</button>
+      <button class="mini" onclick="resolveW11('clear')">Clear all UIDs and start over</button>`;
+        } else {
+          w.className = "hidden";
+          w.innerHTML = "";
+        }
+
+        /* step 3 echo */
+        const echo = document.getElementById("connEcho");
+        echo.className = state.conn ? "callout c-info" : "hidden";
+        echo.innerHTML = state.conn
+          ? `Entering UIDs from <b>${state.conn.name}</b>.`
+          : "";
+      }
+
+      function render() {
+        document
+          .querySelectorAll(".step")
+          .forEach((s) =>
+            s.classList.toggle("hidden", +s.dataset.step !== step),
+          );
+        const put = (id, v) => {
+          const e = document.getElementById(id);
+          if (e && e.value !== String(v ?? "")) e.value = v ?? "";
+        };
+        put("COUNTRY_CODE", state.cfg.COUNTRY_CODE);
+        put("COUNTRY_NAME", state.cfg.COUNTRY_NAME);
+        put("DHIS2_ADMINISTRATION_1", state.cfg.DHIS2_ADMINISTRATION_1);
+        put("DHIS2_ADMINISTRATION_2", state.cfg.DHIS2_ADMINISTRATION_2);
+        put("ANALYTICS_ORG_UNITS_LEVEL", state.cfg.ANALYTICS_ORG_UNITS_LEVEL);
+        put("rep_actual", state.rep.indicators.ACTUAL_REPORTS);
+        put("rep_expected", state.rep.indicators.EXPECTED_REPORTS);
+        put("authName", state.meta.author.name);
+        put("authEmail", state.meta.author.email);
+        put("note", state.meta.note);
+        document.getElementById("authHint").innerHTML =
+          state.meta.author.source === "openhexa"
+            ? 'Prefilled from OpenHEXA — recorded as <code>source: "openhexa"</code>. Editing it switches to <code>"manual"</code>.'
+            : 'Recorded in the save log as <code>source: "manual"</code>.';
+        document
+          .querySelectorAll("[data-poptype]")
+          .forEach((s) => (s.value = state.pop[s.dataset.poptype].type));
+        document
+          .querySelectorAll("input[name=repmode]")
+          .forEach((r) => (r.checked = r.value === state.rep.mode));
+        document
+          .querySelectorAll(".radio")
+          .forEach((l) =>
+            l.classList.toggle("on", l.dataset.mode === state.rep.mode),
+          );
+        document
+          .getElementById("repDatasets")
+          .classList.toggle("hidden", state.rep.mode !== "datasets");
+        document
+          .getElementById("repIndicators")
+          .classList.toggle("hidden", state.rep.mode !== "indicators");
+
+        renderConnection();
+
+        POP_KEYS.forEach(([k]) =>
+          chipInput(
+            document.querySelector(`[data-pop="${k}"]`),
+            state.pop[k].ids,
+            () => {},
+          ),
+        );
+        IND_KEYS.forEach((k) =>
+          chipInput(
+            document.querySelector(`[data-ind="${k}"]`),
+            state.ind[k],
+            () => {},
+          ),
+        );
+        document.getElementById("extraRows").innerHTML = Object.keys(
+          state.extra,
+        )
+          .map(
+            (k) => `
+    <div class="uidrow"><div><div class="keyname">${k}</div>
+      <div class="keynote"><button class="mini"
+        onclick="delete state.extra['${k}'];render()">remove key</button></div></div>
+      <div data-extra="${k}"></div></div>`,
+          )
+          .join("");
+        Object.keys(state.extra).forEach((k) =>
+          chipInput(
+            document.querySelector(`[data-extra="${k}"]`),
+            state.extra[k],
+            () => {},
+          ),
+        );
+        chipInput(
+          document.getElementById("repDsChips"),
+          state.rep.datasets,
+          () => {},
+          false,
+        );
+        chipInput(
+          document.getElementById("prodChips"),
+          state.productUids,
+          () => {},
+        );
+
+        const v = validate();
+
+        [
+          "COUNTRY_CODE",
+          "DHIS2_ADMINISTRATION_1",
+          "DHIS2_ADMINISTRATION_2",
+          "ANALYTICS_ORG_UNITS_LEVEL",
+        ].forEach((f) => {
+          const hit = v.blocking.find((b) => b.path === `SNT_CONFIG.${f}`);
+          document.getElementById("e_" + f).textContent = hit
+            ? "🔴 " + hit.message
+            : "";
+        });
+        document.getElementById("w_levels").textContent = v.warnings
+          .filter(
+            (w) =>
+              w.path.includes("ADMINISTRATION_1") ||
+              w.path.includes("ANALYTICS_ORG"),
+          )
+          .map((w) => "🟠 " + w.message)
+          .join(" ");
+        document.getElementById("w_cc").textContent =
+          countUids() && state.cfg.COUNTRY_CODE.trim()
+            ? `⚠️ Data has been entered. Changing COUNTRY_CODE renames every downstream artefact — ` +
+              `${state.cfg.COUNTRY_CODE.trim()}_routine.parquet and everything derived from it.`
+            : "";
+
+        const bad = (n) => v.blocking.some((b) => stepOf(b.path) === n);
+        const warn = (n) => v.warnings.some((b) => stepOf(b.path) === n);
+        document.querySelectorAll("[data-navdot]").forEach((d) => {
+          const n = +d.dataset.navdot;
+          d.className =
+            "dot " + (bad(n) ? "err" : warn(n) ? "warn" : n === 5 ? "" : "ok");
+        });
+        document
+          .querySelectorAll("[data-nav]")
+          .forEach((b) => b.classList.toggle("on", +b.dataset.nav === step));
+
+        const st = document.getElementById("status");
+        st.textContent = v.is_valid
+          ? "Valid"
+          : `Draft · ${v.blocking.length} blocking`;
+        st.className = "badge " + (v.is_valid ? "valid" : "draft");
+        document.getElementById("ctry").textContent = state.cfg.COUNTRY_CODE
+          ? state.cfg.COUNTRY_CODE + " · " + (state.cfg.COUNTRY_NAME || "")
+          : "no country code yet";
+
+        /* warnings must be acknowledged before export (spec §5) */
+        const needAck = v.warnings.length > 0 && state.ack !== ackKeyOf(v);
+        document.getElementById("ackWrap").innerHTML = v.warnings.length
+          ? `<label class="ackbox"><input type="checkbox" ${needAck ? "" : "checked"}
+         onchange="toggleAck(this.checked)">
+       <span>I have read the ${v.warnings.length} warning${v.warnings.length > 1 ? "s" : ""} and want to
+       export anyway.</span></label>`
+          : "";
+        [
+          document.getElementById("btnExport"),
+          document.getElementById("btnExport2"),
+        ].forEach((b) => (b.disabled = !v.is_valid || needAck));
+        document.getElementById("savehint").textContent = !v.is_valid
+          ? "Fix the blocking errors to export. Drafts save at any completeness."
+          : needAck
+            ? "Acknowledge the warnings to enable the export."
+            : "Export writes SNT_config.json + a .log.json sidecar.";
+
+        renderPanel(v);
+        renderPreview(v);
+        renderHistory();
+        refreshHash();
+        autosave();
+      }
+
+      const stepOf = (p) =>
+        p.startsWith("workspace.") || p.startsWith("_EDITOR_METADATA")
+          ? 1
+          : p.startsWith("SNT_CONFIG.REPORTING_RATE") || p.includes("REPORTING")
+            ? 4
+            : p.startsWith("SNT_CONFIG")
+              ? 1
+              : p.includes("POPULATION_INDICATOR")
+                ? 2
+                : 3;
+
+      function renderPanel(v) {
+        const item = (cls, o) =>
+          `<div class="vitem ${cls}"><span class="p">${o.path}</span>${o.message}</div>`;
+        let h = "";
+        if (state.loadNote)
+          h += `<div class="vitem v-info">${state.loadNote}</div>`;
+        if (v.is_valid)
+          h += `<div class="vitem v-ok"><b>✓ validate_config() would accept this file.</b><br>
+    <span class="tiny">Ready to export as SNT_config.json.</span></div>`;
+        if (v.blocking.length)
+          h += `<div class="vgroup"><h3 style="color:var(--err)">🔴 ${v.blocking.length} blocking</h3>
+    ${v.blocking.map((o) => item("v-err", o)).join("")}
+    <div class="tiny">No pipeline will start until these are fixed.</div></div>`;
+        if (v.warnings.length)
+          h += `<div class="vgroup"><h3 style="color:var(--warn)">🟠 ${v.warnings.length} warning${v.warnings.length > 1 ? "s" : ""}</h3>
+    ${v.warnings.map((o) => item("v-warn", o)).join("")}
+    <div class="tiny">Valid to the pipelines, but probably a mistake. Must be acknowledged before export.</div></div>`;
+        if (v.lost.length)
+          h += `<div class="vgroup"><h3 style="color:var(--info)">🔵 What you lose by leaving keys empty</h3>
+    ${v.lost.map((t) => `<div class="vitem v-info">${t}</div>`).join("")}</div>`;
+        if (v.empty.length)
+          h += `<div class="vgroup"><details><summary>🔵 ${v.empty.length} non-mandatory fields left empty</summary>
+    <div class="readonly" style="margin-top:6px">${v.empty.join("\n")}</div></details></div>`;
+        document.getElementById("vpanel").innerHTML = h;
+      }
+
+      function setPreview(m) {
+        previewMode = m;
+        ["final", "draft", "log"].forEach(
+          (x) =>
+            (document.getElementById(
+              "tab" + x[0].toUpperCase() + x.slice(1),
+            ).className = x === m ? "primary" : ""),
+        );
+        render();
+      }
+      function renderPreview(v) {
+        const doc = buildDoc();
+        let out;
+        if (previewMode === "final") out = doc;
+        else if (previewMode === "draft")
+          out = { _EDITOR_METADATA: editorMeta("DRAFT"), ...doc };
+        else
+          out = sidecar(
+            v.is_valid ? "VALID" : "DRAFT",
+            v,
+            lastHash,
+            v.is_valid ? "SNT_config.json" : "snt_config_draft.json",
+          );
+        document.getElementById("preview").textContent = JSON.stringify(
+          out,
+          null,
+          2,
+        );
+      }
+      async function refreshHash() {
+        const h = await configSha256(buildDoc());
+        if (h === lastHash) return;
+        lastHash = h;
+        document.getElementById("hashShort").textContent = h.slice(0, 8);
+        renderPreview(validate()); // metadata carries the hash — repaint once
+        renderHistory();
+      }
+      function copyHash() {
+        navigator.clipboard && navigator.clipboard.writeText(lastHash);
+      }
+      function renderHistory() {
+        const h = store.listHistory();
+        document.getElementById("histWhere").innerHTML =
+          runtime === "step1"
+            ? `Under <code>LocalStore</code> these are simulated. Drafts live in <b>this browser only</b> —
+       downloading the draft file is the only way to move work to another machine. Step 2's
+       <code>WorkspaceStore</code> writes them to
+       <code>/configuration/snt_config_history/</code> and removes that limitation.`
+            : `In the real step-2 build these are files under <code>/configuration/snt_config_history/</code>.`;
+        document.getElementById("history").innerHTML = h.length
+          ? h
+              .map(
+                (
+                  f,
+                ) => `<div class="hist">${f.at} · ${f.status}<br>${f.file}<br>${f.log}
+        <span class="tiny"> · config_sha256 ${String(f.sha || "").slice(0, 8)}</span></div>`,
+              )
+              .join("")
+          : `<div class="tiny">Nothing saved yet this session.</div>`;
+      }
+
+      /* ============================ actions ============================ */
+      function goto(n) {
+        step = n;
+        render();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+      function toggleAck(on) {
+        state.ack = on ? ackKeyOf(validate()) : "";
+        render();
+      }
+
+      function setRuntime(r) {
+        runtime = r;
+        const conns = ctx.listDhis2Connections();
+        if (conns === null) {
+          state.connSource = "unavailable";
+        } else {
+          state.connSource = state.conn ? "openhexa" : "unavailable";
+          const u = ctx.currentUser();
+          if (u && !state.meta.author.name)
+            state.meta.author = {
+              name: u.name,
+              email: u.email,
+              source: "openhexa",
+            };
+          /* §6.4: a draft authored in step 1 and reopened in step 2 must be asked
+       which instance its UIDs came from — never silently left blank. */
+          if (!state.conn && countUids())
+            state.loadNote =
+              "This draft carries UIDs but no DHIS2 instance. Choose the instance they were " +
+              "copied from on step 1 — only you know which one it was.";
+        }
+        render();
+      }
+      function pickConnection(slug) {
+        const conns = ctx.listDhis2Connections() || [];
+        const c = conns.find((x) => x.slug === slug) || null;
+        if (state.conn && c && c.slug !== state.conn.slug && countUids())
+          pendingW11 = { from: state.conn.name, to: c.name };
+        state.conn = c;
+        state.connSource = c ? "openhexa" : "unavailable";
+        if (c) state.loadNote = "";
+        render();
+      }
+      function resolveW11(choice) {
+        if (choice === "clear") {
+          if (
+            !confirm("Clear every UID entered so far? This cannot be undone.")
+          )
+            return;
+          POP_KEYS.forEach(([k]) => (state.pop[k].ids = []));
+          IND_KEYS.forEach((k) => (state.ind[k] = []));
+          Object.keys(state.extra).forEach((k) => (state.extra[k] = []));
+          state.rep.datasets = [];
+          state.rep.indicators = { ACTUAL_REPORTS: "", EXPECTED_REPORTS: "" };
+          state.productUids = [];
+        }
+        pendingW11 = null;
+        render();
+      }
+
+      function addExtra() {
+        const i = document.getElementById("extraKey"),
+          err = document.getElementById("extraErr");
+        const k = i.value.trim();
+        err.textContent = "";
+        if (!k) return;
+        if (IND_KEYS.includes(k)) {
+          err.textContent = `${k} is already in the controlled list above.`;
+          return;
+        }
+        /* §5.2 W6 "also check": refuse a near-miss of a real key, point at the right one */
+        const norm = (s) => s.replace(/_/g, "");
+        const near = IND_KEYS.find((real) => norm(real) === norm(k));
+        if (near) {
+          err.textContent = `Use ${near} — "${k}" would be a different column and incidence would never look for it.`;
+          return;
+        }
+        if (/_UNDER5|_ABOVE5/.test(k)) {
+          err.textContent = `Use the underscored spelling (${k.replace("_UNDER5", "_UNDER_5").replace("_ABOVE5", "_ABOVE_5")}). "${k}" would never be read by incidence.`;
+          return;
+        }
+        state.extra[k] = state.extra[k] || [];
+        i.value = "";
+        render();
+      }
+
+      const stamp = () => nowUTC().replace(/:/g, "-");
+      const fileBase = (status) =>
+        `${stamp()}__${state.cfg.COUNTRY_CODE.trim() || "NOCC"}__${status}`;
+
+      function downloadText(name, text) {
+        const b = new Blob([text], { type: "application/json" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(b);
+        a.download = name;
+        a.click();
+        URL.revokeObjectURL(a.href);
+      }
+      function autosave() {
+        store.autosave(
+          { _EDITOR_METADATA: editorMeta("DRAFT"), ...buildDoc() },
+          { step, conn: state.conn, connSource: state.connSource },
+        );
+      }
+
+      async function saveDraft() {
+        const v = validate();
+        const sha = await configSha256(buildDoc());
+        const draftDoc = {
+          _EDITOR_METADATA: editorMeta("DRAFT", sha),
+          ...buildDoc(),
+        };
+        const draftText = JSON.stringify(draftDoc, null, 2);
+        const log = sidecar("DRAFT", v, sha, "snt_config_draft.json");
+        log.file_sha256 = await fileSha256(draftText);
+        const base = fileBase("DRAFT");
+        await store.saveDraft(draftDoc, log);
+        previousPayload = buildDoc();
+        previousFile = `${base}.json`;
+        render();
+        if (
+          confirm(
+            "Draft saved.\n\nAlso download the draft file? Under LocalStore this is the only way to move a draft to another machine — the app can load it back in.",
+          )
+        ) {
+          downloadText(`${base}.json`, draftText);
+          downloadText(`${base}.log.json`, JSON.stringify(log, null, 2));
+        }
+      }
+
+      async function publish() {
+        const v = validate();
+        if (!v.is_valid) return;
+        if (v.warnings.length && state.ack !== ackKeyOf(v)) return;
+        const doc = buildDoc(); // no _EDITOR_METADATA — spec §6.3
+        const text = JSON.stringify(doc, null, 2);
+        const sha = await configSha256(doc);
+        const log = sidecar("VALID", v, sha, "SNT_config.json");
+        log.file_sha256 = await fileSha256(text);
+        const base = fileBase("VALID");
+        await store.publishValid(doc, log);
+        previousPayload = doc;
+        previousFile = `${base}.json`;
+        downloadText("SNT_config.json", text);
+        downloadText(`${base}.log.json`, JSON.stringify(log, null, 2));
+        render();
+      }
+
+      /* ---- reopening drafts ---- */
+      async function adoptDoc(doc, where) {
+        const claimed =
+          doc._EDITOR_METADATA && doc._EDITOR_METADATA.config_sha256;
+        state = stateFromDoc(doc);
+        const actual = await configSha256(doc);
+        state.loadNote =
+          claimed && claimed !== actual
+            ? `This draft was modified outside the editor (config_sha256 ${String(claimed).slice(0, 8)} → ${actual.slice(0, 8)}). Loaded anyway.`
+            : "";
+        /* §6.4: step-1 draft reopened where a connection list exists */
+        if (!state.conn && ctx.listDhis2Connections() !== null && countUids())
+          state.loadNote +=
+            (state.loadNote ? " " : "") +
+            "This draft carries UIDs but no DHIS2 instance. Choose the instance they were copied from on step 1.";
+        pendingW11 = null;
+        previousPayload = buildDoc();
+        previousFile = where;
+        render();
+      }
+      function reopenDraft(announce = true) {
+        const d = store.loadDraft();
+        if (!d || !d.doc) {
+          if (announce) alert("No draft saved in this browser.");
+          return;
+        }
+        step = (d.ui && d.ui.step) || 1;
+        adoptDoc(d.doc, "snt_config_draft.json");
+      }
+      function loadDraftFile(file) {
+        if (!file) return;
+        const r = new FileReader();
+        r.onload = () => {
+          let doc;
+          try {
+            doc = JSON.parse(r.result);
+          } catch (e) {
+            alert("That file is not valid JSON.");
+            return;
+          }
+          if (!doc || !doc.SNT_CONFIG) {
+            alert("That does not look like a config this editor wrote.");
+            return;
+          }
+          if (
+            !doc._EDITOR_METADATA &&
+            !confirm(
+              "This file has no _EDITOR_METADATA, so it was not written as a draft by this editor.\n\nImporting existing configs is out of scope for v1 — load it anyway as a prototype convenience?",
+            )
+          )
+            return;
+          adoptDoc(doc, file.name);
+        };
+        r.readAsText(file);
+      }
+      function resetAll() {
+        if (!confirm("Discard everything and start from the skeleton?")) return;
+        state = blank();
+        step = 1;
+        pendingW11 = null;
+        previousPayload = null;
+        previousFile = null;
+        store.clear();
+        setRuntime(runtime);
+      }
+
+      /* ============================ boot ============================ */
+      buildStatic();
+      document.getElementById("runtime").value = runtime;
+      const boot = store.loadDraft();
+      if (boot && boot.doc) {
+        reopenDraft(false);
+      } else {
+        render();
+      }
+    </script>
+  </body>
+</html>
