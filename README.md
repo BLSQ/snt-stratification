@@ -1,5 +1,12 @@
 # 🦟 SNT — Subnational Tailoring pipelines
 
+> **🚧 Migration in progress.** This repo is a fresh snapshot (no history) of four earlier repos; see
+> [Provenance](#-provenance). The text below still comes from `snt_development` and describes its
+> **old layout and deploy routes**. Only the [layout table](#-whats-in-this-repo) and Provenance have
+> been updated so far; the rest is rewritten in Phase 2 of
+> [`docs/MIGRATION_PLAN.md`](docs/MIGRATION_PLAN.md). Live country workspaces still run from the old
+> repos.
+
 Data pipelines that turn a country's routine health data into the evidence base for **subnational
 tailoring (SNT) of malaria interventions** — deciding which interventions to deploy where, at a
 sub-national level.
@@ -43,7 +50,8 @@ Each box is one or more standalone pipelines, **launched by hand** from the Open
 data to each other through OpenHEXA **datasets** — never by calling each other directly. Stages
 `C` and `A2` publish usable layers of their own, not just intermediates, and the Explorer reads
 those datasets directly. (A former stage `E`, `snt_assemble_results`, flattened everything into one
-table per ADM2; it is retired and kept under [`deprecated/`](deprecated/).)
+table per ADM2; it is retired and kept under
+[`deprecated/` in `snt_development`](https://github.com/BLSQ/snt_development/tree/94cfc383c0f8804d2eba264f26a4bd3d372d94da/deprecated).)
 
 Some pipelines also create **blank CSV templates** in the workspace `uploads/` folder, for an
 operator to fill in and upload to a later pipeline. `snt_dhis2_formatting`, for example, writes
@@ -60,16 +68,16 @@ the stage letters above are used throughout (stage `A2` here is written `A′` t
 
 | Path | What it is |
 |---|---|
-| `<pipeline_name>/pipeline.py` | Orchestration, Python. **Deployed automatically** by CI on merge to `main`. |
-| `<pipeline_name>/requirements.txt` | That pipeline's dependencies. Deployed with it. |
-| `<pipeline_name>/readme.md` | The pipeline's user-facing contract — read this before running it. |
-| [`pipelines/`](pipelines/) | **The analytics: R notebooks and helpers.** *Not* deployed by CI — see below. |
-| [`code/`](code/) | Shared R library used across pipelines (`snt_utils`, `snt_report`, `snt_palettes`). |
-| [`contracts/`](contracts/README.md) | Contracts between this repo and its consumers: the `SNT_config.json` skeleton, the `SNT_metadata.json` schema, … The live config lives in each workspace. |
-| [`docs/`](docs/) | Architecture, glossary, standards, ownership, the backlog of open items, and decision records. |
+| [`pipelines/<name>/`](pipelines/) | One folder per pipeline, folder name = `@pipeline` id: `pipeline.py`, `requirements.txt`, `readme.md` (the pipeline's user-facing contract), and its R half in `code/`, `reporting/`, `utils/`. Kinds (SNT, support, bootstrap) are listed in [`pipelines/registry.json`](pipelines/registry.json). No CI deploys anything yet. |
+| [`shared/r/`](shared/r/) | Shared R library used across pipelines (`snt_utils`, `snt_report`, `snt_palettes`); was `code/`. |
+| [`webapps/`](webapps/) | The orchestrator (`orchestrator/app/` is the deployable bundle) and the config editor (spec stage, `app/` empty), each with its own `docs/` and `design/`. |
+| [`contracts/`](contracts/README.md) | Every cross-unit contract: the `SNT_config.json` skeleton, the `SNT_metadata.json` schema, the release manifest and status report schemas, the orchestrator's schemas. The live config lives in each workspace. |
+| [`catalogs/`](catalogs/README.md) | Universal references shipped with each release (`SNT_metadata_master.json`). |
+| [`docs/`](docs/) | Docs that span several units: architecture, glossary, standards, ownership, backlog, decisions, the migration plan; `docs/bootstrap/` for the three bootstrap pipelines. |
+| [`reference/openhexa/`](reference/openhexa/) | The OpenHEXA GraphQL schema (grep it, don't read it whole). |
+| [`tests/`](tests/), [`tools/`](tools/) | pytest suite and helper scripts (from the bootstrap repo). |
 | [`dev/`](dev/) | Optional local Python tooling. Never runs on OpenHEXA. |
 | [`.claude/`](.claude/) | Guardrails for AI coding agents. Active on clone. |
-| [`deprecated/`](deprecated/) | History. Never use as a template. |
 
 ---
 
@@ -189,7 +197,7 @@ Before opening a PR, walk the
 ## 📦 Release management
 
 Each GitHub release of this repo gets a `release_manifest.json`, built by
-[`.github/workflows/generate_manifest.yaml`](.github/workflows/generate_manifest.yaml): every file
+[`.github/workflows/generate_manifest.yaml`](https://github.com/BLSQ/snt_development/blob/94cfc383c0f8804d2eba264f26a4bd3d372d94da/.github/workflows/generate_manifest.yaml): every file
 the release ships, with its hash. The tools that deploy a release into a workspace and check it
 against one live in their own repo,
 [`BLSQ/snt_workspace_bootstrap`](https://github.com/BLSQ/snt_workspace_bootstrap).
@@ -215,9 +223,45 @@ Stated plainly, so nobody spends a day rediscovering them:
 Everything still open — tasks, questions, pending decisions — is in
 [`docs/BACKLOG.md`](docs/BACKLOG.md). Why things are the way they are: [`docs/decisions/`](docs/decisions/README.md).
 
-> **This repo is being migrated.** All SNT stratification code (these pipelines, the orchestrator and
-> config-editor webapps, the workspace bootstrap pipelines) is moving into one new public repo,
-> `BLSQ/snt-stratification`. Plan, decisions and progress: [`docs/MIGRATION_PLAN.md`](docs/MIGRATION_PLAN.md).
+---
+
+## 📜 Provenance
+
+This repo starts as a **clean snapshot without history** (D-1 in
+[`docs/MIGRATION_PLAN.md`](docs/MIGRATION_PLAN.md)), imported on 2026-11-05. Each tree was exported
+with `git archive` at the commit below and moved to this layout following the mapping table in the
+plan (Phase 1). The import commit holds the files as they were. The redactions listed below were
+applied before that commit, and every later change is its own commit. The source repos stay
+readable at these commits.
+
+| Source repo | Commit | Imported | Left out |
+|---|---|---|---|
+| [`BLSQ/snt_development`](https://github.com/BLSQ/snt_development/tree/94cfc383c0f8804d2eba264f26a4bd3d372d94da) | `94cfc383c0f8804d2eba264f26a4bd3d372d94da` | 210 files | 82: `deprecated/` (48), `.github/` (21), `.claude/` (8, already here), 4 country notebooks (D-13), `.gitignore` |
+| [`BLSQ/snt_webapp_orchestrator`](https://github.com/BLSQ/snt_webapp_orchestrator/tree/603a831f8d996b99908819f27afa4a241dc941b9) | `603a831f8d996b99908819f27afa4a241dc941b9` | 43 files | 6: `.claude/` (2), `.github/` (1), `.gitignore`, `LICENSE`, a research questionnaire with personal answers |
+| [`BLSQ/snt_workspace_bootstrap`](https://github.com/BLSQ/snt_workspace_bootstrap/tree/abbe8c0ebdbfdda481adbb0156d99f9ce04c5924) | `abbe8c0ebdbfdda481adbb0156d99f9ce04c5924` | 30 files | 6: `.claude/` (2), `.gitignore`, `LICENSE`, `pyproject.toml` and `dev/environment.yml` (merged into this repo's own) |
+| [`BLSQ/openhexa-webapps-edit-snt-config-json`](https://github.com/BLSQ/openhexa-webapps-edit-snt-config-json/tree/bd0cbf99bd426e7cce5a7f424636899966cd3ade) | `bd0cbf99bd426e7cce5a7f424636899966cd3ade` | 6 files | 3: `.gitignore`, `LICENSE`, an older `SNT_config.skeleton.json` (D-11) |
+
+**Changed before import.** Every other imported file is byte-identical to its source.
+- **Redacted**, because this repo is public:
+  - 15 DHIS2 UIDs, replaced by `REDACTEDUID`;
+  - 2 live country workspace slugs, replaced by `xxx-snt-process`;
+  - 1 bucket name, replaced by `snt-xxx-files`.
+
+  Affected files: `contracts/snt_config/config_analysis_notes.md`,
+  `contracts/snt_config/config_field_matrix.md`, `docs/MIGRATION_PLAN.md`,
+  `pipelines/snt_dhis2_outliers_imputation_path/code/snt_dhis2_outliers_imputation_path.ipynb`,
+  `pipelines/snt_dhis2_reporting_rate_dataset/code/snt_dhis2_reporting_rate_dataset.ipynb`,
+  `pipelines/snt_metadata_json_trim/readme.md`, `webapps/config_editor/design/index.html`,
+  `webapps/config_editor/docs/PRODUCT_SPEC.md`,
+  `webapps/orchestrator/design/wireframes/orchestrator_wireframe_cockpit_narrative.html`,
+  `webapps/orchestrator/docs/BACKLOG.md`.
+- **Removed:** the Niger-only helper `apply_ner_manual_geometry_fixes()` (facility UIDs and
+  coordinates, no caller) from `pipelines/snt_dhis2_extract/utils/snt_dhis2_extract_report.r`.
+- **Stripped:** a stray execution count from
+  `pipelines/snt_seasonality_rainfall/reporting/snt_seasonality_rainfall_report.ipynb`.
+
+Country-specific notebooks (`*_<CC>.ipynb`) are not imported (D-13). They remain in
+`snt_development` at the commit above, and in the country workspaces.
 
 ---
 
