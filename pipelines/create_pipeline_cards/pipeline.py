@@ -13,6 +13,7 @@ import config
 
 @pipeline("create_pipeline_cards")
 def create_pipeline_cards():
+    """Build the workspace's pipeline cards and READMEs and write them to the bucket for the webapp."""
     workspace_slug = workspace.slug
     current_run.log_info(f"Workspace: {workspace_slug}")
 
@@ -473,8 +474,9 @@ def initialize_pipeline_cards(workspace_slug: str) -> dict[str, str | list[dict]
 
 
 def move_files_to_historical(dir_path: Path) -> None:
-    """Moves all of the files in the given path to a ``historical/`` subfolder, appending
-    a timestamp to avoid collisions (e.g. report.pdf → historical/report_20250126_110000.pdf).
+    """Move all of the files in the given path to a ``historical/`` subfolder.
+
+    A timestamp is appended to avoid collisions (e.g. report.pdf → historical/report_20250126_110000.pdf).
 
     Parameters
     ----------
@@ -511,7 +513,7 @@ def save_json(pipeline_cards: dict[str, str | list[dict]], output_dir: Path):
     """
     output_dir.mkdir(parents=True, exist_ok=True)
     file_path = output_dir / config.WEBAPP_CARDS_PATH
-    with Path(file_path).open("w") as f:
+    with file_path.open("w", encoding="utf-8") as f:
         json.dump(pipeline_cards, f, indent=4)
     current_run.log_info(f"Dictionary saved successfully at {file_path}.")
 

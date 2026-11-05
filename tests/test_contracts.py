@@ -1,4 +1,4 @@
-"""Real artefacts from the sandbox validate against the two contracts in docs/contracts/."""
+"""Real artefacts from the sandbox validate against the two contracts in contracts/."""
 
 import json
 from pathlib import Path
@@ -7,7 +7,7 @@ import pytest
 from jsonschema import Draft202012Validator, FormatChecker
 
 ROOT = Path(__file__).resolve().parents[1]
-CONTRACTS = ROOT / "docs" / "contracts"
+CONTRACTS = ROOT / "contracts"
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 
 

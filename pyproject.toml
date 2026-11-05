@@ -84,6 +84,8 @@ ignore = [
 # The checker stub test is a script of module-level asserts against stubbed manifests, kept as it was
 # written; docstrings, annotations and pytest's assertion style are not worth retrofitting there.
 "tests/test_checker_stub.py" = ["ANN", "D", "line-too-long", "pytest-composite-assertion"]
+# Imported by this name in snt_map_extracts and deployed with it; renaming would change behaviour.
+"pipelines/snt_map_extracts/malariaAtlasProject/*" = ["invalid-module-name"]
 
 [tool.ruff.lint.flake8-annotations]
 allow-star-arg-any = true

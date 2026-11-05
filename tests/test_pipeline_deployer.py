@@ -11,8 +11,8 @@ from types import ModuleType
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-DEPLOYER = ROOT / "snt_workspace_deployer" / "pipeline.py"
-VARIANT = ROOT / "snt_pipeline_deployer" / "pipeline.py"
+DEPLOYER = ROOT / "pipelines" / "snt_workspace_deployer" / "pipeline.py"
+VARIANT = ROOT / "pipelines" / "snt_pipeline_deployer" / "pipeline.py"
 
 # Shared functions the variant changes on purpose: the version description names the tool, and
 # get_release's messages differ (no .snt_release to point at; the latest tag is quoted).

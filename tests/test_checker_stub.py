@@ -4,7 +4,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "snt_workspace_checker"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "pipelines" / "snt_workspace_checker"))
 import pipeline as chk
 
 
@@ -393,9 +393,7 @@ from types import SimpleNamespace  # ruff: ignore[module-import-not-at-top-of-fi
 
 from jsonschema import Draft202012Validator, FormatChecker  # ruff: ignore[module-import-not-at-top-of-file]
 
-schema = json.loads(
-    (Path(__file__).resolve().parents[1] / "docs/contracts/status_report.schema.json").read_text()
-)
+schema = json.loads((Path(__file__).resolve().parents[1] / "contracts/status_report.schema.json").read_text())
 Draft202012Validator.check_schema(schema)
 validator = Draft202012Validator(schema, format_checker=FormatChecker())
 chk.workspace = SimpleNamespace(slug="stub-workspace")
