@@ -141,7 +141,7 @@ def snt_era5_climate_data(
             start_date = start_date[0:8] + "01"
         if not end_date:
             end_date = (
-                datetime.now().astimezone(timezone.utc).replace(day=1) - relativedelta(days=1)  # noqa: UP017
+                datetime.now().astimezone(timezone.utc).replace(day=1) - relativedelta(days=1)  # ruff: ignore[datetime-timezone-utc]
             ).strftime("%Y-%m-%d")
         else:
             end_date = to_last_day_previous_month(end_date)

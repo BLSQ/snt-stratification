@@ -31,9 +31,11 @@ def create_pipeline_cards():
         Path(workspace.files_path) / config.OUTPUT_DIR / config.README_DIR,
     )
 
+
 # ---------------------------------------------------------------------------
 # Webapp helpers
 # ---------------------------------------------------------------------------
+
 
 def get_map_node_ids(workspace_slug: str) -> set[str]:
     """Read the node ids of the orchestrator webapp's deployed pipeline map.
@@ -80,14 +82,10 @@ def get_map_node_ids(workspace_slug: str) -> set[str]:
 
     node_ids = {node["id"] for node in json.loads(content).get("nodes", [])}
     if not node_ids:
-        raise ValueError(
-            f"{config.WEBAPP_MAP_PATH} in webapp '{config.WEBAPP_SLUG}' "
-            "declares no nodes"
-        )
+        raise ValueError(f"{config.WEBAPP_MAP_PATH} in webapp '{config.WEBAPP_SLUG}' declares no nodes")
 
     current_run.log_info(
-        f"{len(node_ids)} nodes read from {config.WEBAPP_MAP_PATH} in webapp "
-        f"'{config.WEBAPP_SLUG}'"
+        f"{len(node_ids)} nodes read from {config.WEBAPP_MAP_PATH} in webapp '{config.WEBAPP_SLUG}'"
     )
     return node_ids
 
@@ -125,9 +123,7 @@ def get_pipelines(
             workspace_slug=workspace_slug, page=page, per_page=config.PIPELINES_PER_PAGE
         )
         for p in page_response.items:
-            pipeline_cards["pipelines"].append(
-                {"id": p.id, "name": p.name, "code": p.code}
-            )
+            pipeline_cards["pipelines"].append({"id": p.id, "name": p.name, "code": p.code})
 
     current_run.log_info(f"{len(pipeline_cards['pipelines'])} pipelines found live")
     return pipeline_cards
@@ -163,9 +159,7 @@ def format_pipelines(
     return pipeline_cards
 
 
-def add_ids(
-    workspace_slug: str, pipeline_cards: dict[str, str | list[dict]]
-) -> dict[str, str | list[dict]]:
+def add_ids(workspace_slug: str, pipeline_cards: dict[str, str | list[dict]]) -> dict[str, str | list[dict]]:
     """Add the ``@pipeline("...")`` id to each pipeline, when it can be determined.
 
     Parameters
@@ -358,8 +352,7 @@ def format_parameters(parameters: list[dict]) -> list[dict]:
             **{
                 other_key: one_parameter[other_key]
                 for other_key in one_parameter
-                if other_key not in ["code", "name"]
-                and one_parameter[other_key] is not None
+                if other_key not in ["code", "name"] and one_parameter[other_key] is not None
             },
         }
         if "type" in formatted_parameter:
@@ -443,13 +436,11 @@ def curate_pipelines(
     missing = sorted(map_node_ids - {one["id"] for one in kept})
     for node_id in missing:
         current_run.log_info(
-            f"Map node '{node_id}' has no pipeline in this workspace: "
-            "it will render greyed-out"
+            f"Map node '{node_id}' has no pipeline in this workspace: it will render greyed-out"
         )
 
     current_run.log_info(
-        f"{len(kept)} pipelines included, {len(dropped)} excluded, "
-        f"{len(missing)} map node(s) unavailable"
+        f"{len(kept)} pipelines included, {len(dropped)} excluded, {len(missing)} map node(s) unavailable"
     )
     if len(kept) != config.EXPECTED_NUM_PIPELINES:
         current_run.log_warning(
@@ -520,14 +511,12 @@ def save_json(pipeline_cards: dict[str, str | list[dict]], output_dir: Path):
     """
     output_dir.mkdir(parents=True, exist_ok=True)
     file_path = output_dir / config.WEBAPP_CARDS_PATH
-    with open(file_path, "w") as f:
+    with Path(file_path).open("w") as f:
         json.dump(pipeline_cards, f, indent=4)
     current_run.log_info(f"Dictionary saved successfully at {file_path}.")
 
 
-def save_readmes(
-    workspace_slug: str, pipeline_cards: dict[str, str | list[dict]], readme_dir: Path
-) -> None:
+def save_readmes(workspace_slug: str, pipeline_cards: dict[str, str | list[dict]], readme_dir: Path) -> None:
     """Save each curated pipeline's README, from its deployed version, as ``<id>.md``.
 
     The folder is emptied first, so it only ever holds the READMEs of the current

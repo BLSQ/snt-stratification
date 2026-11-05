@@ -357,7 +357,7 @@ read by nothing. Definitions and confidence flags for all of these are in
 Two branches, and the choice is made by the code, not the operator:
 
 ```python
-if has_reporting_dataset(rep_datasets):        # any entry with a non-empty DATASET
+if has_reporting_dataset(rep_datasets):  # any entry with a non-empty DATASET
     handle_reporting_datasets(...)
 elif has_reporting_indicator(rep_indicators):  # any non-empty value
     handle_reporting_indicators(...)

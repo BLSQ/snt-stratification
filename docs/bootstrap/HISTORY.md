@@ -124,7 +124,10 @@ verification.
 
 ```python
 patterns = [
-    ..., '*/requirements.txt', '*/readme.md', '*/**/*.py',
+    ...,
+    "*/requirements.txt",
+    "*/readme.md",
+    "*/**/*.py",
 ]
 ```
 
@@ -216,16 +219,16 @@ a manifest with no `pipelines` key and ~106 entries came from this.
 
 ```python
 def main():
-    version = os.environ.get('GITHUB_REF_NAME', 'unknown')
+    version = os.environ.get("GITHUB_REF_NAME", "unknown")
     manifest = {"version": version, "files": {}}
 
     # Directories to track based on our strategy
     patterns = [
-        'pipelines/**/code/*.ipynb',
-        'pipelines/**/reporting/*.ipynb',
-        'pipelines/**/utils/*.r',
-        'code/**/*.r',
-        '*/pipeline.py',
+        "pipelines/**/code/*.ipynb",
+        "pipelines/**/reporting/*.ipynb",
+        "pipelines/**/utils/*.r",
+        "code/**/*.r",
+        "*/pipeline.py",
     ]
 
     tracked_files = []
@@ -234,9 +237,9 @@ def main():
     tracked_files = list(set(tracked_files))  # Deduplicate
 
     for fpath in tracked_files:
-        manifest["files"][fpath.replace('\\', '/')] = hash_file(fpath)
+        manifest["files"][fpath.replace("\\", "/")] = hash_file(fpath)
 
-    with open('release_manifest.json', 'w') as f:
+    with open("release_manifest.json", "w") as f:
         json.dump(manifest, f, indent=2)
 ```
 

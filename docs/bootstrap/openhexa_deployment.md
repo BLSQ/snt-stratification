@@ -29,8 +29,9 @@ Reference implementation: `openhexa/cli/api.py` → `upload_pipeline()` (~line 6
 
 ```python
 from openhexa.sdk.pipelines.runtime import get_pipeline
-parsed = get_pipeline(Path("snt_dhis2_extract"))   # directory, not file
-parsed.parameters   # list[Parameter]; .to_dict() matches the GraphQL ParameterInput exactly
+
+parsed = get_pipeline(Path("snt_dhis2_extract"))  # directory, not file
+parsed.parameters  # list[Parameter]; .to_dict() matches the GraphQL ParameterInput exactly
 parsed.timeout
 ```
 
@@ -73,11 +74,11 @@ Endpoint `{HEXA_SERVER_URL}/graphql/`, header `Authorization: Bearer <token>` (w
 
 ```python
 {
-    "workspaceSlug": workspace.slug,   # required
-    "code": "snt-dhis2-extract",       # kebab-case pipeline code, the deploy target
-    "name": "v1.2.0",                  # version name
-    "description": "...",              # shown in the version list
-    "externalLink": None,              # link to the commit; what CI uses for traceability
+    "workspaceSlug": workspace.slug,  # required
+    "code": "snt-dhis2-extract",  # kebab-case pipeline code, the deploy target
+    "name": "v1.2.0",  # version name
+    "description": "...",  # shown in the version list
+    "externalLink": None,  # link to the commit; what CI uses for traceability
     "zipfile": "<base64>",
     "parameters": [p.to_dict() for p in parsed.parameters],
     "timeout": parsed.timeout,
