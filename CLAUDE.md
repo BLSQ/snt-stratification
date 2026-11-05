@@ -144,7 +144,7 @@ step list is in [`docs/CONVENTIONS.md`](docs/CONVENTIONS.md#adding-or-changing-a
 ## Commands
 
 ```bash
-conda activate snt_development            # everything below needs this first (setup: dev/README.md)
+conda activate snt-stratification         # everything below needs this first (setup: dev/README.md)
 
 # Lint / format — the ONLY automated quality gate in this repo
 ruff check .                              # ruff config lives in pyproject.toml (line-length 110)
@@ -240,7 +240,7 @@ In descending order of what is actually achievable:
 
 Before calling a change done — each item maps to a rule in the [Register](#register):
 
-- [ ] `ruff check <changed dirs>` clean, in the `snt_development` conda env. *(R18)*
+- [ ] `ruff check <changed dirs>` clean, in the `snt-stratification` conda env. *(R18)*
 - [ ] Notebook outputs stripped; no `.csv`/`.parquet`/Zone.Identifier files staged. *(R1, R2)*
 - [ ] `pipeline.py` parameters ↔ notebook `exists()` fallbacks agree, name for name and **case for
       case**; new globals are UPPERCASE. *(R11, R12)*

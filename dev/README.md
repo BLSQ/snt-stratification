@@ -24,7 +24,7 @@ Install by tier — you do not need all of it. Everything below is cross-platfor
 
 ```bash
 conda env create -f dev/environment.yml
-conda activate snt_development
+conda activate snt-stratification
 
 # after someone edits dev/environment.yml
 conda env update -f dev/environment.yml --prune

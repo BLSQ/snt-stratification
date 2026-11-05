@@ -110,7 +110,7 @@ None of the pipelines has a deployment workflow, by decision (D19). You deploy t
 
 ```bash
 conda env create -f dev/environment.yml   # once; later: conda env update -f dev/environment.yml --prune
-conda activate snt_workspace_bootstrap
+conda activate snt-stratification
 
 ruff check .                              # rules in pyproject.toml (line-length 110)
 ruff format .

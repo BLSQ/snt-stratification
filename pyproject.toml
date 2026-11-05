@@ -1,8 +1,12 @@
+# One ruff + pytest config for all Python in the repo: SNT, support and bootstrap pipelines, tools/,
+# tests/. Merged from snt_development and snt_workspace_bootstrap (identical rule sets; the union of
+# their ignores and per-file ignores is kept, so nothing that passed before fails now).
 [project]
-name = "openhexa-templates-ds"
+name = "snt-stratification"
 version = "0.1.0"
-description = "SNT pipelines maintained by Bluesquare Data Services team"
+description = "SNT stratification on OpenHEXA: pipelines, webapps and workspace bootstrap, maintained by Bluesquare Data Services team"
 readme = "README.md"
+# Also ruff's target Python version (drives the UP and FA rules).
 requires-python = ">=3.11"
 dependencies = [
     "nbdiff>=1.0.3",
@@ -64,6 +68,7 @@ ignore = [
     "RUF022", # `__all__` is not sorted
     "RUF005", # Consider expression instead of concatenation
     "D213", # Multi-line docstring summary should start at the second line (conflicts with D212)
+    "PD901", # Avoid using the generic variable name df for dataframes
     "PLR0904", # Too many public methods ({methods} > {max_methods})
     "PLR0911", # Too many return statements ({returns} > {max_returns})
     "PLR0912", # Too many branches ({branches} > {max_branches})
@@ -75,13 +80,23 @@ ignore = [
     "COM812", # Missing trailing comma
 ]
 
+[tool.ruff.lint.per-file-ignores]
+# The checker stub test is a script of module-level asserts against stubbed manifests, kept as it was
+# written; docstrings, annotations and pytest's assertion style are not worth retrofitting there.
+"tests/test_checker_stub.py" = ["ANN", "D", "E501", "PT018"]
+
 [tool.ruff.lint.flake8-annotations]
 allow-star-arg-any = true
 mypy-init-return = true
 suppress-dummy-args = true
 suppress-none-returning = true
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
 [dependency-groups]
 dev = [
     "nbdime>=4.0.4",
+    "pytest",
+    "jsonschema",
 ]
