@@ -35,7 +35,7 @@ it.
 `[ERROR] Required columns for disaggregation '{SEL}' are missing`.
 
 **The question.** We know the error fires when a column is **absent**. We also know
-([`config_analysis_notes.md`](config_analysis_notes.md) §4.1 trap 3) that an empty list still
+([`config_analysis_notes.md`](../../../contracts/snt_config/config_analysis_notes.md) §4.1 trap 3) that an empty list still
 creates the column, filled with `NA` (`include_empty_ind = TRUE`). What we do **not** know is
 whether there is a **second** guard — an `all(is.na(...))` check, a row-filter that empties the
 frame, or a division that propagates `NA` into a hard failure — that turns an empty-but-present
@@ -101,7 +101,7 @@ register is worthless if it names things that no longer exist.
 
 ## 7. Does a sixth country config break a "fixed" assumption?
 
-[`config_field_matrix.md`](config_field_matrix.md) derives "fixed vs variable" from five configs. The
+[`config_field_matrix.md`](../../../contracts/snt_config/config_field_matrix.md) derives "fixed vs variable" from five configs. The
 15 dataset identifiers being identical everywhere is the load-bearing one — the app pre-fills them
 and never asks ([`PRODUCT_SPEC.md`](PRODUCT_SPEC.md) §8). A sixth country that differs turns a
 pre-filled constant into a field. Re-check when a country is added.

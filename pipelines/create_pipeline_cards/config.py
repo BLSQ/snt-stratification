@@ -55,9 +55,9 @@ PARAMETERS_SOURCE = "openhexa_deployed"
 EXPECTED_NUM_PIPELINES = 18
 PIPELINES_PER_PAGE = 50
 # Bucket path, NOT a repo path: do not change it with the repo layout. OUTPUT_DIR +
-# "/" + WEBAPP_CARDS_PATH must equal CARDS_OBJECT_KEY in webapps/orchestrator/app.js.
+# "/" + WEBAPP_CARDS_PATH must equal CARDS_OBJECT_KEY in webapps/orchestrator/app/app.js.
 OUTPUT_DIR = "utils_pipelines/create_pipeline_cards/pipeline_cards"
 WEBAPP_CARDS_PATH = "pipeline_cards.json"
 # Each curated pipeline's README, as <id>.md. OUTPUT_DIR + "/" + README_DIR must
-# equal README_DIR_KEY in webapps/orchestrator/app.js. Emptied on every run.
+# equal README_DIR_KEY in webapps/orchestrator/app/app.js. Emptied on every run.
 README_DIR = "readmes"

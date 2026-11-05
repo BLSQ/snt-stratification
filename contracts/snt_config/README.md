@@ -10,7 +10,7 @@ below).
 | `SNT_config.skeleton.json` | The **fixed part** of `SNT_config.json`, which is the same in every country and workspace. The country-specific values are left empty. | **Yes.** This is the reference for the current structure. |
 
 Past per-country copies (BDI, BFA, CMR, COD, NER) are archived in
-[`deprecated/configuration/`](../../deprecated/configuration/README.md). They were never checked
+[`deprecated/configuration/`](https://github.com/BLSQ/snt_development/blob/94cfc383c0f8804d2eba264f26a4bd3d372d94da/deprecated/configuration/README.md). They were never checked
 against the running workspaces: use them as examples only.
 
 ---

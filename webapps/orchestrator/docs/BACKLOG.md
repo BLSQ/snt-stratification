@@ -80,7 +80,7 @@ flight but is not tracked anywhere.
 ### <a id="oh-2"></a>OH-2 · Ask OpenHEXA to allow `workspace { connections }` through the webapp proxy
 
 The proxy refuses `Workspace.connections` and `Connection.{id,name,slug,type}` even with
-`USER_READ` ([runtime](OPENHEXA_WEBAPP_RUNTIME.md#allowed_operations-scopes)), so the
+`USER_READ` ([runtime](../../../docs/OPENHEXA_WEBAPP_RUNTIME.md#allowed_operations-scopes)), so the
 DHIS2/custom connection dropdowns never load and users must type a slug. Ask for those fields (no
 secret fields) under `USER_READ` or a new scope. Until then the app's text fallback stands; the
 dropdown and the "no connection of this type" note activate on their own once the query passes.
@@ -246,7 +246,7 @@ badge shows for seconds in OpenHEXA and its colours weren't captured. Replace th
 ### <a id="app-11"></a>APP-11 · Output dataset links need `DATASETS_READ`
 
 The proxy grants `DatasetVersion` / `Dataset` fields only under `DATASETS_READ`
-([runtime](OPENHEXA_WEBAPP_RUNTIME.md#allowed_operations-scopes)), which the app does not have
+([runtime](../../../docs/OPENHEXA_WEBAPP_RUNTIME.md#allowed_operations-scopes)), which the app does not have
 (R9). So `DATASET_OUTPUTS_QUERY` is refused and the Latest outputs box lists no dataset links;
 files and the HTML report are unaffected. Decide: add `DATASETS_READ` (changes R9) and the links
 come back with no code change, or drop the query.

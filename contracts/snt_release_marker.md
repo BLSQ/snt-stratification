@@ -1,7 +1,7 @@
 # `.snt_release` — the workspace release marker
 
 > Written by the deployer at the workspace root, read by the checker to pick its target (see
-> [`checker.md`](../checker.md) §4.2).
+> [`checker.md`](../docs/bootstrap/checker.md) §4.2).
 
 ## 3.2 `.snt_release`
 

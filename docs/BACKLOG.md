@@ -174,7 +174,7 @@ the value is unused.
 The skeleton records *where* country-specific values go, not *how* to fill them in. That belongs in
 a JSON Schema on the model of `contracts/snt_metadata_json/`. Not created yet. Note that the config
 editor webapp repo documents the values in more depth, and the two skeletons are to be reconciled
-there ([`contracts/snt_config_json/README.md`](../contracts/snt_config_json/README.md)).
+there ([`contracts/snt_config_json/README.md`](../contracts/snt_config/README.md)).
 
 **Owner:** Giulia. **Source:** `contracts/snt_config_json/README.md`.
 

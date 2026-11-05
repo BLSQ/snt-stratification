@@ -89,7 +89,7 @@ there. Decision record: [ADR 0004](decisions/0004-publish-only-from-snt-developm
 A GitHub release of this repo is the unit that the tools in
 [`BLSQ/snt_workspace_bootstrap`](https://github.com/BLSQ/snt_workspace_bootstrap) deploy into a
 workspace and check it against. This repo holds only the producer side:
-[`../.github/workflows/generate_manifest.yaml`](../.github/workflows/generate_manifest.yaml) runs when
+[`../.github/workflows/generate_manifest.yaml`](https://github.com/BLSQ/snt_development/blob/94cfc383c0f8804d2eba264f26a4bd3d372d94da/.github/workflows/generate_manifest.yaml) runs when
 a release is published, hashes every file the release ships, and attaches `release_manifest.json`
 to the release.
 
@@ -162,7 +162,7 @@ runs it in CI ([BACKLOG TOOL-2](BACKLOG.md#tool-2)) — run `ruff check` yoursel
 
 R: snake_case functions, `<-` assignment, roxygen2 docstrings above the function signature
 (`#' Title`, blank `#'`, description, `@param` per argument, `@return`, `@export`) — see
-[`../code/snt_utils.r`](../code/snt_utils.r) for examples.
+[`../code/snt_utils.r`](../shared/r/snt_utils.r) for examples.
 
 ## Schema
 
@@ -222,7 +222,7 @@ not assume every current output already complies.
 - Pipelines read `<workspace>/configuration/SNT_config.json` — one file, one country, one workspace.
   (That is the workspace path — this repo has no `configuration/` folder.)
 - The current structure of that file is
-  [`../contracts/snt_config_json/SNT_config.skeleton.json`](../contracts/snt_config_json/README.md) —
+  [`../contracts/snt_config_json/SNT_config.skeleton.json`](../contracts/snt_config/README.md) —
   keep it in sync when a schema key changes. The old `SNT_config_<CC>.json` copies in
   `deprecated/configuration/` are **examples only, not loadable**, and were never verified against
   the workspaces. Do not add logic that reads the `_<CC>` names.

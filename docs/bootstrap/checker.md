@@ -3,14 +3,14 @@
 > `snt_workspace_checker`: statuses, modes, attribution, the report contract, build phases and the
 > open decisions about it. Section numbers are those of the former `PRODUCT_SPEC.md`; a § that is not
 > here is linked to the file that holds it. The report's authority is
-> [`contracts/status_report.schema.json`](contracts/status_report.schema.json).
+> [`contracts/status_report.schema.json`](../../contracts/status_report.schema.json).
 
 ## Verification pipeline — phase 1 done
 
 An OpenHEXA pipeline that hashes what is actually in a workspace, compares it against the release
 manifests, and reports per file which release it matches, or that it matches none.
 
-[`snt_workspace_checker/`](../snt_workspace_checker/) holds the phase-1 build: verification against a
+[`snt_workspace_checker/`](../../pipelines/snt_workspace_checker/) holds the phase-1 build: verification against a
 single target release, both sources hashed, the four statuses `match` / `unknown_content` /
 `missing` / `unreadable`, and the report written to `snt_status/`. It is credential-free. Phase 1
 iterated over the target manifest only. **Phase 2 (built and verified in the sandbox 2026-09-29)**
@@ -54,10 +54,10 @@ Out of scope, and to be stated as blind spots in the report:
 | Term | Meaning |
 |---|---|
 | **Release tag** | A GitHub release tag, e.g. `v1.2.0`. The single source of truth for "what version is this workspace on". Tags are protected and never moved (`release_strategy.md` §"Release tags are never moved"). |
-| **Release manifest** | `release_manifest.json`, attached as an asset to each release: `{version, files: {path: sha256}, pipelines: {dir: {code, zip_files}}}`. `files` is flat and covers both sources; the `pipelines` block says which of those paths ship inside which pipeline zip, and under what name once inside it ([`release_manifest.md`](contracts/release_manifest.md) §2.1). |
+| **Release manifest** | `release_manifest.json`, attached as an asset to each release: `{version, files: {path: sha256}, pipelines: {dir: {code, zip_files}}}`. `files` is flat and covers both sources; the `pipelines` block says which of those paths ship inside which pipeline zip, and under what name once inside it ([`release_manifest.md`](../../contracts/release_manifest.md) §2.1). |
 | **Tracked file** | A path present in some release manifest. |
 | **Target release** | The release the workspace is being compared *against*, when one is given. |
-| **Declared release** | What `.snt_release` says the workspace was last deployed to. Intent, not verified fact ([`snt_release_marker.md`](contracts/snt_release_marker.md) §3.2). |
+| **Declared release** | What `.snt_release` says the workspace was last deployed to. Intent, not verified fact ([`snt_release_marker.md`](../../contracts/snt_release_marker.md) §3.2). |
 | **Attribution** | The set of releases whose manifest contains a file's observed hash. |
 | **Drift** | An observed hash that matches no manifest of any release. |
 
@@ -255,7 +255,7 @@ Excluded from the scan entirely, so the bucket stays readable: `archive/`, `pape
 ### 5.5 The report contract
 
 **Frozen at `schema_version: 1` (phase 4, decision D18).** The authority is the JSON Schema
-[`status_report.schema.json`](contracts/status_report.schema.json), not this section. This section
+[`status_report.schema.json`](../../contracts/status_report.schema.json), not this section. This section
 says what the contract is *for* and shows the shape; if the two ever disagree, the schema wins and
 this section is the bug.
 
@@ -353,11 +353,11 @@ still open.
 | # | Deliverable | Exit criterion | Blocked by |
 |---|---|---|---|
 | **0** | ✅ **DONE** — manifest gap closed, sandbox reset, fixture releases cut ([`sandbox.md`](sandbox.md) §6.1). Details: [`HISTORY.md`](HISTORY.md) §2.1, §4. | — | — |
-| **1** | ✅ **DONE** 2026-09-22 — checker skeleton in [`snt_workspace_checker/`](../snt_workspace_checker/): verification mode against a single target release, both sources hashed, four statuses, report written (§6.2). | Met: `snt-development-sandbox` at `v0.1.0-test` reported **163/163 `match`**. | — |
+| **1** | ✅ **DONE** 2026-09-22 — checker skeleton in [`snt_workspace_checker/`](../../pipelines/snt_workspace_checker/): verification mode against a single target release, both sources hashed, four statuses, report written (§6.2). | Met: `snt-development-sandbox` at `v0.1.0-test` reported **163/163 `match`**. | — |
 | **2** | ✅ **DONE** 2026-09-29 — taxonomy verified in the sandbox, D9 decided (§6.3). Full taxonomy: `removed_in_target`, `untracked`, `not_covered`, the pipeline-directory case. Plus **measure notebook drift** on a real workspace and decide D9. | A workspace at T-1 with one hand-edited file reports exactly the expected mix. | 1 |
 | **3** | ✅ **DONE** 2026-09-29 — attribution mode, per-release agreement and completeness in both modes, D15–D17 (§6.4, §6.5). | Met: the mixed sandbox workspace scores `v0.3.0-test` as best fit, agreement 1.0, completeness 0.9816. | — |
-| **4** | ✅ **DONE** 2026-09-30 — `schema_version: 1` frozen as [`status_report.schema.json`](contracts/status_report.schema.json); `snt_workspace_checker/readme.md` re-verified against the code (§6.6, D18). | Met: schema documented and validated against reports the code builds; readme verified by reading, discrepancies listed in §6.6. | — |
-| **5** | `snt_workspace_deployer` integration: report before and after a fix; enrich `.snt_release` ([`snt_release_marker.md`](contracts/snt_release_marker.md) §7.4). **In progress**: step 1, making the deployer solid on its own (re-deploy defect, whole-release-only), is written and untested ([`deployer.md`](deployer.md) §6.7). Integration with the checker comes after. | A fix run links to the before/after reports it produced. | 4 |
+| **4** | ✅ **DONE** 2026-09-30 — `schema_version: 1` frozen as [`status_report.schema.json`](../../contracts/status_report.schema.json); `snt_workspace_checker/readme.md` re-verified against the code (§6.6, D18). | Met: schema documented and validated against reports the code builds; readme verified by reading, discrepancies listed in §6.6. | — |
+| **5** | `snt_workspace_deployer` integration: report before and after a fix; enrich `.snt_release` ([`snt_release_marker.md`](../../contracts/snt_release_marker.md) §7.4). **In progress**: step 1, making the deployer solid on its own (re-deploy defect, whole-release-only), is written and untested ([`deployer.md`](deployer.md) §6.7). Integration with the checker comes after. | A fix run links to the before/after reports it produced. | 4 |
 | **6** | Web app. | Out of scope for this spec. | 5 |
 
 ### 6.2 Phase 1, as verified
@@ -584,7 +584,7 @@ the release it was actually upgraded to.
 
 Done 2026-09-30. Three changes, one new file.
 
-* **The schema** is [`status_report.schema.json`](contracts/status_report.schema.json) (JSON Schema
+* **The schema** is [`status_report.schema.json`](../../contracts/status_report.schema.json) (JSON Schema
   2020-12), the authority for `schema_version: 1`. §5.5 now points to it and states the
   compatibility rules.
 * **`checker_version` became `snt_workspace_check_version`** (D18). It was hardcoded to `null` and
@@ -675,7 +675,7 @@ retention/pruning. Also parked until one of them blocks something (Giulia, 2026-
   rate limit (§7.2); it would matter only for GitHub outages, bandwidth, or runs with no internet.
 * ~~**The deployer's `DUPLICATE_PIPELINE_VERSION_NAME` defect** on re-deploy.~~ **Written 2026-09-30
   (D22), untested** — [`deployer.md`](deployer.md) §6.7. No longer blocks phase 5 once the test plan passes.
-* ~~**Delete the deployer's legacy-manifest fallback**~~ **Deleted 2026-10-02** ([`release_manifest.md`](contracts/release_manifest.md) §2.1, D26).
+* ~~**Delete the deployer's legacy-manifest fallback**~~ **Deleted 2026-10-02** ([`release_manifest.md`](../../contracts/release_manifest.md) §2.1, D26).
 * **The 15 `not_in_repo` notebooks** from the D9 run, one real country workspace, 2026-09-29. Their
   names would show whether they are country variants, renamed notebooks or scratch work, which is
   input for D5. Not collected.

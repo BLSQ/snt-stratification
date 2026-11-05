@@ -24,7 +24,7 @@
 > **Related:** how it is built — [`ARCHITECTURE.md`](ARCHITECTURE.md); why — [`decisions/`](decisions/README.md);
 > repo-level open items — [`BACKLOG.md`](BACKLOG.md); SNT vocabulary — `snt_development`'s
 > [`docs/GLOSSARY.md`](https://github.com/BLSQ/snt_development/blob/main/docs/GLOSSARY.md); user
-> research — [`research/personas/persona_questionnaire_answered-20260713.md`](research/personas/persona_questionnaire_answered-20260713.md);
+> research — `research/personas/persona_questionnaire_answered-20260713.md` (not public);
 > UX target — [`design/wireframes/orchestrator_wireframe_cockpit.html`](../design/wireframes/orchestrator_wireframe_cockpit.html).
 > The parked Flowchart (2D map) UI has its own spec in
 > [`deprecated/flowchart/SPEC.md`](https://github.com/BLSQ/OpenHEXA-WebApp-Diary/blob/bbd02388f0104d809e55a81f5b84b29ce6b569bd/deprecated/flowchart/SPEC.md)
@@ -147,7 +147,7 @@ The persona below is the agreed design target. **Design for the floor, not the c
   every workspace and country. **It does not change per workspace.** What differs per workspace is
   only _which_ pipelines are installed (installed → active; not installed → greyed).
 - The map is **authored separately** (by the SNT team, validated with the PM) as a standalone file
-  (`webapps/orchestrator/pipeline_map.json`) — _not_ hard-coded into the page. It captures, per
+  (`webapps/orchestrator/app/pipeline_map.json`) — _not_ hard-coded into the page. It captures, per
   node: **type** (mandatory / alternative / facultative), the **group** that ties
   mutually-exclusive alternatives together, its walkthrough stage and track, and the directed
   **dependency edges** between pipelines (hard dependency vs optional link). Technical detail:
@@ -184,7 +184,7 @@ boundaries.
 The stable set of capabilities, each with the technical basis that makes it possible on an
 OpenHEXA static webapp (HTML/CSS/JS served inside a workspace, calling the GraphQL API through a
 same-origin proxy). **All of these are built and were part of v0** (§9); they are the baseline the
-roadmap builds on. Technical detail: [`OPENHEXA_WEBAPP_RUNTIME.md`](OPENHEXA_WEBAPP_RUNTIME.md).
+roadmap builds on. Technical detail: [`OPENHEXA_WEBAPP_RUNTIME.md`](../../../docs/OPENHEXA_WEBAPP_RUNTIME.md).
 
 | ID  | Capability | What it means for the user | Technical basis | Status |
 | --- | --- | --- | --- | --- |
@@ -232,7 +232,7 @@ side product and is parked ([ADR 0009](decisions/0009-cockpit-only-flowchart-par
   at the Excel-level floor and the "partial mental model" persona (§3). The PM drafts the text for a
   couple of pipelines as a template; Giulia completes the rest. **🔨 In progress — 2 of 18
   expanded** (`snt_dhis2_extract` A.1, `snt_dhis2_formatting` A.2); the rest are one-liners. The
-  delivery mechanism is done (`webapps/orchestrator/pipeline_descriptions.json`, bilingual), so
+  delivery mechanism is done (`webapps/orchestrator/app/pipeline_descriptions.json`, bilingual), so
   completing this is **content authoring, not development**.
 - **Full narrative layer — parked.** Extra per-step text walking the user through the whole
   process was considered for v1 but deliberately parked (PM, 2026-07-15): authoring all that

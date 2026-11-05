@@ -1,7 +1,7 @@
 # `SNT_config.json` — field-by-field, country-by-country
 
 **Ticket:** SNT25-661 · **Produced:** 2026-09-09 · **Scope:** the five reference copies in
-[`configuration/`](../../configuration/) (`BDI`, `BFA`, `CMR`, `COD`, `NER`), read against the code
+[`configuration/`](https://github.com/BLSQ/snt_development/tree/94cfc383c0f8804d2eba264f26a4bd3d372d94da/deprecated/configuration) (`BDI`, `BFA`, `CMR`, `COD`, `NER`), read against the code
 that consumes each key.
 
 **Purpose.** Show at a glance which fields are the *same everywhere* (→ the web app pre-fills them,

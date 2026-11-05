@@ -1,9 +1,9 @@
 # SNT Config Editor — product spec
 
 **Ticket:** SNT25-661 · **Drafted:** 2026-09-09 · **Status:** draft, v1 scope agreed
-**Reads:** [`config_analysis_notes.md`](config_analysis_notes.md) ·
-[`config_field_matrix.md`](config_field_matrix.md) ·
-[`SNT_config.skeleton.json`](SNT_config.skeleton.json)
+**Reads:** [`config_analysis_notes.md`](../../../contracts/snt_config/config_analysis_notes.md) ·
+[`config_field_matrix.md`](../../../contracts/snt_config/config_field_matrix.md) ·
+[`SNT_config.skeleton.json`](../../../contracts/snt_config/SNT_config.skeleton.json)
 
 This spec is written for two readers: a human maintainer and a coding agent picking the work up
 cold. It says *what to build and why*, and defers every schema fact to the two analysis docs above —
@@ -715,8 +715,8 @@ pipelines are Python and R; this is a browser app — but it creates a real long
 section exists so that risk is managed rather than discovered.
 
 > ⚠️ Paths and symbol names below come from
-> [`config_analysis_notes.md`](config_analysis_notes.md) and
-> [`config_field_matrix.md`](config_field_matrix.md), not from reading the pipelines repository
+> [`config_analysis_notes.md`](../../../contracts/snt_config/config_analysis_notes.md) and
+> [`config_field_matrix.md`](../../../contracts/snt_config/config_field_matrix.md), not from reading the pipelines repository
 > directly. **Verify each one against the live repo before relying on it**, and correct this table
 > in place when you do.
 
@@ -727,7 +727,7 @@ section exists so that risk is managed rather than discovered.
 | **`snt_lib.validate_config()`** | `github.com/BLSQ/snt_utils` → `snt_pipeline_utils`. **Unpinned** (`git+https://…`, no ref) | **Reimplemented in JavaScript** as spec §5.1 rules 1–7. The single most important reuse. | The app declares a file valid that the pipelines reject, or blocks a file they would accept. **Silent** — nothing tells us. See §12.2 |
 | **`validate_required_config_keys()`** (R side) | SNT pipelines repo, R helpers | Assumed equivalent to the Python gate. **Unverified** — the analysis docs treat them as the same contract | If the R gate is stricter, R pipelines reject files this app calls valid |
 | **`load_configuration_snt()`** | SNT pipelines repo | Defines the path contract: exactly `<workspace>/configuration/SNT_config.json`. This is why §6.1 exists and why history goes in a subfolder | If it starts globbing, or reads a different path, the whole draft-isolation design needs revisiting |
-| **`SNT_config.skeleton.json`** | [`docs/`](SNT_config.skeleton.json) in *this* repo | Drives the form: section order, key order, key sets, placeholder conventions. Acceptance criterion §10.2 compares against it | It is a **derived artefact** — see §12.3 |
+| **`SNT_config.skeleton.json`** | [`docs/`](../../../contracts/snt_config/SNT_config.skeleton.json) in *this* repo | Drives the form: section order, key order, key sets, placeholder conventions. Acceptance criterion §10.2 compares against it | It is a **derived artefact** — see §12.3 |
 | **The 5 reference configs** `configuration/SNT_config_<CC>.json` | SNT pipelines repo | Source of the fixed-vs-variable analysis: the 15 identical dataset identifiers, the 8 population keys, observed level values | A sixth country with a different shape invalidates a "fixed" assumption — most likely the dataset identifiers |
 | **`indicators_selection()`, `build_indicators()`, `get_unique_data_elements()`** | SNT pipelines repo (extract + formatting) | Define UID semantics: bare = sum all COCs, dotted = one COC, `.split(".")[0]` at extract, lists are summed. All of §5.2 W1 and W5 rest on this | The double-counting warning becomes wrong — actively misleading, worse than absent |
 | **`has_reporting_dataset()` / `has_reporting_indicator()`** | SNT pipelines repo (reporting-rate extract) | Define the XOR and that **datasets win**. This is why step 4 is a radio, not two independent sections | If the precedence flips, the UI teaches the wrong mental model |
@@ -768,7 +768,7 @@ when.
 
 ### 12.3 The skeleton is a derived artefact
 
-[`docs/SNT_config.skeleton.json`](SNT_config.skeleton.json) lives in this repo but is not authored
+[`docs/SNT_config.skeleton.json`](../../../contracts/snt_config/SNT_config.skeleton.json) lives in this repo but is not authored
 here — it was derived from the five country configs and the code that reads them. It is the app's
 schema source, so if it drifts from upstream reality the app drifts with it, confidently.
 

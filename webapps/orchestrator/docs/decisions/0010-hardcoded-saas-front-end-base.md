@@ -25,4 +25,4 @@ UI. It is never derived from `location.hostname`.
   display name (`GENERATOR_TEMPLATE_NAME`); renaming the template breaks that link silently.
 
 Sources: former `CLAUDE.md` *Constructing OpenHEXA front-end URLs*;
-[`../OPENHEXA_WEBAPP_RUNTIME.md`](../OPENHEXA_WEBAPP_RUNTIME.md#openhexa-front-end-urls).
+[`../OPENHEXA_WEBAPP_RUNTIME.md`](../../../../docs/OPENHEXA_WEBAPP_RUNTIME.md#openhexa-front-end-urls).

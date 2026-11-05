@@ -32,4 +32,4 @@ the form could offer parameters the installed pipeline did not accept, and a run
   ([UI-4](../BACKLOG.md#ui-4)).
 
 Sources: former `CLAUDE.md` *Staleness*; `contracts/pipeline_cards.schema.json`;
-[`pipelines/create_pipeline_cards/README.md`](../../pipelines/create_pipeline_cards/README.md).
+[`pipelines/create_pipeline_cards/README.md`](../../../../pipelines/create_pipeline_cards/README.md).

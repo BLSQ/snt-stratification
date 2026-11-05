@@ -2,18 +2,18 @@
 
 Portable know-how for any static webapp on OpenHEXA, as used by the orchestrator. These patterns
 are non-obvious; do not guess them from the schema alone. How this repo deploys: see
-[`DEPLOYMENT.md`](DEPLOYMENT.md).
+[`DEPLOYMENT.md`](../webapps/orchestrator/docs/DEPLOYMENT.md).
 
 ## Upstream references
 
 - **GraphQL schema:** [`reference/openhexa/schema.generated.graphql`](../reference/openhexa/schema.generated.graphql).
   It is large — **grep it for the types you need; never read it whole.** Refresh command:
-  [`DEPLOYMENT.md`](DEPLOYMENT.md#refreshing-the-openhexa-schema).
+  [`DEPLOYMENT.md`](../webapps/orchestrator/docs/DEPLOYMENT.md#refreshing-the-openhexa-schema).
 - **`mcp__claude_ai_OpenHEXA__get_help_or_doc`** — no topic for an overview, or a topic for a full
   page: `cli`, `notebooks-advanced`, `sdk`, `sql-widgets`, `static-webapps`, `toolbox-dhis2`,
   `toolbox-hexa`, `toolbox-iaso`, `writing-pipelines`. `static-webapps` covers the three webapp
   types (Static / Iframe / Superset), the scope table, `window.OPENHEXA`, the proxy's Origin check
-  and `dev.js`. It does not cover the MCP-only webapp tools (see [`DEPLOYMENT.md`](DEPLOYMENT.md#mcp-tools)).
+  and `dev.js`. It does not cover the MCP-only webapp tools (see [`DEPLOYMENT.md`](../webapps/orchestrator/docs/DEPLOYMENT.md#mcp-tools)).
 - `propose_webapp_version` / `propose_pipeline_version` in the schema's `AssistantToolName` enum
   belong to the in-app OpenHEXA Assistant, not to our MCP server — ignore them.
 
@@ -82,26 +82,26 @@ check before relying on them. `__typename`, `__schema` and `__type` are always a
   with `Fields not allowed: Connection.id, Connection.name, Connection.slug, Connection.type,
   Workspace.connections`, and no scope grants it. So the parameter form's connection dropdowns
   never load, and connection parameters fall back to a text slug input
-  ([OH-2](BACKLOG.md#oh-2)). The app keeps `USER_READ` (R9) and the dropdown code, so they work as
+  ([OH-2](../webapps/orchestrator/docs/BACKLOG.md#oh-2)). The app keeps `USER_READ` (R9) and the dropdown code, so they work as
   soon as the proxy allows the fields.
 
 - `PIPELINES_READ` unlocks `pipelineVersion`, but **not** `PipelineVersion.files` or `zipfile`,
   and no scope grants them, so a webapp cannot read a pipeline's code (or its README). The
   generator copies the READMEs to the bucket instead
-  ([ADR 0016](decisions/0016-readmes-from-deployed-version.md), [OH-3](BACKLOG.md#oh-3)).
+  ([ADR 0016](../webapps/orchestrator/docs/decisions/0016-readmes-from-deployed-version.md), [OH-3](../webapps/orchestrator/docs/BACKLOG.md#oh-3)).
 
 - `PIPELINES_READ` grants `PipelineRun.datasetVersions` but **not** the `DatasetVersion` /
   `Dataset` fields under it; those need `DATASETS_READ`, and `Dataset.workspace` is granted to no
-  scope. So the orchestrator's output dataset links do not load ([APP-11](BACKLOG.md#app-11)).
+  scope. So the orchestrator's output dataset links do not load ([APP-11](../webapps/orchestrator/docs/BACKLOG.md#app-11)).
 
 Available under these scopes but unused: `readFileContent` (an alternative catalog read,
-[UI-10](BACKLOG.md#ui-10)), `getFileByPath`.
+[UI-10](../webapps/orchestrator/docs/BACKLOG.md#ui-10)), `getFileByPath`.
 
 ⚠️ **Public webapps cannot call the proxy at all.** The orchestrator must stay **private**; making
 it public silently kills every query and the app cannot boot.
 
 Scopes are **webapp metadata**, not part of the bundle — how to set and check them:
-[`DEPLOYMENT.md`](DEPLOYMENT.md#setting-scopes).
+[`DEPLOYMENT.md`](../webapps/orchestrator/docs/DEPLOYMENT.md#setting-scopes).
 
 ## Reading last-run status for all pipelines
 
@@ -128,7 +128,7 @@ query ($ws: String!) {
 
 `PipelineRunStatus` values are **lowercase**: `queued`, `running`, `success`, `failed`, `stopped`,
 `skipped`, `terminating`. A pipeline with no runs returns an empty `runs.items`. The orchestrator
-does not paginate past 100 pipelines ([APP-1](BACKLOG.md#app-1)).
+does not paginate past 100 pipelines ([APP-1](../webapps/orchestrator/docs/BACKLOG.md#app-1)).
 
 ## Running a pipeline
 
@@ -143,8 +143,8 @@ mutation ($input: RunPipelineInput!) {
 ```
 
 `RunPipelineInput` also takes `versionId` (run a specific version), `sendMailNotifications` and
-`enableDebugLogs`; the orchestrator sets none of them ([UI-8](BACKLOG.md#ui-8),
-[UI-9](BACKLOG.md#ui-9)). `stopPipeline(input: {runId})` needs only `PIPELINES_RUN`.
+`enableDebugLogs`; the orchestrator sets none of them ([UI-8](../webapps/orchestrator/docs/BACKLOG.md#ui-8),
+[UI-9](../webapps/orchestrator/docs/BACKLOG.md#ui-9)). `stopPipeline(input: {runId})` needs only `PIPELINES_RUN`.
 
 ### Run errors are an enum
 
@@ -194,8 +194,8 @@ query ($id: UUID!) {
   the app restarts polling from the latest run returned by the status query.
 - The union has a third member, `DatabaseTable`. Without a fragment for it a table output is
   silently not rendered, so "no outputs shown" does not prove "no outputs produced"
-  ([UI-3](BACKLOG.md#ui-3)).
-- `progress: Int!` is available on every run ([UI-2](BACKLOG.md#ui-2)).
+  ([UI-3](../webapps/orchestrator/docs/BACKLOG.md#ui-3)).
+- `progress: Int!` is available on every run ([UI-2](../webapps/orchestrator/docs/BACKLOG.md#ui-2)).
 
 ## Signed download URLs
 
@@ -224,7 +224,7 @@ URLs are **CORS-open**, so `fetch` works cross-origin, not only `<iframe>`.
 ⚠️ **Never derive the app host from the webapp's hostname.** Webapps are served under
 `*.openhexa.io`; the main UI is at **`app.openhexa.org`**. String-munging gives `app.openhexa.io`,
 which returns a "Web app not found" 404. Hardcode the SaaS base
-([ADR 0010](decisions/0010-hardcoded-saas-front-end-base.md)).
+([ADR 0010](../webapps/orchestrator/docs/decisions/0010-hardcoded-saas-front-end-base.md)).
 
 ```js
 var appBase = "https://app.openhexa.org";
@@ -247,8 +247,8 @@ OpenHEXA serves **`https://api.openhexa.org/webapps/dev.js`** (the `api.` host;
 `app.openhexa.org/webapps/dev.js` 404s). With one script tag in `index.html`, a page served
 locally can call the **real** `/graphql/` proxy of a real workspace, under a deployed private
 webapp's actual scopes. The orchestrator ships the tag in its bundle
-([ADR 0014](decisions/0014-ship-openhexa-dev-js.md)); how to use it for this repo:
-[`DEPLOYMENT.md`](DEPLOYMENT.md#developing-locally).
+([ADR 0014](../webapps/orchestrator/docs/decisions/0014-ship-openhexa-dev-js.md)); how to use it for this repo:
+[`DEPLOYMENT.md`](../webapps/orchestrator/docs/DEPLOYMENT.md#developing-locally).
 
 ```html
 <script src="https://api.openhexa.org/webapps/dev.js"></script>

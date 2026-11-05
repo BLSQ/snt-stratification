@@ -3,7 +3,7 @@
 > The authority is [`release_manifest.schema.json`](release_manifest.schema.json) (D26). This file
 > holds the prose: how the manifest is generated in `snt_development`, why it has a `pipelines`
 > block, and why legacy manifests are refused. What `snt_development` ships is in
-> [`../context/snt_development.md`](../context/snt_development.md).
+> [`../context/snt_development.md`](../docs/bootstrap/context/snt_development.md).
 
 ## Manifest generation — done
 
@@ -27,7 +27,7 @@ second, drifting dialect — one pattern per suffix *per depth* — and needs a 
 future nesting or suffix. Anchoring on `*/pipeline.py` also excludes `dev/` and `deprecated/`
 without naming them: `deprecated/` nests its eight pipelines one level deeper, so `*/pipeline.py`
 never matches inside it. Nothing is excluded by a denylist that a new top-level directory could slip
-past. (The rejected alternative is recorded in [`HISTORY.md`](../HISTORY.md) §2.1.)
+past. (The rejected alternative is recorded in [`HISTORY.md`](../docs/bootstrap/HISTORY.md) §2.1.)
 
 The manifest also carries a `pipelines` block alongside `files` — per pipeline directory, its
 OpenHEXA `code` slug and the list of paths inside its zip. Shape and rationale:
@@ -50,7 +50,7 @@ Two consequences worth knowing:
   as well. That is wanted — a workspace can be told its deployer is out of date — but it does mean
   the deployer can deploy a new version of itself.
 * If the SDK ever changes its suffix list, this generator goes stale silently. The checker's
-  `not_covered` status ([`checker.md`](../checker.md) §5.1) is the tripwire for exactly that, which is why the
+  `not_covered` status ([`checker.md`](../docs/bootstrap/checker.md) §5.1) is the tripwire for exactly that, which is why the
   spec keeps it after phase 0 rather than deleting it.
 
 A third, optional block, `repository_files`, holds `{path: sha256}` for files a pipeline **fetches
@@ -101,16 +101,16 @@ consumer refuses one. Both consumers name the phase-0 cutover in the error:
 
 **Decided 2026-10-01 (D26): no fallback.** Legacy manifests only ever existed during development
 and no live release lacks the block. The contract is
-[`release_manifest.schema.json`](../contracts/release_manifest.schema.json), which requires the
+[`release_manifest.schema.json`](release_manifest.schema.json), which requires the
 block (it may be empty). The deployer's former fallback, which derived pipeline directories from
-`<name>/pipeline.py` entries, is in [`HISTORY.md`](../HISTORY.md) §3.4.
+`<name>/pipeline.py` entries, is in [`HISTORY.md`](../docs/bootstrap/HISTORY.md) §3.4.
 
 ## 7.1 ~~The manifest under-described what is deployed~~ — **closed**
 
-Closed as phase 0. Kept as a numbered heading only so the [`checker.md`](../checker.md) §7.x references elsewhere still line up.
+Closed as phase 0. Kept as a numbered heading only so the [`checker.md`](../docs/bootstrap/checker.md) §7.x references elsewhere still line up.
 What the problem was, why a wider glob list was rejected, and the consumer it broke:
-[`HISTORY.md`](../HISTORY.md) §2.1–2.2. What the generator does now:
+[`HISTORY.md`](../docs/bootstrap/HISTORY.md) §2.1–2.2. What the generator does now:
 this file.
 
-Phase 1 was left blocked only by the token question in [`openhexa_deployment.md`](../openhexa_deployment.md) §7.3, which closed on 2026-09-22. **Phase 1
+Phase 1 was left blocked only by the token question in [`openhexa_deployment.md`](../docs/bootstrap/openhexa_deployment.md) §7.3, which closed on 2026-09-22. **Phase 1
 is unblocked and ready to start.**

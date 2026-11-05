@@ -1,24 +1,24 @@
 # `webapps/orchestrator/` — app rules
 
-Loaded when working in this folder. Architecture: [`docs/ARCHITECTURE.md`](../../docs/ARCHITECTURE.md);
+Loaded when working in this folder. Architecture: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md);
 OpenHEXA runtime patterns: [`docs/OPENHEXA_WEBAPP_RUNTIME.md`](../../docs/OPENHEXA_WEBAPP_RUNTIME.md);
-deploying: [`docs/DEPLOYMENT.md`](../../docs/DEPLOYMENT.md). UX target:
-[`design/wireframes/orchestrator_wireframe_cockpit.html`](../../design/wireframes/orchestrator_wireframe_cockpit.html)
-and [`docs/PRODUCT_SPEC.md`](../../docs/PRODUCT_SPEC.md).
+deploying: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md). UX target:
+[`design/wireframes/orchestrator_wireframe_cockpit.html`](design/wireframes/orchestrator_wireframe_cockpit.html)
+and [`docs/PRODUCT_SPEC.md`](docs/PRODUCT_SPEC.md).
 
 ## The bundle
 
 These five files are the deployed bundle, flat, as-is — **no build step, no CDN, no new files
-without a reason** ([ADR 0007](../../docs/decisions/0007-multi-file-bundle-no-build.md)). This
+without a reason** ([ADR 0007](docs/decisions/0007-multi-file-bundle-no-build.md)). This
 `CLAUDE.md` is the only non-bundle file here; never deploy it.
 
 | File | Role |
 |---|---|
-| `index.html` | Minimal shell: containers, header appbar, EN/FR toggle, links to `styles.css` / `app.js`, and OpenHEXA's `dev.js` tag (local dev only; keep it a plain script right before `app.js`, no slugs — [ADR 0014](../../docs/decisions/0014-ship-openhexa-dev-js.md)) |
+| `index.html` | Minimal shell: containers, header appbar, EN/FR toggle, links to `styles.css` / `app.js`, and OpenHEXA's `dev.js` tag (local dev only; keep it a plain script right before `app.js`, no slugs — [ADR 0014](docs/decisions/0014-ship-openhexa-dev-js.md)) |
 | `styles.css` | All styling |
 | `app.js` | All logic + the `I18N` string table. Fetches the two JSON files as same-origin siblings |
-| `pipeline_map.json` | Hand-authored map — contract: [`contracts/pipeline_map.schema.json`](../../contracts/pipeline_map.schema.json) |
-| `pipeline_descriptions.json` | Hand-authored descriptions — contract + Markdown-lite rules: [`contracts/pipeline_descriptions.schema.json`](../../contracts/pipeline_descriptions.schema.json) |
+| `pipeline_map.json` | Hand-authored map — contract: [`contracts/pipeline_map.schema.json`](../../contracts/orchestrator/pipeline_map.schema.json) |
+| `pipeline_descriptions.json` | Hand-authored descriptions — contract + Markdown-lite rules: [`contracts/pipeline_descriptions.schema.json`](../../contracts/orchestrator/pipeline_descriptions.schema.json) |
 
 Constants at the top of `app.js` that encode contracts with the outside world:
 
@@ -28,7 +28,7 @@ Constants at the top of `app.js` that encode contracts with the outside world:
 - `README_DIR_KEY` — the bucket folder of the pipeline READMEs (`<id>.md`), same rules. Lockstep
   with `config.py` (`OUTPUT_DIR` + `README_DIR`).
 - The SaaS front-end base `https://app.openhexa.org` — never derive it from `location.hostname`
-  ([ADR 0010](../../docs/decisions/0010-hardcoded-saas-front-end-base.md)).
+  ([ADR 0010](docs/decisions/0010-hardcoded-saas-front-end-base.md)).
 - `GENERATOR_TEMPLATE_NAME` — the generator template's display name, used in the install deep link.
   If the template is renamed, the link breaks silently.
 - `POLL_INTERVAL_MS` / `POLL_MAX_ATTEMPTS` — poll every 5 s for up to 40 min, then show "stopped
@@ -40,7 +40,7 @@ Constants at the top of `app.js` that encode contracts with the outside world:
 
 ## Bilingual text
 
-([ADR 0008](../../docs/decisions/0008-one-bilingual-app.md))
+([ADR 0008](docs/decisions/0008-one-bilingual-app.md))
 
 - **`t(key, params)`** looks up chrome strings; a missing key falls back to English, then to the key
   itself (so a typo is visible). **Add every new chrome string to both `I18N.en` and `I18N.fr`.**
@@ -54,7 +54,7 @@ Constants at the top of `app.js` that encode contracts with the outside world:
 - Language at boot: `?lang=` (wins, and is persisted) → `localStorage["snt_lang"]` → `en`.
   Switching sets `LANG`, rebuilds the steps and re-renders from scratch; there is no partial-update
   path to maintain.
-- The `I18N.fr` strings are drafts pending review ([UI-5](../../docs/BACKLOG.md#ui-5)); do not
+- The `I18N.fr` strings are drafts pending review ([UI-5](docs/BACKLOG.md#ui-5)); do not
   present them as final.
 
 ## HTML injection seam
@@ -67,7 +67,7 @@ unescaped data (pipeline names, error text, URLs) to these paths is an injection
 ## Catalog diagnosis
 
 When `loadCards()` fails, the boot panel explains why
-([`docs/ARCHITECTURE.md`](../../docs/ARCHITECTURE.md#diagnosing-a-missing-catalog)). Pieces, near the
+([`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#diagnosing-a-missing-catalog)). Pieces, near the
 top of `app.js`: `GENERATOR_QUERY`, `looksLikeGenerator`, `diagnoseMissingCatalog`,
 `generatorTemplateUrl` / `generatorPipelineUrl` / `generatorRunUrl`, `missingCatalogError`; i18n keys
 `boot.cardsMissing` / `boot.cardsUnreadable` / `boot.noWorkspace`.
@@ -78,7 +78,7 @@ top of `app.js`: `GENERATOR_QUERY`, `looksLikeGenerator`, `diagnoseMissingCatalo
 - `diagnoseMissingCatalog` is reused by the run-error drift hint (via `generatorRefreshUrl`) and
   the not-installed panel, so it resolves the generator's state (and its `id`) generally, despite
   its name.
-- **The not-installed panel runs the generator** ([ADR 0015](../../docs/decisions/0015-webapp-may-run-the-generator.md)).
+- **The not-installed panel runs the generator** ([ADR 0015](docs/decisions/0015-webapp-may-run-the-generator.md)).
   Step 2's slot `#sb-genrefresh` renders at once ("Checking…", or the watched run), then
   `resolveGeneratorRefresh` fills it from a fresh diagnosis on every render: not installed →
   template link; `neverRun` / `lastRunFailed` → **Refresh the catalogue** button
@@ -107,7 +107,7 @@ generic branch still prints the codes, so nothing is swallowed). The four drift 
 
 - **Parameter controls:** `fieldControlHtml` has dedicated controls only for DHIS2 and custom
   connections (dropdowns from `workspace { connections }`, which the proxy currently refuses even
-  with `USER_READ`, so today the text input always shows; [OH-2](../../docs/BACKLOG.md#oh-2)). Three outcomes:
+  with `USER_READ`, so today the text input always shows; [OH-2](docs/BACKLOG.md#oh-2)). Three outcomes:
   query loaded with matches → dropdown; loaded with none of that type → a "No … connection — add
   one on the Connections page" note (`.fnoconn`, `form.noConn`, links to
   `/workspaces/<slug>/connections/`); query failed or returned no
@@ -117,7 +117,7 @@ generic branch still prints the codes, so nothing is swallowed). The four drift 
 - **Report embed:** `renderReportEmbeds()` mounts the HTML report in an `<iframe>` on a signed URL
   and re-signs on demand — never cache a signed URL.
 - **Node state:** `cockpitState(node)`, `lockedReason()` (group-aware unlock), `computeGroupInUse()`
-  (mutual exclusion) — semantics in [`docs/ARCHITECTURE.md`](../../docs/ARCHITECTURE.md#node-states).
+  (mutual exclusion) — semantics in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#node-states).
 - **Run row:** `runRowHtml` builds Run / Run again (`.btn-primary`), Stop (`.btn-danger`, only
   while a run is in flight) and Preview config (`.btn-quiet`, pushed to the right end); the
   styles copy OpenHEXA's Button. `refreshRunRow` rebuilds `#sb-runrow` in place on every run
@@ -139,6 +139,6 @@ generic branch still prints the codes, so nothing is swallowed). The four drift 
 ## After changing anything here
 
 Try it locally first — serve this folder and connect to a workspace
-([`docs/DEPLOYMENT.md`](../../docs/DEPLOYMENT.md#developing-locally)); **Run** there starts real runs.
-A change to any bundle file needs a redeploy to take effect ([`docs/DEPLOYMENT.md`](../../docs/DEPLOYMENT.md)).
+([`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md#developing-locally)); **Run** there starts real runs.
+A change to any bundle file needs a redeploy to take effect ([`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)).
 Comment-only changes can wait for the next real deploy.

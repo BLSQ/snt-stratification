@@ -15,7 +15,7 @@ For the workspace it runs in, it:
 1. Lists every pipeline currently deployed in the workspace (`hexa_client.pipelines`).
 2. For each one, resolves its current version and reads its deployed `pipeline.py` source to
    extract the `@pipeline("...")` id — the stable Python function name used as the node `id` in
-   `webapps/orchestrator/pipeline_map.json`.
+   `webapps/orchestrator/app/pipeline_map.json`.
 3. Curates the list down to only the pipelines that are actual nodes of the orchestrator
    webapp's deployed `pipeline_map.json` (which webapp: see `config.WEBAPP_SLUG` below).
    Pipelines with no resolvable id, or not present in the map, are excluded and logged; map
@@ -35,14 +35,14 @@ For the workspace it runs in, it:
 The output matches the contract in `contracts/pipeline_cards.schema.json`. **It is consumed in place:**
 the orchestrator webapp fetches it straight out of the workspace's file storage at page load, so
 running this pipeline is all that's needed to update a workspace's configuration — nothing to copy,
-commit, or redeploy. The full picture is in [`docs/ARCHITECTURE.md`](../../docs/ARCHITECTURE.md#the-pipeline-catalog);
-the reasons in ADRs [0002](../../docs/decisions/0002-catalog-in-workspace-bucket.md) (catalog in the
-bucket), [0003](../../docs/decisions/0003-catalog-parameters-from-deployed-version.md) (parameters
-from the deployed version) and [0004](../../docs/decisions/0004-generator-curates-against-deployed-map.md)
+commit, or redeploy. The full picture is in [`docs/ARCHITECTURE.md`](../../webapps/orchestrator/docs/ARCHITECTURE.md#the-pipeline-catalog);
+the reasons in ADRs [0002](../../webapps/orchestrator/docs/decisions/0002-catalog-in-workspace-bucket.md) (catalog in the
+bucket), [0003](../../webapps/orchestrator/docs/decisions/0003-catalog-parameters-from-deployed-version.md) (parameters
+from the deployed version) and [0004](../../webapps/orchestrator/docs/decisions/0004-generator-curates-against-deployed-map.md)
 (curation against the deployed map).
 
 Each card also records the **deployed version** its parameters were read from (`version_name`,
-`version_number`). The orchestrator does not read them yet ([UI-8](../../docs/BACKLOG.md#ui-8)).
+`version_number`). The orchestrator does not read them yet ([UI-8](../../webapps/orchestrator/docs/BACKLOG.md#ui-8)).
 
 ## Parameters
 
@@ -74,7 +74,7 @@ overwritten silently.
 
 **This path is a contract with the webapp** — a bucket key, not a repo path (it does not follow
 where this folder lives in the repo). The webapp hardcodes it as `CARDS_OBJECT_KEY` in
-`webapps/orchestrator/app.js` and reads the file via `prepareObjectDownload` → `fetch(signedUrl)` (needing
+`webapps/orchestrator/app/app.js` and reads the file via `prepareObjectDownload` → `fetch(signedUrl)` (needing
 the webapp's `FILES_READ` scope). Changing `OUTPUT_DIR` or `WEBAPP_CARDS_PATH` therefore means
 changing `CARDS_OBJECT_KEY` and redeploying the webapp — otherwise every orchestrator
 in every workspace stops booting.
@@ -83,7 +83,7 @@ The READMEs go to `<workspace files>/utils_pipelines/create_pipeline_cards/pipel
 (`config.OUTPUT_DIR` / `config.README_DIR`). The folder is emptied on every run, with no
 `historical/` copy, so it only holds the READMEs of the current catalog. This path is a contract
 too: `README_DIR_KEY` in `app.js`. The app's **Documentation** section reads these files
-([ADR 0016](../../docs/decisions/0016-readmes-from-deployed-version.md)).
+([ADR 0016](../../webapps/orchestrator/docs/decisions/0016-readmes-from-deployed-version.md)).
 
 Nothing needs to be downloaded, committed, or redeployed after a run: the app reads the new file on
 its next page load. The pipeline does not push to the repo or touch the webapp bundle.
@@ -141,4 +141,4 @@ Python types `bool`, `int`, `float`, `str`, `File` map to the same names. Connec
 reach the generator as OpenHEXA's lowercase codes (`dhis2`, `custom`, `iaso`, `postgresql`, `gcs`,
 `s3`, `file`) and are mapped by `PARAMETER_TYPE_MAP` in `config.py` to `DHIS2Connection`,
 `CustomConnection`, `IASOConnection`, `PostgreSQLConnection`, `GCSConnection`, `S3Connection`,
-`File`. The contract is [`contracts/pipeline_cards.schema.json`](../../contracts/pipeline_cards.schema.json).
+`File`. The contract is [`contracts/pipeline_cards.schema.json`](../../contracts/orchestrator/pipeline_cards.schema.json).

@@ -7,7 +7,7 @@
 > human or agent — does not rediscover them, re-litigate a settled decision, or mistake an old
 > artefact for a live one.
 >
-> The current state lives in the files [`CLAUDE.md`](../CLAUDE.md) routes to. Until 2026-10-01 these
+> The current state lives in the files [`CLAUDE.md`](CLAUDE.md) routes to. Until 2026-10-01 these
 > were `PRODUCT_SPEC.md`, `release_strategy.md` and `pipeline_deployment_mechanism.md` (§3.3).
 >
 > Rule of thumb when editing any of those: if a paragraph explains what something *used to be*,
@@ -109,7 +109,7 @@ unit of measurement**. Nothing about a shared-IP budget can be inferred by compa
 
 ### 2.1 The manifest under-described what is deployed — closed 2026-09-21
 
-*Was: [`release_manifest.md`](contracts/release_manifest.md) §7.1, blocking phase 1. Fixed as phase 0 (decision D10).*
+*Was: [`release_manifest.md`](../../contracts/release_manifest.md) §7.1, blocking phase 1. Fixed as phase 0 (decision D10).*
 
 **The problem.** The manifest's `*/pipeline.py` pattern tracked one file per pipeline, but
 deployment zips the **whole pipeline directory**. `snt_map_extracts` was deployed with `utils.py`,
@@ -137,7 +137,7 @@ unverified. `*/**/*.py` additionally sweeps up unrelated top-level directories (
 
 **The fix that was applied** — reimplementing the SDK's own selection rule, anchored on
 `*/pipeline.py` — is current design and is described in
-[`release_manifest.md`](contracts/release_manifest.md).
+[`release_manifest.md`](../../contracts/release_manifest.md).
 
 ### 2.2 Widening the manifest broke an existing consumer
 
@@ -157,7 +157,7 @@ and the new one: **86 analytics files in all three**, so old releases deployed e
 
 Both of those releases were deleted in the sandbox reset (§4), so that verification stands as a
 record but is no longer repeatable, and **no live release exercises the fallback path**. That leaves
-one open item, carried in [`release_manifest.md`](contracts/release_manifest.md) §2.1: keep a legacy manifest as a local test fixture, or
+one open item, carried in [`release_manifest.md`](../../contracts/release_manifest.md) §2.1: keep a legacy manifest as a local test fixture, or
 delete the fallback in a PR of its own. Untested back-compat code for a case that can no longer
 occur is worse than either.
 
@@ -165,7 +165,7 @@ occur is worse than either.
 
 It was built as a pipeline version inside `snt-development-sandbox` with no copy in the repository —
 exactly the "no version-propagation story" problem this project exists to fix. Committed in
-`5cb7995`, widened in `16bd149`; it now lives at [`snt_workspace_manager/`](../snt_workspace_deployer/)
+`5cb7995`, widened in `16bd149`; it now lives at [`snt_workspace_manager/`](../../pipelines/snt_workspace_deployer/)
 with `pipeline.py`, `requirements.txt` and `readme.md`. No `push_*.yaml` workflow yet, pending the
 R5 wording question (`openhexa_deployment.md`).
 

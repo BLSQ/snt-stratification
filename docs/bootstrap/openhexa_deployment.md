@@ -3,7 +3,7 @@
 Companion to [`release_strategy.md`](release_strategy.md), which explains *why* the Workspace
 Deployer deploys `pipeline.py` instead of copying it. This document is the *how*.
 
-> Implemented in [`snt_workspace_deployer/`](../snt_workspace_deployer/), running in the
+> Implemented in [`snt_workspace_deployer/`](../../pipelines/snt_workspace_deployer/), running in the
 > `snt-development-sandbox` workspace. Verified end to end for 2 of 20 pipelines.
 >
 > This document describes the **current** mechanism. Past verifications against deleted fixtures,
@@ -57,7 +57,7 @@ The zip is base64-encoded into the `zipfile` input field.
 Note the zip carries the **whole directory**, not just `pipeline.py` — `snt_map_extracts` deploys
 with `utils.py`, `worldpopclient.py`, the `malariaAtlasProject/` package, `readme.md` and
 `requirements.txt`. The release manifest mirrors this rule so that everything deployed is also
-verifiable — see [`release_manifest.md`](contracts/release_manifest.md).
+verifiable — see [`release_manifest.md`](../../contracts/release_manifest.md).
 
 ### Step 3 — call the GraphQL mutation
 

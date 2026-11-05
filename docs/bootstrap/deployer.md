@@ -8,7 +8,7 @@
 
 ## Workspace Deployer — built, **changed 2026-09-30 and not yet fully tested**
 
-[`snt_workspace_deployer/`](../snt_workspace_deployer/), an OpenHEXA pipeline running in
+[`snt_workspace_deployer/`](../../pipelines/snt_workspace_deployer/), an OpenHEXA pipeline running in
 `snt-development-sandbox`. Parameters: `github_repo`, `release_tag`, `api_connection`,
 `backup_existing`, `dry_run`. `release_tag` is optional: empty deploys the repository's latest
 release (D23), and the resolved tag is what names everything downstream. It always deploys the **whole** release, both halves together
@@ -27,7 +27,7 @@ some pipelines, or skip creating missing ones. It:
 inside a zip. It splits by *directory*, reading the manifest's `pipelines` block.
 `download_manifest()` refuses a manifest with no such block (pre-phase-0) with
 `[ERROR] Cannot deploy: …` before anything is written; legacy manifests are not supported
-([`release_manifest.md`](contracts/release_manifest.md) §2.1, D26).
+([`release_manifest.md`](../../contracts/release_manifest.md) §2.1, D26).
 
 **Version naming on deploy (2026-09-30, D22).** OpenHEXA refuses two versions of one pipeline with
 the same name (`DUPLICATE_PIPELINE_VERSION_NAME`), and the deployer names each version after the
@@ -79,7 +79,7 @@ run so far was against an empty workspace. Past verification runs: [`HISTORY.md`
 
 ## Single-pipeline deployer — built 2026-10-30, **not yet tested in a workspace**
 
-[`snt_pipeline_deployer/`](../snt_pipeline_deployer/) deploys **one** pipeline of a release (D28). It
+[`snt_pipeline_deployer/`](../../pipelines/snt_pipeline_deployer/) deploys **one** pipeline of a release (D28). It
 is meant for a workspace that already holds real work, such as a locally hosted OpenHEXA with a running
 analysis, where updating the whole release at once is too much change. It exists alongside the
 deployer and does not replace it: D21 still holds for `snt_workspace_deployer`.

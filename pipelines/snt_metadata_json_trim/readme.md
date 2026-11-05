@@ -14,7 +14,7 @@ the **`SNT_METADATA`** dataset, creating that dataset on first run.
 * **`repository_ref`** (String, Required, Default: `latest`):
   * **Name:** Master list version (release tag or branch)
   * **Description:** Which version of
-    [`catalogs/SNT_metadata_master.json`](../catalogs/SNT_metadata_master.json) to fetch from
+    [`catalogs/SNT_metadata_master.json`](../../catalogs/SNT_metadata_master.json) to fetch from
     `github.com/BLSQ/snt_development`:
     * `latest` — the latest published GitHub release (drafts and pre-releases excluded).
     * a release tag (e.g. `v2026.10.0`) — pins that release.

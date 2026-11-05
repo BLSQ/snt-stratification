@@ -14,7 +14,7 @@ The **content** — every layer the pipelines can publish — is the master list
 [`catalogs/SNT_metadata_master.json`](../../catalogs/SNT_metadata_master.json). What it contains,
 leaves out and why is in [`catalogs/README.md`](../../catalogs/README.md). Older catalogues (the
 old-format file and Niger's 2026-09 conversion) are archived in
-[`deprecated/configuration/`](../../deprecated/configuration/README.md).
+[`deprecated/configuration/`](https://github.com/BLSQ/snt_development/blob/94cfc383c0f8804d2eba264f26a4bd3d372d94da/deprecated/configuration/README.md).
 
 **Strict JSON only — no comments.** The SNT Explorer does not accept JSONC, so a `//` comment
 anywhere in the file breaks ingestion. Notes belong in the schema's `description` fields or in this
@@ -251,7 +251,7 @@ The validator is
 (also used by the `add-explorer-layer` skill). It runs the schema, plus the two checks JSON Schema
 cannot express: `SCALE` ordering, and whether every `DATASET.NAME` is a key of
 `SNT_DATASET_IDENTIFIERS` in the config skeleton
-([`contracts/snt_config_json/SNT_config.skeleton.json`](../snt_config_json/SNT_config.skeleton.json) —
+([`contracts/snt_config_json/SNT_config.skeleton.json`](../snt_config/SNT_config.skeleton.json) —
 the trusted key set; the archived per-country copies were never verified).
 
 ```bash

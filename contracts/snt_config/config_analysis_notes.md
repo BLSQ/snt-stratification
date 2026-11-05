@@ -343,7 +343,7 @@ made 2026-09-10:
   (`include_empty_ind = TRUE`). The error therefore fires on a **missing or misspelled key**
   (BDI's `_UNDER5`), not on an empty one; an empty key yields an all-`NA` column instead. ❓ Whether
   `snt_dhis2_incidence` has a second guard that rejects an all-`NA` column is **unverified** — see
-  [`EXTERNAL_CHECKS.md`](EXTERNAL_CHECKS.md) item 1.
+  [`EXTERNAL_CHECKS.md`](../../webapps/config_editor/docs/EXTERNAL_CHECKS.md) item 1.
 
 `_ABOVE_5` variants exist in some configs but **no code consumes them**.
 

@@ -10,7 +10,7 @@ It is the single-pipeline variant of [`snt_workspace_deployer`](../snt_workspace
 (decision D28), for a workspace that already holds real work and where the release should be taken in
 one pipeline at a time. Everything it does not mention here, it does exactly as the deployer does:
 release resolution, version naming, failure messages. Spec and test plan:
-[`docs/deployer.md`](../docs/deployer.md) § Single-pipeline deployer.
+[`docs/deployer.md`](../../docs/bootstrap/deployer.md) § Single-pipeline deployer.
 
 > **Status: built 2026-10-30 and first run on a local OpenHEXA instance the same day.** Run it with
 > `dry_run` first.

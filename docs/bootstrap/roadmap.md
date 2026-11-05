@@ -26,14 +26,14 @@ BLSQ/snt_workspace_bootstrap@v0.1.0
 ```
 
 Every source publishes a `release_manifest.json` in the shape of
-[`contracts/release_manifest.schema.json`](contracts/release_manifest.schema.json). The schema is
+[`contracts/release_manifest.schema.json`](../../contracts/release_manifest.schema.json). The schema is
 already repository-agnostic for this reason (D26), so **the manifest itself needs no change**. What
 does change, per component:
 
 | Component | Today | With a list of sources |
 |---|---|---|
 | Deployer parameters | `github_repo`, `release_tag` | One list parameter of `owner/repo@tag` strings. An empty tag keeps D23's meaning (that source's latest release). |
-| `.snt_release` | `{"snt_release": "<tag>"}`, no repository ([`snt_release_marker.md`](contracts/snt_release_marker.md) §3.2) | One entry per source: repository and tag at least. This is §7.4's enrichment, now required. Markers written by today's deployer must still be read. |
+| `.snt_release` | `{"snt_release": "<tag>"}`, no repository ([`snt_release_marker.md`](../../contracts/snt_release_marker.md) §3.2) | One entry per source: repository and tag at least. This is §7.4's enrichment, now required. Markers written by today's deployer must still be read. |
 | `archive/<release_tag>/` | One folder per tag | Two sources can share a tag (`v0.1.0` in both). The folder needs the repository in its path. |
 | Checker parameters | `github_repo`, `release_tag` | The same list. Attribution then runs per source. |
 | Status report | One `repo`, one `releases[]` | **Breaking** under the report's own rules: `repo` would change meaning. Needs `schema_version: 2` (D18, DOC5). |
@@ -109,7 +109,7 @@ The proposal above (a manifest workflow here) holds until this is evaluated.
 by D19 there is no deployment workflow for this repository's pipelines. So every new workspace
 starts with one hand-deployed pipeline, by `openhexa pipelines push`. The bootstrap then deploys
 everything else, including newer versions of itself: the deployer can already deploy a new version
-of itself, as noted in [`release_manifest.md`](contracts/release_manifest.md).
+of itself, as noted in [`release_manifest.md`](../../contracts/release_manifest.md).
 
 Two more manual steps come with that first one:
 
@@ -166,4 +166,4 @@ is described in its own file:
 * Finish the deployer's test plan, D21–D24 and `backup_existing` ([`deployer.md`](deployer.md)
   §6.7). Run by hand in the sandbox.
 * ~~Delete the pre-phase-0 fallback in `split_manifest()`~~ Deleted 2026-10-02 (D26,
-  [`release_manifest.md`](contracts/release_manifest.md) §2.1).
+  [`release_manifest.md`](../../contracts/release_manifest.md) §2.1).

@@ -1,7 +1,7 @@
 # SNT Release Strategy
 
 > The **why** of the whole product: the problem, the design, tag immutability and the three
-> operations. Each component's spec and state is in its own file; [`CLAUDE.md`](../CLAUDE.md) says
+> operations. Each component's spec and state is in its own file; [`CLAUDE.md`](CLAUDE.md) says
 > which to read when. Section numbers like §1.3 are those of the former `PRODUCT_SPEC.md`, kept so
 > existing references still resolve.
 
@@ -194,7 +194,7 @@ feedback from actual use. Revisit this assumption once countries are running the
 Each component's state now lives with its spec:
 
 * Sandbox — [`sandbox.md`](sandbox.md)
-* Manifest generation — [`contracts/release_manifest.md`](contracts/release_manifest.md)
+* Manifest generation — [`contracts/release_manifest.md`](../../contracts/release_manifest.md)
 * Workspace Deployer — [`deployer.md`](deployer.md)
 * Python deployment — [`openhexa_deployment.md`](openhexa_deployment.md)
 * Verification pipeline (the checker) — [`checker.md`](checker.md)

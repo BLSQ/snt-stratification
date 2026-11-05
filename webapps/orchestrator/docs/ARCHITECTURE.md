@@ -1,8 +1,8 @@
 # Architecture — SNT Pipelines Orchestrator
 
 How the orchestrator webapp and its catalog generator fit together. The portable OpenHEXA know-how
-(proxy, scopes, queries) is in [`OPENHEXA_WEBAPP_RUNTIME.md`](OPENHEXA_WEBAPP_RUNTIME.md); app-code
-rules are in [`webapps/orchestrator/CLAUDE.md`](../webapps/orchestrator/CLAUDE.md); the *why* behind
+(proxy, scopes, queries) is in [`OPENHEXA_WEBAPP_RUNTIME.md`](../../../docs/OPENHEXA_WEBAPP_RUNTIME.md); app-code
+rules are in [`webapps/orchestrator/CLAUDE.md`](../CLAUDE.md); the *why* behind
 each choice is in [`decisions/`](decisions/README.md). SNT terms: see `snt_development`'s
 [`docs/GLOSSARY.md`](https://github.com/BLSQ/snt_development/blob/main/docs/GLOSSARY.md).
 
@@ -36,18 +36,18 @@ catalog.
 
 | File | Scope | Holds | Contract |
 |---|---|---|---|
-| `webapps/orchestrator/pipeline_map.json` | bundle (all workspaces) | nodes (`id`, `code`, bilingual `label`, `ohName`, stage `row`, `track`, `type`, mutex `group`) + directed `edges` | [`pipeline_map.schema.json`](../contracts/pipeline_map.schema.json) |
-| `webapps/orchestrator/pipeline_descriptions.json` | bundle | hand-authored Markdown-lite description per node, keyed by `id`, as `{ en, fr }` | [`pipeline_descriptions.schema.json`](../contracts/pipeline_descriptions.schema.json) |
-| `pipeline_cards.json` — **in the workspace bucket, not the repo** | per workspace | which pipelines exist + `uuid` + `parameters` + source version | [`pipeline_cards.schema.json`](../contracts/pipeline_cards.schema.json) |
+| `webapps/orchestrator/app/pipeline_map.json` | bundle (all workspaces) | nodes (`id`, `code`, bilingual `label`, `ohName`, stage `row`, `track`, `type`, mutex `group`) + directed `edges` | [`pipeline_map.schema.json`](../../../contracts/orchestrator/pipeline_map.schema.json) |
+| `webapps/orchestrator/app/pipeline_descriptions.json` | bundle | hand-authored Markdown-lite description per node, keyed by `id`, as `{ en, fr }` | [`pipeline_descriptions.schema.json`](../../../contracts/orchestrator/pipeline_descriptions.schema.json) |
+| `pipeline_cards.json` — **in the workspace bucket, not the repo** | per workspace | which pipelines exist + `uuid` + `parameters` + source version | [`pipeline_cards.schema.json`](../../../contracts/orchestrator/pipeline_cards.schema.json) |
 | `readmes/<id>.md` — **in the workspace bucket, next to the catalog** | per workspace | each curated pipeline's README, copied from its deployed version | — (Markdown, see [Pipeline READMEs](#pipeline-readmes)) |
-| `webapps/orchestrator/index.html` + `app.js` + `styles.css` | bundle | the app shell: merges map + descriptions with the catalog, runs and polls pipelines | — |
+| `webapps/orchestrator/app/index.html` + `app.js` + `styles.css` | bundle | the app shell: merges map + descriptions with the catalog, runs and polls pipelines | — |
 
 The map and descriptions are **hand-authored**, not generated from the API.
 `design/pipeline_map_preview.html` renders the map for review.
 
 ### The bundle is workspace-independent
 
-The deployed bundle is the five files in `webapps/orchestrator/`, flat, with nothing
+The deployed bundle is the five files in `webapps/orchestrator/app/`, flat, with nothing
 workspace-specific ([ADR 0007](decisions/0007-multi-file-bundle-no-build.md)). The app adapts at
 runtime: `window.OPENHEXA.workspaceSlug` drives every query and the catalog read, and the catalog
 drives which nodes are greyed. The only platform assumptions baked into `app.js` are the SaaS
@@ -61,7 +61,7 @@ Why it lives where it does: [ADR 0002](decisions/0002-catalog-in-workspace-bucke
 [0003](decisions/0003-catalog-parameters-from-deployed-version.md),
 [0004](decisions/0004-generator-curates-against-deployed-map.md),
 [0005](decisions/0005-catalog-not-in-workspace-configuration.md). How the generator works:
-[`pipelines/create_pipeline_cards/README.md`](../pipelines/create_pipeline_cards/README.md).
+[`pipelines/create_pipeline_cards/README.md`](../../../pipelines/create_pipeline_cards/README.md).
 
 **Location.** Each workspace's catalog is at the fixed **bucket key**
 
@@ -127,7 +127,7 @@ link:
 
 The generator's `code` and `name` vary by how it was installed (`create-pipeline-cards`,
 `create_pipeline_cards`, `Create pipeline_cards.json`), so it is matched by a normalised key, never
-a hardcoded code. Implementation notes: [`webapps/orchestrator/CLAUDE.md`](../webapps/orchestrator/CLAUDE.md#catalog-diagnosis).
+a hardcoded code. Implementation notes: [`webapps/orchestrator/CLAUDE.md`](../CLAUDE.md#catalog-diagnosis).
 
 ### Run errors that mean catalog drift
 
@@ -135,7 +135,7 @@ a hardcoded code. Implementation notes: [`webapps/orchestrator/CLAUDE.md`](../we
 them mean the catalog no longer matches the installed pipeline — `INVALID_CONFIG`,
 `PIPELINE_DOES_NOT_SUPPORT_PARAMETERS`, `PIPELINE_NOT_FOUND`, `PIPELINE_VERSION_NOT_FOUND` — and
 for those the app adds a "refresh the catalogue" line linking to the generator (reusing the
-diagnosis above). See [`OPENHEXA_WEBAPP_RUNTIME.md`](OPENHEXA_WEBAPP_RUNTIME.md#run-errors-are-an-enum)
+diagnosis above). See [`OPENHEXA_WEBAPP_RUNTIME.md`](../../../docs/OPENHEXA_WEBAPP_RUNTIME.md#run-errors-are-an-enum)
 for the enum.
 
 ## Node states
@@ -178,7 +178,7 @@ reporting-rate groups. Only a *succeeding* run moves the "in use" mark.
 
 Order and dependencies are explicit; there is no graph-layout library
 ([ADR 0007](decisions/0007-multi-file-bundle-no-build.md)). Field-level docs:
-[`contracts/pipeline_map.schema.json`](../contracts/pipeline_map.schema.json).
+[`contracts/pipeline_map.schema.json`](../../../contracts/orchestrator/pipeline_map.schema.json).
 
 - The **array order of `nodes` is the walkthrough order**; an alternative group becomes one
   "choose one" step at its first member. `row` is the stage (0 = Extract … 4 = Outputs), `track` the
@@ -198,13 +198,13 @@ interface language for v1.
 
 | Text | Source | Mechanism |
 |---|---|---|
-| App chrome (buttons, statuses, headings) | `I18N` table in `webapps/orchestrator/app.js` | `t("key", {params})` |
+| App chrome (buttons, statuses, headings) | `I18N` table in `webapps/orchestrator/app/app.js` | `t("key", {params})` |
 | Node / step titles | `pipeline_map.json` → `label` | `pickLang(label)` |
 | Node descriptions | `pipeline_descriptions.json` → `{ en, fr }` | `pickLang(desc)` |
 | Parameter labels / help / choices | the workspace's catalog | not translated — English ([UI-4](BACKLOG.md#ui-4)) |
 
 Code-level rules (both `I18N` tables, `pickLang` fallbacks, language resolution order):
-[`webapps/orchestrator/CLAUDE.md`](../webapps/orchestrator/CLAUDE.md#bilingual-text).
+[`webapps/orchestrator/CLAUDE.md`](../CLAUDE.md#bilingual-text).
 
 ## Run outputs and the report embed
 
@@ -212,4 +212,4 @@ After a run the app shows its output files from `pipelineRun.outputs`, and its o
 from `pipelineRun.datasetVersions` in a separate, best-effort query (it needs `DATASETS_READ`,
 [APP-11](BACKLOG.md#app-11)). A run's HTML report renders **inline** in an `<iframe>` on a freshly signed GCS
 URL, re-signed on demand because signed URLs expire. The technique is in
-[`OPENHEXA_WEBAPP_RUNTIME.md`](OPENHEXA_WEBAPP_RUNTIME.md#embedding-an-html-report-iframe).
+[`OPENHEXA_WEBAPP_RUNTIME.md`](../../../docs/OPENHEXA_WEBAPP_RUNTIME.md#embedding-an-html-report-iframe).

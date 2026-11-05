@@ -29,6 +29,6 @@ map has a fixed, hand-authored order, so automatic graph layout adds nothing.
 - No third-party code runs in the app. Adding any script tag is a reviewed change (OpenHEXA's own
   `dev.js` was reviewed and added: [0014](0014-ship-openhexa-dev-js.md)).
 - No type checking, minification or module system: `app.js` is one large plain-JS file, and
-  structure is by convention ([`webapps/orchestrator/CLAUDE.md`](../../webapps/orchestrator/CLAUDE.md)).
+  structure is by convention ([`webapps/orchestrator/CLAUDE.md`](../../CLAUDE.md)).
 
 Sources: former `CLAUDE.md` *Multi-file app architecture* and *Map format*.

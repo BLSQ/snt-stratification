@@ -31,8 +31,8 @@ Two layers, both committed so they reach every clone:
 
 | File | What it does | Needs |
 |---|---|---|
-| [`.claude/hooks/block-destructive-git.py`](.claude/hooks/block-destructive-git.py) | A `PreToolUse(Bash)` hook: regex-matches the command about to run and returns a `deny` decision. The precise layer — it sees through `git -C <path> …`, catches chained commands (`… && git reset --hard`), and deliberately *permits* the recovery forms `git rebase --abort/--continue/--skip`, `git clean --dry-run` and `git restore --staged`. | `python3` on `PATH`, standard library only |
-| [`.claude/settings.json`](.claude/settings.json) | Wires up that hook, **and** carries a coarser `permissions.deny` list that Claude Code enforces itself. | nothing |
+| [`.claude/hooks/block-destructive-git.py`](../../.claude/hooks/block-destructive-git.py) | A `PreToolUse(Bash)` hook: regex-matches the command about to run and returns a `deny` decision. The precise layer — it sees through `git -C <path> …`, catches chained commands (`… && git reset --hard`), and deliberately *permits* the recovery forms `git rebase --abort/--continue/--skip`, `git clean --dry-run` and `git restore --staged`. | `python3` on `PATH`, standard library only |
+| [`.claude/settings.json`](../../.claude/settings.json) | Wires up that hook, **and** carries a coarser `permissions.deny` list that Claude Code enforces itself. | nothing |
 
 The deny list is not redundant. A hook that cannot start (missing interpreter, syntax error) is a
 *non-blocking* error — the tool call it was meant to stop then proceeds, silently. The deny list
@@ -81,9 +81,9 @@ Moved out of `snt_development` on 2026-10-01 (import `895b2b9`, from `d9acafc`),
 
 | Repo / service | What this repo relies on |
 |---|---|
-| [`BLSQ/snt_development`](https://github.com/BLSQ/snt_development) | Produces every release and its `release_manifest.json` (its `.github/workflows/generate_manifest.yaml`). The manifest's shape is the contract in `docs/contracts/`. Facts: [`docs/context/snt_development.md`](docs/context/snt_development.md) |
-| `BLSQ/snt_development_sandbox` + the `snt-development-sandbox` workspace | Where both pipelines are tested; both still default `github_repo` to the sandbox repo ([`docs/sandbox.md`](docs/sandbox.md)) |
-| `openhexa-sdk` | `get_pipeline()` (AST parse of parameters), the zip rule the manifest mirrors, the GraphQL API ([`docs/openhexa_deployment.md`](docs/openhexa_deployment.md)) |
+| [`BLSQ/snt_development`](https://github.com/BLSQ/snt_development) | Produces every release and its `release_manifest.json` (its `.github/workflows/generate_manifest.yaml`). The manifest's shape is the contract in `docs/contracts/`. Facts: [`docs/context/snt_development.md`](context/snt_development.md) |
+| `BLSQ/snt_development_sandbox` + the `snt-development-sandbox` workspace | Where both pipelines are tested; both still default `github_repo` to the sandbox repo ([`docs/sandbox.md`](sandbox.md)) |
+| `openhexa-sdk` | `get_pipeline()` (AST parse of parameters), the zip rule the manifest mirrors, the GraphQL API ([`docs/openhexa_deployment.md`](openhexa_deployment.md)) |
 
 ## Repo map
 
@@ -134,7 +134,7 @@ plainly what you could not verify. Deploying and running in the sandbox is done 
 ## Rule register
 
 IDs R17–R19 are carried from `snt_development` with the same numbers, so a citation means the same in
-both repos. R3/R5 and the rest of that register stay there ([`docs/context/snt_development.md`](docs/context/snt_development.md)).
+both repos. R3/R5 and the rest of that register stay there ([`docs/context/snt_development.md`](context/snt_development.md)).
 
 | ID | Rule | Status |
 |---|---|---|
@@ -143,7 +143,7 @@ both repos. R3/R5 and the rest of that register stay there ([`docs/context/snt_d
 | **R19** | Agents never run destructive / history-rewriting `git` or `gh` commands | `enforced` — hook + `permissions.deny` (above) |
 | **DOC1** | Current state only in the live docs. A paragraph about what something *used to be*, or a verification against something that no longer exists, moves to `docs/HISTORY.md`, leaving a link | `convention` |
 | **DOC2** | Nothing is deleted, it is relocated. A closed problem keeps its write-up in HISTORY | `convention` |
-| **DOC3** | Decisions live in [`docs/decisions.md`](docs/decisions.md), numbered `D<n>`, append-only, cited rather than re-argued | `convention` |
+| **DOC3** | Decisions live in [`docs/decisions.md`](decisions.md), numbered `D<n>`, append-only, cited rather than re-argued | `convention` |
 | **DOC4** | Each fact lives in one file. A new fact goes where the routing table below sends a reader looking for it | `convention` |
 | **DOC5** | A change to a report or manifest shape updates its schema in `docs/contracts/` in the same change. What is breaking is stated in each schema's `description` (and for the report in `docs/checker.md` §5.5): a new key or enum value is not, a rename, removal or change of meaning is | `convention` |
 
@@ -153,19 +153,19 @@ Read only what the task needs. `docs/HISTORY.md` is **never** read by default.
 
 | Path | Holds | Read it when |
 |---|---|---|
-| [`docs/deployer.md`](docs/deployer.md) | Deployer spec, current state, phase-5 test plan, limits (strays, no deletes); the single-pipeline deployer | Working on either deployer |
-| [`docs/checker.md`](docs/checker.md) | Statuses, modes, attribution, report contract prose, build phases, open decisions | Working on the checker |
-| [`docs/contracts/release_manifest.schema.json`](docs/contracts/release_manifest.schema.json) + [`release_manifest.md`](docs/contracts/release_manifest.md) | Producer ↔ consumer contract; how it is generated; the `pipelines` block; the legacy fallback | Changing manifest reading or writing |
-| [`docs/contracts/status_report.schema.json`](docs/contracts/status_report.schema.json) | The checker's frozen report (`schema_version: 1`) — the authority over `checker.md` §5.5 | Changing or consuming the report |
-| [`docs/contracts/snt_release_marker.md`](docs/contracts/snt_release_marker.md) | `.snt_release` | Reading or writing the marker |
-| [`docs/openhexa_deployment.md`](docs/openhexa_deployment.md) | GraphQL deploy sequence, tokens, gotchas, Templates/R5 | Touching deployment or credentials |
-| [`docs/context/snt_development.md`](docs/context/snt_development.md) | The source repo's facts these tools depend on | Anything touching what a release contains |
-| [`docs/release_strategy.md`](docs/release_strategy.md) | Why, tag immutability, staging pre-releases from feature branches, the three operations, components, one workspace per release | Big-picture questions, or testing a PR |
-| [`docs/roadmap.md`](docs/roadmap.md) | The bootstrap: a list of sources instead of `github_repo`, this repo as a source, the starting problem, web apps and the OpenHEXA-dev questions | Planning ahead, or anything touching more than one source repo |
-| [`docs/decisions.md`](docs/decisions.md) | D1–D28, append-only | Before reopening any choice |
-| [`docs/sandbox.md`](docs/sandbox.md) | Sandbox repo and workspace, fixture releases, expected check results | Testing |
-| [`docs/HISTORY.md`](docs/HISTORY.md) | Dead ends, closed issues, superseded designs and layouts | Before re-investigating something that seems solved |
-| [`tests/`](tests/) | Offline stub and contract tests | Before committing a change to either pipeline or a schema: run them |
+| [`docs/deployer.md`](deployer.md) | Deployer spec, current state, phase-5 test plan, limits (strays, no deletes); the single-pipeline deployer | Working on either deployer |
+| [`docs/checker.md`](checker.md) | Statuses, modes, attribution, report contract prose, build phases, open decisions | Working on the checker |
+| [`docs/contracts/release_manifest.schema.json`](../../contracts/release_manifest.schema.json) + [`release_manifest.md`](../../contracts/release_manifest.md) | Producer ↔ consumer contract; how it is generated; the `pipelines` block; the legacy fallback | Changing manifest reading or writing |
+| [`docs/contracts/status_report.schema.json`](../../contracts/status_report.schema.json) | The checker's frozen report (`schema_version: 1`) — the authority over `checker.md` §5.5 | Changing or consuming the report |
+| [`docs/contracts/snt_release_marker.md`](../../contracts/snt_release_marker.md) | `.snt_release` | Reading or writing the marker |
+| [`docs/openhexa_deployment.md`](openhexa_deployment.md) | GraphQL deploy sequence, tokens, gotchas, Templates/R5 | Touching deployment or credentials |
+| [`docs/context/snt_development.md`](context/snt_development.md) | The source repo's facts these tools depend on | Anything touching what a release contains |
+| [`docs/release_strategy.md`](release_strategy.md) | Why, tag immutability, staging pre-releases from feature branches, the three operations, components, one workspace per release | Big-picture questions, or testing a PR |
+| [`docs/roadmap.md`](roadmap.md) | The bootstrap: a list of sources instead of `github_repo`, this repo as a source, the starting problem, web apps and the OpenHEXA-dev questions | Planning ahead, or anything touching more than one source repo |
+| [`docs/decisions.md`](decisions.md) | D1–D28, append-only | Before reopening any choice |
+| [`docs/sandbox.md`](sandbox.md) | Sandbox repo and workspace, fixture releases, expected check results | Testing |
+| [`docs/HISTORY.md`](HISTORY.md) | Dead ends, closed issues, superseded designs and layouts | Before re-investigating something that seems solved |
+| [`tests/`](../../tests/) | Offline stub and contract tests | Before committing a change to either pipeline or a schema: run them |
 
 **Typical tasks:**
 

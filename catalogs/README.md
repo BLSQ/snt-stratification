@@ -9,7 +9,7 @@ ships with a release.
 
 | File | Role | Fetched by |
 |---|---|---|
-| [`SNT_metadata_master.json`](SNT_metadata_master.json) | **The master list**: every SNT Explorer data layer the current SNT pipelines can publish, for any country. Generic — it describes the pipeline collection, not a workspace. | [`snt_metadata_json_trim`](../snt_metadata_json_trim/readme.md) |
+| [`SNT_metadata_master.json`](SNT_metadata_master.json) | **The master list**: every SNT Explorer data layer the current SNT pipelines can publish, for any country. Generic — it describes the pipeline collection, not a workspace. | [`snt_metadata_json_trim`](../pipelines/snt_metadata_json_trim/readme.md) |
 
 ## Adding a catalog
 
@@ -17,7 +17,7 @@ ships with a release.
 - **Un-ignore it by exact name** in `.gitignore` (`!catalogs/<file>`). The repo ignores `*.json`
   wholesale; naming each file keeps a stray data file dropped here ignored.
 - **It is hashed into `release_manifest.json`** (`repository_files`) only if it matches
-  `catalogs/*.json` in [`generate_manifest.yaml`](../.github/workflows/generate_manifest.yaml). A
+  `catalogs/*.json` in [`generate_manifest.yaml`](https://github.com/BLSQ/snt_development/blob/94cfc383c0f8804d2eba264f26a4bd3d372d94da/.github/workflows/generate_manifest.yaml). A
   non-JSON catalog needs that pattern extended (R22).
 - **Add a row above** and a section below: what it is, who fetches it, how to maintain it. If it
   has a shape other tools depend on, its schema goes in [`contracts/`](../contracts/README.md).
@@ -31,7 +31,7 @@ The **format** (fields, `TYPE` / `SCALE` rules, JSON Schema, validator) is speci
 
 It is **not** deployed with any pipeline: `openhexa pipelines push` packages only
 `.py .ipynb .txt .md .r .sql` files. Instead, the
-[`snt_metadata_json_trim`](../snt_metadata_json_trim/readme.md) pipeline downloads it from this
+[`snt_metadata_json_trim`](../pipelines/snt_metadata_json_trim/readme.md) pipeline downloads it from this
 repository at run time. The ref it downloads from is set by the `repository_ref` parameter:
 
 - `latest` (default) — the latest published GitHub release;

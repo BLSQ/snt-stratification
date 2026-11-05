@@ -31,5 +31,5 @@ The generator once took a `webapp_name` parameter; the date it was removed is re
 - Map nodes with no matching pipeline are logged and render greyed in the app; pipelines with no
   resolvable id are excluded.
 
-Sources: [`pipelines/create_pipeline_cards/README.md`](../../pipelines/create_pipeline_cards/README.md)
+Sources: [`pipelines/create_pipeline_cards/README.md`](../../../../pipelines/create_pipeline_cards/README.md)
 *Parameters*; former `CLAUDE.md` *The pipeline catalog*.

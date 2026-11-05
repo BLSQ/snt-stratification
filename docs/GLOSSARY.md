@@ -337,7 +337,7 @@ The file alone does not say which method produced it; the `{CC}_parameters.json`
 > - The known **parameter-wiring mismatch**: `pipeline.py` injects `DEVIATION_MEAN` while the R
 >   notebook reads `MEAN_DEVIATION` (default 10), so the OpenHEXA field may not be driving the
 >   live threshold. Documented in the pipeline's own
->   [`readme.md`](../snt_dhis2_outliers_imputation_path/readme.md); it should be fixed, not just
+>   [`readme.md`](../pipelines/snt_dhis2_outliers_imputation_path/readme.md); it should be fixed, not just
 >   described.
 
 | Term | Definition | Status |
