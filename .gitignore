@@ -1,0 +1,81 @@
+# snt-stratification .gitignore
+# Merged from snt_development, snt_webapp_orchestrator, snt_workspace_bootstrap and the config
+# editor (Phase 1). Public repo: data never goes in (R1). JSON and YAML are ignored by default and
+# allowed back by explicit path at the end. In .gitignore the last matching pattern wins, so the
+# allowlist must stay last.
+
+# Local tooling -----------------------------------
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+.cache/
+venv/
+.venv/
+uv.lock
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.ipynb_checkpoints/
+.claude/settings.local.json
+
+# OpenHEXA CLI working files (`openhexa pipelines run` / `init`)
+workspace/
+
+# Windows security metadata sidecars (no effect on Linux and macOS)
+*:Zone.Identifier
+
+# Scratch, plans, spikes: local only --------------
+# (A bare `**/[Tt]est*` from the old repos is deliberately gone: it would hide tests/.)
+**/ignore/
+**/old/
+**/test/
+**/to_find_better_place/
+**/WIP/
+**/tmp/
+**/test_stuff*
+SNT_extract_changes.txt
+SNT Process/
+
+# Data: never committed (R1) ----------------------
+*.csv
+*.CSV
+*.xlsx
+*.xls
+*.parquet
+*.rds
+*.RDS
+*.geojson
+*.gpkg
+*.shp
+*.tif
+*.tiff
+*.nc
+*.grib
+
+# Ignored by default, allowed back below ----------
+*.json
+*.yaml
+*.yml
+
+# Allowlist (keep last) ---------------------------
+# Claude Code settings: the R19 guardrail must reach every clone.
+!.claude/settings.json
+# Pipeline registry (kind + deploy route per pipelines/<name>/).
+!pipelines/registry.json
+# Schemas, skeletons and examples: no real values. The ** is load-bearing: it reaches the
+# per-contract subfolders (contracts/snt_config/, contracts/orchestrator/, ...).
+!contracts/**/*.json
+# SNT Explorer master list, named exactly so a stray data .json in catalogs/ stays ignored.
+!catalogs/SNT_metadata_master.json
+# Webapp bundles: only files inside app/ are deployed.
+!webapps/*/app/**/*.json
+# Test fixtures: sandbox artefacts, checked to hold no country data or credential.
+!tests/fixtures/*.json
+# Conda env and CI workflows.
+!dev/environment.yml
+!.github/workflows/*.yaml
+# R scripts, in case a pattern above ever matches one.
+!*.R
+!*.r
