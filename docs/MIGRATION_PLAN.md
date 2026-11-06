@@ -74,6 +74,9 @@ and documented separately:
 | D-11 | **One config skeleton:** the `snt_development` copy becomes the single copy (`contracts/snt_config/`), and every empty single value is written as **`null`**, the pipelines' convention. The editor's `""` for empty strings changes to `null` | 2026-11-03 |
 | D-12 | **Report-only fix** (was OD-7): the orchestrator reads the run's own `config.run_report_only` through the proxy (`PIPELINES_READ`, proven by S4) and counts only full runs as "processed". No `RUN_MODE` in `{CC}_parameters.json` | 2026-11-03 |
 | D-13 | **Public-import scope:** Jira links and Bluesquare dev-workspace slugs (`snt-development`, `snt-development-sandbox`, `snt-testing`, `snt-app-dev`) are **kept**. **Country-specific notebooks (`*_<CC>.ipynb`, plus the un-suffixed `NER_pyramid_format.ipynb`) are left out.** They stay findable in the old `snt_development` repo at the commit SHA in the provenance table (it stays readable after archiving), and in the country workspaces themselves. How they are versioned in the future is OD-10 | 2026-11-03 |
+| D-14 | **One ADR sequence** (was OD-5), in `docs/decisions/`. `snt_development` ADRs keep 0001–0009 (the most cited). The orchestrator's 0001–0016 follow as 0010–0025, then the bootstrap D-entries that record an architectural decision; the new ADRs come after them. Every imported ADR gets an "Originally: `<repo>` ADR NNNN / D<n>" line, and `docs/decisions/README.md` holds the mapping table. Bootstrap D-entries that are only implementation detail stay in `docs/bootstrap/decisions.md` | 2026-11-06 |
+| D-15 | **No CODEOWNERS for now** (was OD-8): ADR 0005 stands. Giulia discusses per-area review with the team later; tracked in the BACKLOG | 2026-11-06 |
+| D-16 | **Merged Register IDs.** R1–R22 keep their IDs (cited in code and notebooks). Rules the three repos share (git guardrail, `[ERROR]`/`[WARNING]`, Python style) appear once, as R17–R19. Webapp-only rules get `W<n>` in `webapps/CLAUDE.md`. The doc-hygiene rules (bootstrap DOC1–5, orchestrator R12) merge into root rules from R23 on. Rules for the bootstrap pipelines go in `pipelines/CLAUDE.md`: no `CLAUDE.md` inside a pipeline folder, because every `.md` there ships in the pipeline zip. Every renumbered rule keeps its old ID in an "old ID" column | 2026-11-06 |
 
 ## 3. Open decisions (owner: Giulia unless stated)
 
@@ -84,9 +87,7 @@ blocks, and move it to the Decision log.
 | ID | Question | Recommendation / current leaning | Blocks |
 |---|---|---|---|
 | OD-4 | How do the bootstrap pipelines (deployer, checker, single-pipeline deployer) reach a workspace? | **Leaning (Giulia):** as regular OH **template pipelines**, kept in this repo as `kind: bootstrap` folders in `pipelines/`, with their **own CI** that pushes every merge to `main` into the new templates workspace (not tied to the release train). Implications to keep in mind: (a) a deployer on `main` must stay able to read every manifest schema version it may be asked to deploy, or refuse old ones with a clear `[ERROR]`; (b) they are then **outside** the release manifest's `pipelines` (or listed with `kind: bootstrap` for provenance only, never deployed by the deployer); (c) this supersedes bootstrap D19 ("no deploy workflow") and solves roadmap §3 (chicken-and-egg). Not decided | Phase 3 (CI) / Phase 4 |
-| OD-5 | Import ADRs: one renumbered sequence, or per-origin folders? | One sequence with an "Originally: `<repo>` ADR NNNN / D<n>" line and a mapping table in `decisions/README.md`. Bootstrap D-entries that are only implementation detail stay in `docs/bootstrap/decisions.md` | Phase 2 |
 | OD-6 | Testing releases: keep a sandbox repo, or use pre-releases? | Pre-release tags (`v0.x.y`, marked pre-release) on the new repo + a test workspace. Drop `snt_development_sandbox`. The deployer already ignores pre-releases unless asked (D27) | Phase 4 |
-| OD-8 | CODEOWNERS (ADR 0005 said no) | Revisit: three areas with different reviewers is the case where it pays off | Phase 2 |
 | OD-9 | Retiring Pull scripts | **S2b passed (2026-11-03):** self-sync works, so Pull scripts can go for both routes. Still open: the S2b sub-questions (§4.3), in particular the per-run escape hatch | Phase 6 |
 | OD-10 | **How to version country-specific notebooks, and analyst-edited ones** (raised 2026-11-03). Today nothing versions `_<CC>` variants, and no route delivers them to their country. Analysts also edit notebooks in their workspace, and updates (templates, deployer, self-sync) must not silently overwrite those edits. We need one system that keeps good practice (versioned, reviewable, no country data in the public repo) and still lets users run what they edited | No leaning yet. Constraints so far: country variants are not in the public repo (D-13); self-sync skips `_<CC>` files and archives what it replaces (S2b). Inputs: OD-9's escape hatch, and possibly a private per-country repo or dataset | None (not scheduled). Must be settled before Pull scripts is retired (OD-9) |
 
@@ -614,24 +615,51 @@ found on the way:
   Result: `ruff check .` and `ruff format --check .` clean, `pytest` 16 passed.
 
 ### Phase 2 — Docs and agent setup
+
+**Outcome:** one CLAUDE.md router, one Register, one ADR sequence and one BACKLOG for the whole repo,
+landed through **one PR** (branch `phase-2/docs-and-agents`, merged with a merge commit). Docs and
+agent setup only: no pipeline, workflow or workspace behaviour changes. One branch because the
+renumbering of ADRs, backlog IDs and rules changes links across the whole repo; `main` never holds
+a half-renumbered state. Decisions settled at the start: D-14 (was OD-5), D-15 (was OD-8), D-16.
+**Agents:** run no `git`/`gh` command yourself (R19). Give Giulia the exact commands, one commit at
+a time.
+
+| # | Content | Commit message |
+|---|---|---|
+| 1 | This file: D-14…D-16, Phase 2 runbook | `plan: open Phase 2, settle OD-5 and OD-8` |
+| 2 | Orchestrator ADRs and the architectural bootstrap D-entries moved into `docs/decisions/`, renumbered (D-14), mapping table, links updated | `docs(decisions): one ADR sequence with a mapping table (OD-5)` |
+| 3 | The new ADRs listed below | `docs(decisions): ADRs for the monorepo, release train, repo path = workspace path, docs placement and template routes` |
+| 4 | One `docs/BACKLOG.md` | `docs: one BACKLOG with area-prefixed IDs` |
+| 5 | Root router + merged Register (D-16), `webapps/CLAUDE.md` W-rules, bootstrap rules into `pipelines/CLAUDE.md`, interim CLAUDE.md files retired | `docs: root CLAUDE.md router with the merged Register` |
+| 6 | `docs/ARCHITECTURE.md` | `docs: ARCHITECTURE.md system map` |
+| 7 | Skill texts | `docs(skills): update the skills for the monorepo paths` |
+| 8 | This file: Phase 2 checkboxes, results, Session log | `plan: Phase 2 results` |
+
+The memory and `ignore/` sweep (last item below) runs first, as reading; what it finds lands in
+commits 3–5, wherever each item belongs.
+
 - [ ] Root `CLAUDE.md` router (≤15 KB) with the **merged Register**. Rules shared by all three repos
       (git guardrail, `[ERROR]`/`[WARNING]` prefixes, Python style) appear once. Webapp-only rules move
       to `webapps/CLAUDE.md` (prefix `W`); notebook rules stay in `pipelines/CLAUDE.md`.
 - [ ] `docs/ARCHITECTURE.md` (new): one-page system map. Units, the contracts between them, the
       deploy routes (deployer, new templates, old templates), and the release train.
-- [ ] Import the ADRs per OD-5. Write the first new ADRs: monorepo (supersedes orchestrator REPO-1),
+- [ ] Import the ADRs per D-14 (was OD-5). Write the first new ADRs: monorepo (supersedes orchestrator REPO-1),
       release train (D-2), repo path = workspace path (D-9, §4.2), docs placement rule (D-10), templates kept alongside the deployer
       (**supersedes bootstrap D20**), publishing workspace for the new templates (**amends R5 / ADR 0004**).
 - [ ] Merge the backlogs into one `docs/BACKLOG.md`. IDs collide (`TOOL-1`, `DOC-2`, `OH-1`… exist
       in several repos), so give each an area prefix (`PIPE-`, `APP-`, `BOOT-`, `CFG-`, `REL-`, `TOOL-`)
       and add an "old ID" column. Drop items this migration resolves: REPO-1/2, the multi-source
       roadmap §1, the CI path-filter typos.
-- [ ] Update the skills for the new paths. Add a `release` skill: checklist, cutting an rc,
-      verifying in the test workspace, then promoting. (The skills' scripts were fixed in Phase 1,
+- [ ] Update the skills for the new paths. The `release` skill is **moved to Phase 4**: it would
+      describe a release process that does not exist yet. (The skills' scripts were fixed in Phase 1,
       commit 8. Their text still says `code/*.r` and `contracts/snt_config_json/`, and
       `validate_metadata.py` still says jsonschema is not in `dev/environment.yml`, which is now wrong.)
-- [ ] Sweep the local Claude memory and the `ignore/` plans of all source repos. Anything still true
+- [~] Sweep the local Claude memory and the `ignore/` plans of all source repos. Anything still true
       and useful goes **into the repo** (CLAUDE.md, ADR, BACKLOG, docs). Nothing may rely on local memory.
+      → 2026-11-06, memory half done: the notes were Giulia's personal working preferences (moved to
+      her global `~/.claude/CLAUDE.md`, as they hold for every repo) and two finished-history notes
+      (deleted or marked done). The `ignore/` plans (`snt_development`, `snt_webapp_orchestrator`,
+      `snt_workspace_bootstrap`) are still to read. `OpenHEXA-WebApp-Diary` is out of scope.
 
 ### Phase 3 — Tooling and CI
 - [ ] `tools/build_manifest.py` (from the `generate_manifest.yaml` heredoc) emitting **manifest v2**,
@@ -662,6 +690,8 @@ found on the way:
       run the SNT chain for one country (copy a config), compare outputs with an old-repo workspace,
       and confirm the checker reports `match`. This isolates "did the move break anything" from the
       bold changes.
+- [ ] `release` skill (moved from Phase 2), written while cutting `v0.1.0`: checklist, cutting an
+      rc, verifying in the test workspace, then promoting.
 
 ### Phase 5 — Breaking-change window (before the first production tag)
 Batch the held-back breaking changes before any country adopts the new repo; later they would need a
@@ -743,7 +773,7 @@ proceed in parallel against the new schema.
 | Agent context bloat in a bigger repo | Root CLAUDE.md is a router only. Nested CLAUDE.md per area (`pipelines/`, `webapps/`, `webapps/<app>/`) loads lazily |
 | Public exposure grows (more docs, research, workspace names) | Phase 0 audit. R1 stays enforced. Public webapps already must not hold secrets (ADR 0013) |
 | Deployer downloads the whole repo tarball | Slim release tarball asset (Phase 3) |
-| Everyone with write access can change everything | CODEOWNERS per area (OD-8), plus branch protection |
+| Everyone with write access can change everything | Branch protection. CODEOWNERS per area declined for now (D-15); to be discussed with the team |
 | `.gitignore` `*.json` trap silently drops webapp/contract JSON | Allowlist + `git check-ignore` check in Phase 1 |
 | Webapp deployment still can't be automated (no CLI/SDK route, OH-1) | Not caused or fixed by the monorepo. Stamped zips make the manual route reproducible |
 | Two live systems (old repo/templates + new) for a long period | D-4 maintenance-only + explicit archive criteria |
