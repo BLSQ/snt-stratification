@@ -95,6 +95,10 @@ Notes that the table cannot carry:
 
 ## 2. Runtime topology
 
+> This section describes how the **old `snt_development` repo** reaches workspaces, which is what
+> live countries run today. The routes from this repo, and their state, are in
+> [`ARCHITECTURE.md` §1.3](ARCHITECTURE.md#13-deploy-routes).
+
 ```
 ┌─────────────────────────────┐        ┌──────────────────────────────────────────┐
 │  GitHub  BLSQ/snt_development│        │  OpenHEXA workspace  (one per country)   │

@@ -1,17 +1,24 @@
-# `contracts/` — the files this repo exchanges with other tools
+# `contracts/` — the files the units of this repo exchange
 
-A contract is a file whose shape another tool depends on. One subfolder per contract kept in this
-repo. Each holds that file's JSON Schema (the source of truth for its shape) or a skeleton, a
+A contract is a file whose shape another unit depends on. One subfolder per contract, except the
+three bootstrap contracts (manifest, status report, `.snt_release`), which sit at this folder's
+root. A subfolder holds that file's JSON Schema (the source of truth for its shape) or a skeleton, a
 canonical valid example, any reference instances worth keeping, and a `README.md` carrying the
 conventions. Decisions behind a contract are ADRs in [`docs/decisions/`](../docs/decisions/README.md);
 open questions are in [`docs/BACKLOG.md`](../docs/BACKLOG.md).
 
 | Contract | What | Producer | Consumer(s) | Schema / reference | Status |
 |---|---|---|---|---|---|
-| `SNT_config.json` | Per-workspace configuration, one country | Operator, by hand (config webapp in future) | Every pipeline | [`snt_config_json/`](snt_config/README.md) — skeleton; `snt_config.schema.json` `[TODO]` | Skeleton current; schema not written |
+| `SNT_config.json` | Per-workspace configuration, one country | Operator, by hand (config editor in future) | Every pipeline; the config editor | [`snt_config/`](snt_config/README.md) — skeleton, the one copy (D-11); `snt_config.schema.json` `[TODO]` ([CFG-3](../docs/BACKLOG.md#cfg-3)) | Skeleton current; schema not written |
 | `SNT_metadata.json` | SNT Explorer data-layer catalogue, one country | [`catalogs/SNT_metadata_master.json`](../catalogs/README.md) → `snt_metadata_json_trim` | SNT Explorer (IASO) | [`snt_metadata_json/`](snt_metadata_json/README.md) | **Work in progress**, being validated with the IASO developers |
-| `release_manifest.json` | Files and hashes shipped by a release | [`.github/workflows/generate_manifest.yaml`](https://github.com/BLSQ/snt_development/blob/94cfc383c0f8804d2eba264f26a4bd3d372d94da/.github/workflows/generate_manifest.yaml) | `snt_workspace_bootstrap` deployer and checker | Owned by that repo: [`docs/contracts/release_manifest.schema.json`](https://github.com/BLSQ/snt_workspace_bootstrap/blob/main/docs/contracts/release_manifest.schema.json) | Stable (rule R22) |
+| `release_manifest.json` | Files and hashes shipped by a release | The old repo's [`generate_manifest.yaml`](https://github.com/BLSQ/snt_development/blob/94cfc383c0f8804d2eba264f26a4bd3d372d94da/.github/workflows/generate_manifest.yaml) (here from Phase 3) | Deployer, single-pipeline deployer, checker | [`release_manifest.schema.json`](release_manifest.schema.json) + [`release_manifest.md`](release_manifest.md) | v1, frozen (R22) |
+| Checker status report | Per file, which releases a workspace matches | `snt_workspace_checker` | A future status page ([BOOT-2](../docs/BACKLOG.md#boot-2)) | [`status_report.schema.json`](status_report.schema.json) | `schema_version: 1`, frozen (R22) |
+| `.snt_release` | The release installed in a workspace | Deployer | Checker | [`snt_release_marker.md`](snt_release_marker.md) | Stable |
+| `pipeline_map.json`, `pipeline_descriptions.json` | The orchestrator's map and texts, hand-authored, in its bundle | Hand-edited | Orchestrator; `create_pipeline_cards` (curates against the deployed map) | [`orchestrator/`](orchestrator/) | Stable |
+| `pipeline_cards.json` | The orchestrator's per-workspace catalog, in the bucket | `create_pipeline_cards` | Orchestrator | [`orchestrator/pipeline_cards.schema.json`](orchestrator/pipeline_cards.schema.json) | Stable |
 | Per-dataset outputs | Files, columns and `YEAR` per OpenHEXA dataset | Each `pipeline.py` | Downstream pipelines, SNT Explorer, master list | — | **Planned**, not started ([BACKLOG CFG-5](../docs/BACKLOG.md#cfg-5)) |
+
+How these connect: [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md#12-how-they-connect).
 
 **These schemas describe target shapes, not necessarily what is deployed.** Read the subfolder's
 `README.md` before assuming a field's meaning. Older files that nothing reads any more are archived

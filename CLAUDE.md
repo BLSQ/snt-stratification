@@ -204,14 +204,15 @@ Before calling a change done — each item maps to a rule in the [Register](#reg
 
 | For | Read |
 |---|---|
-| Orientation, newcomer path, provenance of the import | [`README.md`](README.md) |
+| Orientation, newcomer path, provenance | [`README.md`](README.md) |
 | Why each rule exists; adding a pipeline; config, logging | [`docs/CONVENTIONS.md`](docs/CONVENTIONS.md) |
 | Pipeline + notebook rules, pipeline traps, bootstrap pipelines | [`pipelines/CLAUDE.md`](pipelines/CLAUDE.md) |
 | Webapp rules (W1–W9), webapp traps | [`webapps/CLAUDE.md`](webapps/CLAUDE.md) |
+| System map: units, contracts, deploy routes, releases | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) |
 | Data architecture, lineage, dataset contracts | [`docs/DATA_ARCHITECTURE.md`](docs/DATA_ARCHITECTURE.md) |
 | Domain vocabulary | [`docs/GLOSSARY.md`](docs/GLOSSARY.md) |
 | Writing a pipeline `readme.md` | [`docs/PIPELINE_README_STANDARD.md`](docs/PIPELINE_README_STANDARD.md) |
-| Contracts: config skeleton, manifest, report, orchestrator JSON | [`contracts/README.md`](contracts/README.md) |
+| Contracts between units | [`contracts/README.md`](contracts/README.md) |
 | SNT Explorer master list | [`catalogs/README.md`](catalogs/README.md) |
 | Who to ask, how review works | [`docs/OWNERSHIP.md`](docs/OWNERSHIP.md) |
 | Open items (do not start a list elsewhere) | [`docs/BACKLOG.md`](docs/BACKLOG.md) |

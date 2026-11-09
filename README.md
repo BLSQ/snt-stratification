@@ -87,7 +87,7 @@ Pick the row that matches what you came for.
 
 | I want to… | Read |
 |---|---|
-| understand the system in 10 minutes | [`docs/DATA_ARCHITECTURE.md`](docs/DATA_ARCHITECTURE.md) §1–2 |
+| understand the system in 10 minutes | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — the units, how they connect, how they reach a workspace; Part 2 explains OpenHEXA |
 | know what a term means — `N1`, `PfPR`, `CSB`, ADM2, "Magic Glasses" | [`docs/GLOSSARY.md`](docs/GLOSSARY.md) |
 | run a pipeline, or know exactly what it produces | that pipeline's own `readme.md` |
 | follow the data end to end | [`docs/DATA_ARCHITECTURE.md`](docs/DATA_ARCHITECTURE.md) §3 |
@@ -134,7 +134,8 @@ deliberate; none is a bug to fix.
 
 ### 🗓️ Your first day
 
-1. Read [`docs/DATA_ARCHITECTURE.md`](docs/DATA_ARCHITECTURE.md) §1–2, then skim
+1. Read [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), then
+   [`docs/DATA_ARCHITECTURE.md`](docs/DATA_ARCHITECTURE.md) §1, then skim
    [`docs/GLOSSARY.md`](docs/GLOSSARY.md).
 2. Read [`CLAUDE.md`](CLAUDE.md) — the [Register](CLAUDE.md#register) is the whole rulebook in one
    table. It applies to humans and AI agents alike.
