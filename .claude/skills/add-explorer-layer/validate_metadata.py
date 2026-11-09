@@ -9,7 +9,7 @@ Runs the JSON Schema, plus the two checks JSON Schema cannot express on its own:
 
 What it still cannot catch is listed in contracts/snt_metadata_json/README.md §5.
 
-Usage, from anywhere (needs ``jsonschema``, which is not in dev/environment.yml)::
+Usage, from anywhere (needs ``jsonschema``, which is in dev/environment.yml)::
 
     python3 .claude/skills/add-explorer-layer/validate_metadata.py            # the master list
     python3 .claude/skills/add-explorer-layer/validate_metadata.py <file.json>
