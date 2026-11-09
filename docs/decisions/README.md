@@ -26,7 +26,7 @@ who made it move on. Format after Michael Nygard's
 | [0001](0001-no-dag-engine.md) | No DAG engine or scheduler: pipelines are launched by hand | Accepted | not recorded |
 | [0002](0002-alternative-methods-last-run-wins.md) | Alternative methods overwrite each other: last run wins | Accepted | not recorded |
 | [0003](0003-country-variants-outside-pull-scripts.md) | Country-specific notebook variants live outside `Pull scripts` | Accepted | not recorded |
-| [0004](0004-publish-only-from-snt-development.md) | Publish SNT pipelines only from `snt-development` | Accepted | not recorded |
+| [0004](0004-publish-only-from-snt-development.md) | Publish SNT pipelines only from `snt-development` | Accepted, amended by 0041 | not recorded |
 | [0005](0005-no-codeowners.md) | No `CODEOWNERS` file: review by convention | Accepted | not recorded |
 | [0006](0006-retire-snt-assemble-results.md) | Retire `snt_assemble_results`; the Explorer reads datasets directly | Accepted | 2026-10 |
 | [0007](0007-snt-metadata-json-format.md) | `SNT_metadata.json`: a pointer per layer, keyed on config keys, time via `YEAR` | Proposed | 2026-09-08 |
@@ -52,12 +52,18 @@ who made it move on. Format after Michael Nygard's
 | [0027](0027-checker-report-is-a-workspace-file.md) | The checker's report is a workspace file, not a dataset or a DB table | Accepted | 2026-09-18 |
 | [0028](0028-hash-raw-bytes-no-notebook-normalisation.md) | Hash notebooks as raw bytes; no normalisation | Accepted | 2026-09-29 |
 | [0029](0029-no-deployment-workflow-for-bootstrap-pipelines.md) | No deployment workflow for the bootstrap pipelines | Accepted | 2026-09-30 |
-| [0030](0030-template-mechanism-being-retired.md) | The pipeline template mechanism is being retired | Accepted | 2026-09-30 |
+| [0030](0030-template-mechanism-being-retired.md) | The pipeline template mechanism is being retired | Superseded by 0040 | 2026-09-30 |
 | [0031](0031-deployer-deploys-the-whole-release.md) | The workspace deployer always deploys the whole release | Accepted | 2026-09-30 |
 | [0032](0032-one-workspace-per-release.md) | One workspace per release is the expected usage | Accepted | 2026-10-01 |
 | [0033](0033-release-manifest-frozen-json-schema.md) | The release manifest is a contract, frozen as a JSON Schema | Accepted | 2026-10-01 |
 | [0034](0034-pre-releases-for-development-only.md) | Pre-releases are for development and testing only | Accepted | 2026-10-02 |
 | [0035](0035-single-pipeline-deployer.md) | A separate pipeline deploys a single pipeline of a release | Accepted | 2026-10-30 |
+| [0036](0036-one-monorepo.md) | One public monorepo for SNT stratification | Accepted | 2026-11-02 |
+| [0037](0037-one-release-train.md) | One release train for pipelines, webapps and bootstrap | Accepted | 2026-11-02 |
+| [0038](0038-repo-path-is-workspace-path.md) | Repo path = workspace path; flat `pipelines/`, R half co-located | Accepted | 2026-11-02 |
+| [0039](0039-docs-placement-rule.md) | Where docs live, and how agent instructions are split | Accepted | 2026-11-02 |
+| [0040](0040-templates-kept-alongside-the-deployer.md) | Templates stay as a deploy route, alongside the deployer | Accepted | 2026-11-02 |
+| [0041](0041-new-templates-publishing-workspace.md) | The new templates are published from their own workspace | Accepted | 2026-11-02 |
 
 ## Imported ADRs: old number → new number
 

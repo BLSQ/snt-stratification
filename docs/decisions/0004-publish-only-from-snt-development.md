@@ -1,7 +1,7 @@
 # 0004. Publish SNT pipelines only from `snt-development`
 
 Date: not recorded
-Status: Accepted
+Status: Accepted (amended by [0041](0041-new-templates-publishing-workspace.md): the new template set publishes from its own workspace)
 
 ## Context
 

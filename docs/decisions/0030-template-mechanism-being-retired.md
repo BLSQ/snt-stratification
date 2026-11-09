@@ -1,7 +1,7 @@
 # 0030. The pipeline template mechanism is being retired
 
 Date: 2026-09-30
-Status: Accepted
+Status: Superseded by [0040](0040-templates-kept-alongside-the-deployer.md)
 Originally: `snt_workspace_bootstrap` D20
 
 ## Context
