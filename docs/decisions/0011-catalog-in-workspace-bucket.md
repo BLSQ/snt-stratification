@@ -35,7 +35,7 @@ bundle was no longer the same in every workspace.
 - The bucket key is a runtime contract between `CARDS_OBJECT_KEY` in `webapps/orchestrator/app.js`
   and `OUTPUT_DIR` + `WEBAPP_CARDS_PATH` in `pipelines/create_pipeline_cards/config.py`. It does not
   follow the repo layout; changing it is a migration across every workspace
-  ([REPO-3](../../webapps/orchestrator/docs/BACKLOG.md#repo-3)).
+  ([APP-12](../BACKLOG.md#app-12)).
 - Each generator run archives the previous catalog under `…/pipeline_cards/historical/`, so changes
   can be diffed.
 - A stale bundled copy can never be served silently, but a workspace without a catalog shows an

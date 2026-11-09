@@ -382,6 +382,79 @@ as the schema says.
 
 ---
 
+### 3.5 The multi-source roadmap — superseded 2026-11 by the monorepo
+
+Written 2026-10-02 as `roadmap.md` §1–§2, when the bootstrap had to deploy releases of several
+repositories into one workspace. The monorepo ([ADR 0036](../decisions/0036-one-monorepo.md)) and its one
+release train ([ADR 0037](../decisions/0037-one-release-train.md)) leave one source per workspace, so neither
+proposal is needed. Two items in it outlived it: the report-key rename is
+[BOOT-4](../BACKLOG.md#boot-4), and the tag ruleset exists on `BLSQ/snt-stratification`. The text, as
+it was:
+
+### 1. Sources replace `github_repo` — proposal
+
+A **source** is one `owner/repo@tag`. A workspace is described by a list of them:
+
+```
+BLSQ/snt_development@v1.2.0
+BLSQ/snt_workspace_bootstrap@v0.1.0
+```
+
+Every source publishes a `release_manifest.json` in the shape of
+[`contracts/release_manifest.schema.json`](../../contracts/release_manifest.schema.json). The schema is
+already repository-agnostic for this reason (D26), so **the manifest itself needs no change**. What
+does change, per component:
+
+| Component | Today | With a list of sources |
+|---|---|---|
+| Deployer parameters | `github_repo`, `release_tag` | One list parameter of `owner/repo@tag` strings. An empty tag keeps D23's meaning (that source's latest release). |
+| `.snt_release` | `{"snt_release": "<tag>"}`, no repository ([`snt_release_marker.md`](../../contracts/snt_release_marker.md) §3.2) | One entry per source: repository and tag at least. This is §7.4's enrichment, now required. Markers written by today's deployer must still be read. |
+| `archive/<release_tag>/` | One folder per tag | Two sources can share a tag (`v0.1.0` in both). The folder needs the repository in its path. |
+| Checker parameters | `github_repo`, `release_tag` | The same list. Attribution then runs per source. |
+| Status report | One `repo`, one `releases[]` | **Breaking** under the report's own rules: `repo` would change meaning. Needs `schema_version: 2` (D18, DOC5). |
+| Manifest | per repository | Unchanged. |
+
+**What a single source never had to handle:**
+
+* **Collisions.** Two sources may ship the same filesystem path or the same pipeline `code`. The
+  deployer must refuse that before it changes anything, with an `[ERROR] Cannot deploy:` line (D24),
+  rather than let the last source silently win.
+* **Order.** With collisions refused, order does not matter for correctness. A fixed order still
+  keeps the run logs comparable between runs.
+* **Partial runs.** One source can succeed and the next fail. The marker must say which sources
+  were deployed, or the checker reads intent as fact (§3.2's second limitation, multiplied).
+
+**What already breaks today, before any of this is built.** Pointing the current deployer at a
+second repository overwrites `.snt_release` with that repository's tag. The checker would then
+compare the `snt_development` files against a tag from another repository. So until the marker
+records the repository, **deploy only `snt_development` with the deployer**, and deploy this
+repository's pipelines by hand (D19).
+
+**Open:**
+
+* Is the bootstrap a new pipeline, or the deployer with a list parameter? The deployer already does
+  every step except handling several sources.
+* Does the checker need the full list, or can it read the sources from the enriched marker?
+
+#### 2. This repository as a release source — proposal
+
+Plan item: give this repository its own manifest workflow, so the bootstrap can deploy the checker
+like any other pipeline.
+
+* **What a release here contains.** The generator's deployment half finds two pipeline directories:
+  `snt_workspace_checker/` *and* `snt_workspace_deployer/`. So a release of this repository ships the
+  deployer as well as the checker. The filesystem half (`pipelines/**`, `code/**`) matches nothing
+  here, so the deployer would copy no analytics from it.
+* **One generator or two.** The generator lives in `snt_development`'s
+  `generate_manifest.yaml` (M3). A copy here would be a second implementation of the SDK's zip rule
+  that can drift from the first. The alternative is to make that workflow reusable
+  (`workflow_call`) and call it from here, which is a change in `snt_development`. **Open.**
+* **Before the first release here:** rename the report key `snt_workspace_check_version` →
+  `snt_workspace_checker_version`. This was decided 2026-10-02 and deferred until now: after a
+  release it needs `schema_version: 2` and a migration (move plan, open questions).
+* **Tag protection:** set up the `Protect release tags` ruleset on this repository before its first
+  `v*` tag ([`release_strategy.md`](release_strategy.md)).
+
 ## 4. Retired sandbox state and stale verification records
 
 ### 4.1 Sandbox reset — 2026-09-21

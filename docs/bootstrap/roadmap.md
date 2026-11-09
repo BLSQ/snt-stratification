@@ -1,84 +1,30 @@
 # Roadmap — toward the SNT workspace bootstrap
 
-> What comes after the move: one deploy path for **several release sources** instead of one
-> `github_repo`, the bootstrap's starting problem, and web apps. Nothing here is built or decided;
-> each heading says which parts are proposals. A choice made from this file becomes a `D<n>` in
-> [`decisions.md`](decisions.md) and its text moves to the component's spec. Written 2026-10-02
+> What comes after the move: the bootstrap's starting problem, and web apps. Nothing here is built
+> or decided; each heading says which parts are proposals. §1 and §2 (several release sources) were
+> superseded in 2026-11 by the monorepo. A choice made from this file becomes an ADR in
+> [`../decisions/`](../decisions/README.md) (or, for implementation detail, a `D<n>` in
+> [`decisions.md`](decisions.md)), and its text moves to the component's spec. Written 2026-10-02
 > (Session 5 of the move plan).
 
 ## The goal
 
-Set up an empty SNT workspace by deploying, each from its own repository: every pipeline and the R
-analytics of `snt_development`, the checker, and the two OpenHEXA web apps (pipeline orchestrator,
-SNT_config editor). Then move the workspace to newer or older releases on request.
+Set up an empty SNT workspace from one release of this repository: every pipeline and the R
+analytics, the checker, and the two OpenHEXA web apps (pipeline orchestrator, SNT_config editor).
+Then move the workspace to newer or older releases on request
+([ADR 0037](../decisions/0037-one-release-train.md)).
 
-Today the deployer and the checker each take **one** `github_repo` and one `release_tag`, and the
-workspace records one tag in `.snt_release`. Everything below is what changes when a workspace is
-made of several repositories' releases at once.
+## 1. Sources replace `github_repo` — superseded
 
-## 1. Sources replace `github_repo` — proposal
+One repo and one release train ([ADR 0036](../decisions/0036-one-monorepo.md),
+[ADR 0037](../decisions/0037-one-release-train.md)) leave a workspace with one release source, so the
+multi-source proposal is not needed. Its text: [`HISTORY.md` §3.5](HISTORY.md#35-the-multi-source-roadmap--superseded-2026-11-by-the-monorepo).
 
-A **source** is one `owner/repo@tag`. A workspace is described by a list of them:
+## 2. This repository as a release source — superseded
 
-```
-BLSQ/snt_development@v1.2.0
-BLSQ/snt_workspace_bootstrap@v0.1.0
-```
-
-Every source publishes a `release_manifest.json` in the shape of
-[`contracts/release_manifest.schema.json`](../../contracts/release_manifest.schema.json). The schema is
-already repository-agnostic for this reason (D26), so **the manifest itself needs no change**. What
-does change, per component:
-
-| Component | Today | With a list of sources |
-|---|---|---|
-| Deployer parameters | `github_repo`, `release_tag` | One list parameter of `owner/repo@tag` strings. An empty tag keeps D23's meaning (that source's latest release). |
-| `.snt_release` | `{"snt_release": "<tag>"}`, no repository ([`snt_release_marker.md`](../../contracts/snt_release_marker.md) §3.2) | One entry per source: repository and tag at least. This is §7.4's enrichment, now required. Markers written by today's deployer must still be read. |
-| `archive/<release_tag>/` | One folder per tag | Two sources can share a tag (`v0.1.0` in both). The folder needs the repository in its path. |
-| Checker parameters | `github_repo`, `release_tag` | The same list. Attribution then runs per source. |
-| Status report | One `repo`, one `releases[]` | **Breaking** under the report's own rules: `repo` would change meaning. Needs `schema_version: 2` (D18, DOC5). |
-| Manifest | per repository | Unchanged. |
-
-**What a single source never had to handle:**
-
-* **Collisions.** Two sources may ship the same filesystem path or the same pipeline `code`. The
-  deployer must refuse that before it changes anything, with an `[ERROR] Cannot deploy:` line (D24),
-  rather than let the last source silently win.
-* **Order.** With collisions refused, order does not matter for correctness. A fixed order still
-  keeps the run logs comparable between runs.
-* **Partial runs.** One source can succeed and the next fail. The marker must say which sources
-  were deployed, or the checker reads intent as fact (§3.2's second limitation, multiplied).
-
-**What already breaks today, before any of this is built.** Pointing the current deployer at a
-second repository overwrites `.snt_release` with that repository's tag. The checker would then
-compare the `snt_development` files against a tag from another repository. So until the marker
-records the repository, **deploy only `snt_development` with the deployer**, and deploy this
-repository's pipelines by hand (D19).
-
-**Open:**
-
-* Is the bootstrap a new pipeline, or the deployer with a list parameter? The deployer already does
-  every step except handling several sources.
-* Does the checker need the full list, or can it read the sources from the enriched marker?
-
-## 2. This repository as a release source — proposal
-
-Plan item: give this repository its own manifest workflow, so the bootstrap can deploy the checker
-like any other pipeline.
-
-* **What a release here contains.** The generator's deployment half finds two pipeline directories:
-  `snt_workspace_checker/` *and* `snt_workspace_deployer/`. So a release of this repository ships the
-  deployer as well as the checker. The filesystem half (`pipelines/**`, `code/**`) matches nothing
-  here, so the deployer would copy no analytics from it.
-* **One generator or two.** The generator lives in `snt_development`'s
-  `generate_manifest.yaml` (M3). A copy here would be a second implementation of the SDK's zip rule
-  that can drift from the first. The alternative is to make that workflow reusable
-  (`workflow_call`) and call it from here, which is a change in `snt_development`. **Open.**
-* **Before the first release here:** rename the report key `snt_workspace_check_version` →
-  `snt_workspace_checker_version`. This was decided 2026-10-02 and deferred until now: after a
-  release it needs `schema_version: 2` and a migration (move plan, open questions).
-* **Tag protection:** set up the `Protect release tags` ruleset on this repository before its first
-  `v*` tag ([`release_strategy.md`](release_strategy.md)).
+The bootstrap pipelines now live in the monorepo, in the same release as everything else (same
+history entry). How they reach a workspace is open decision OD-4 in
+[`MIGRATION_PLAN.md`](../MIGRATION_PLAN.md) §3; the evaluation below is an input to it.
 
 ### To evaluate: deliver these two as OpenHEXA template pipelines instead
 
@@ -160,9 +106,8 @@ Also for the devs, already written up elsewhere: deleting or archiving a pipelin
 The move plan's other Session 5 items. They are listed here so the roadmap is complete, and each
 is described in its own file:
 
-* Switch both `github_repo` defaults from `BLSQ/snt_development_sandbox` to `BLSQ/snt_development`
-  **once the first real release exists**. On 2026-10-02 its only release was `v0.0.0-test`,
-  published that day as "Unofficial 1st release for testing purposes".
+* Switch the `github_repo` defaults from `BLSQ/snt_development_sandbox` to
+  `BLSQ/snt-stratification` ([`MIGRATION_PLAN.md`](../MIGRATION_PLAN.md) Phase 4).
 * Finish the deployer's test plan, D21–D24 and `backup_existing` ([`deployer.md`](deployer.md)
   §6.7). Run by hand in the sandbox.
 * ~~Delete the pre-phase-0 fallback in `split_manifest()`~~ Deleted 2026-10-02 (D26,

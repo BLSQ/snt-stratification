@@ -43,7 +43,8 @@ new one. Bumping a number is cheap; a tag that means two different things is exp
 that tag becomes ambiguous at once.
 
 GitHub enforces this rather than leaving it to discipline. **Active on
-`BLSQ/snt_development_sandbox`**; repeat it on `BLSQ/snt_development` before the first real release.
+`BLSQ/snt-stratification`** (the `v*` tag ruleset, since 2026-11-05) and on
+`BLSQ/snt_development_sandbox`.
 
 A ruleset is a property of the repository, so deleting the repository deletes it — and it is also
 why a sandbox cannot be cleaned up in place: *Restrict deletions* with an empty bypass list stops an
@@ -99,11 +100,12 @@ What has to be settled first:
    staging tags pile up for good. A prefix outside `v*` (e.g. `staging/…`) could be cleaned up, but
    that also means it could be moved. Every pipeline version and `.snt_release` named after it would
    then become ambiguous, which is the problem the ruleset exists to prevent. **Open.**
-3. **Which pairing a PR tests.** A `snt_development` PR: its pre-release, with this repo's current
-   deployer. A PR here: this repo's branch, against a fixed `snt_development` release. A change
-   spanning both: a pre-release in each, linked by name (e.g. the same ticket ID). Until this repo
-   publishes manifests ([`roadmap.md`](roadmap.md) §2), the deployer under test is pushed by hand
-   from the branch (D19).
+3. **Which pairing a PR tests.** In the monorepo there is one pairing: a PR's pre-release carries
+   the pipelines and the bootstrap pipelines together
+   ([ADR 0037](../decisions/0037-one-release-train.md)). The deployer under test is still pushed by
+   hand from the branch ([ADR 0029](../decisions/0029-no-deployment-workflow-for-bootstrap-pipelines.md))
+   until OD-4 in [`MIGRATION_PLAN.md`](../MIGRATION_PLAN.md) §3 settles how the bootstrap pipelines
+   reach a workspace.
 4. **What "clean workspace" means.** The deployer cannot delete pipelines or files
    ([`deployer.md`](deployer.md) §7.5), so a reused staging workspace keeps strays from the last PR.
    Either a new workspace per test, which needs the `oh` connection set up each time

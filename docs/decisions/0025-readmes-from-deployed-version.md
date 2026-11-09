@@ -13,7 +13,7 @@ the installed version does not have. Every SNT pipeline ships a `readme.md` next
 
 The webapp cannot read that code itself. `PIPELINES_READ` unlocks `pipelineVersion`, but the
 proxy grants no webapp scope `PipelineVersion.files` (or `zipfile`), so the query is refused
-([OH-3](../../webapps/orchestrator/docs/BACKLOG.md#oh-3)). `create_pipeline_cards` already reads `currentVersion.files` with
+([OH-6](../BACKLOG.md#oh-6)). `create_pipeline_cards` already reads `currentVersion.files` with
 their content, to find the function name in `pipeline.py`.
 
 ## Decision
@@ -36,5 +36,5 @@ their content, to find the function name in `pipeline.py`.
 - A not-installed step shows no README (there is no deployed version to read it from).
 - The README path is a second bucket-key contract between `config.py` (`OUTPUT_DIR` +
   `README_DIR`) and `app.js` (`README_DIR_KEY`).
-- If OpenHEXA grants `PipelineVersion.files` to a webapp scope (OH-3), the app could read the
+- If OpenHEXA grants `PipelineVersion.files` to a webapp scope (OH-6), the app could read the
   README directly and the copies could go.

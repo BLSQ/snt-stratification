@@ -109,7 +109,7 @@ pipeline_cards". `README_DIR_KEY` is in lockstep with `OUTPUT_DIR` + `README_DIR
 (`parameters_source: "openhexa_deployed"`), so the catalog matches what was installed when the
 generator ran; `generated_at` says when that was. What can be stale is the catalog vs the
 workspace *now*. Each card also records `version_name` / `version_number`; nothing reads them yet
-([UI-8](BACKLOG.md#ui-8)).
+([UI-8](../../../docs/BACKLOG.md#ui-8)).
 
 ### Diagnosing a missing catalog
 
@@ -158,7 +158,7 @@ Three independent axes per node:
 **What the UI shows.** One state per node, nested: **not installed** (`missing`, dashed ring) is
 never locked; an **installed** node (solid ring) is one of never run (`none`), **locked** (a `none`
 node with an unmet hard prerequisite — only never-run nodes are locked, see
-[APP-10](BACKLOG.md#app-10)), queued, running, succeeded, failed or stopped. `cockpitState()` maps
+[APP-10](../../../docs/BACKLOG.md#app-10)), queued, running, succeeded, failed or stopped. `cockpitState()` maps
 OpenHEXA run statuses onto these (`terminating` → running, `skipped` → stopped); the colours and
 labels follow OpenHEXA's run badges (tokens at the top of `styles.css`). A legend under the rail
 spells out the nesting.
@@ -201,7 +201,7 @@ interface language for v1.
 | App chrome (buttons, statuses, headings) | `I18N` table in `webapps/orchestrator/app/app.js` | `t("key", {params})` |
 | Node / step titles | `pipeline_map.json` → `label` | `pickLang(label)` |
 | Node descriptions | `pipeline_descriptions.json` → `{ en, fr }` | `pickLang(desc)` |
-| Parameter labels / help / choices | the workspace's catalog | not translated — English ([UI-4](BACKLOG.md#ui-4)) |
+| Parameter labels / help / choices | the workspace's catalog | not translated — English ([UI-4](../../../docs/BACKLOG.md#ui-4)) |
 
 Code-level rules (both `I18N` tables, `pickLang` fallbacks, language resolution order):
 [`webapps/orchestrator/CLAUDE.md`](../CLAUDE.md#bilingual-text).
@@ -210,6 +210,6 @@ Code-level rules (both `I18N` tables, `pickLang` fallbacks, language resolution 
 
 After a run the app shows its output files from `pipelineRun.outputs`, and its output datasets
 from `pipelineRun.datasetVersions` in a separate, best-effort query (it needs `DATASETS_READ`,
-[APP-11](BACKLOG.md#app-11)). A run's HTML report renders **inline** in an `<iframe>` on a freshly signed GCS
+[APP-11](../../../docs/BACKLOG.md#app-11)). A run's HTML report renders **inline** in an `<iframe>` on a freshly signed GCS
 URL, re-signed on demand because signed URLs expire. The technique is in
 [`OPENHEXA_WEBAPP_RUNTIME.md`](../../../docs/OPENHEXA_WEBAPP_RUNTIME.md#embedding-an-html-report-iframe).

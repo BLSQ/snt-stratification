@@ -27,7 +27,7 @@ separate per-language builds or one app that switches language.
 - Every new chrome string and every description edit must be written in **both** languages. Do not
   flatten the `{ en, fr }` shape.
 - Parameter labels and help come from the generated catalog and stay English
-  ([UI-4](../../webapps/orchestrator/docs/BACKLOG.md#ui-4)).
-- The French copy is a draft until reviewed ([UI-5](../../webapps/orchestrator/docs/BACKLOG.md#ui-5)).
+  ([UI-4](../BACKLOG.md#ui-4)).
+- The French copy is a draft until reviewed ([UI-5](../BACKLOG.md#ui-5)).
 
 Sources: `docs/PRODUCT_SPEC.md` §3 and §10 item 1; former `CLAUDE.md` *Bilingual UI*.

@@ -25,7 +25,7 @@ and the `deprecated/` folder still carried the old material. The repo was also t
 ## Consequences
 
 - No git history before the snapshot here. `git log` / `git blame` for older work runs against the
-  archived repo ([DOC-2](../../webapps/orchestrator/docs/BACKLOG.md#doc-2)).
+  archived repo ([DOC-7](../BACKLOG.md#doc-7)).
 - Nothing still in use is lost: the decisions are in ADRs (e.g. 0002, 0009), and what the spikes
   proved (report iframe on a signed URL, last-run status through the proxy) is in
   [`docs/OPENHEXA_WEBAPP_RUNTIME.md`](../OPENHEXA_WEBAPP_RUNTIME.md). Only the parked code, the

@@ -28,9 +28,9 @@ the form could offer parameters the installed pipeline did not accept, and a run
 - The pipeline README link in the app still points at GitHub `main`, so documentation can still
   drift from the installed version (settled later by [ADR 0025](0025-readmes-from-deployed-version.md)).
 - `version_name` / `version_number` are not read by the app yet; they exist for a future drift
-  check ([UI-8](../../webapps/orchestrator/docs/BACKLOG.md#ui-8)).
+  check ([UI-8](../BACKLOG.md#ui-8)).
 - Parameter labels and help text are English, because they come from pipeline source
-  ([UI-4](../../webapps/orchestrator/docs/BACKLOG.md#ui-4)).
+  ([UI-4](../BACKLOG.md#ui-4)).
 
 Sources: former `CLAUDE.md` *Staleness*; `contracts/pipeline_cards.schema.json`;
 [`pipelines/create_pipeline_cards/README.md`](../../pipelines/create_pipeline_cards/README.md).

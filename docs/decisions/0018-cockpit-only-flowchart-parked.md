@@ -28,7 +28,7 @@ per-variant line references) and the deploy paths.
 
 - Docs, contracts and the product spec describe one UI; there is no "variant" wording left.
 - Flowchart webapps may still be deployed in some workspaces; the repo does not track them
-  ([OPS-1](../../webapps/orchestrator/docs/BACKLOG.md#ops-1)).
+  ([OPS-1](../BACKLOG.md#ops-1)).
 - Whether a 2D map ever becomes user-facing is an open product question, recorded in
   `deprecated/flowchart/README.md`. Reviving it means porting everything Cockpit gained since.
 - The node ids of any future second webapp must match `webapps/orchestrator/pipeline_map.json`,

@@ -54,7 +54,7 @@ Constants at the top of `app.js` that encode contracts with the outside world:
 - Language at boot: `?lang=` (wins, and is persisted) → `localStorage["snt_lang"]` → `en`.
   Switching sets `LANG`, rebuilds the steps and re-renders from scratch; there is no partial-update
   path to maintain.
-- The `I18N.fr` strings are drafts pending review ([UI-5](docs/BACKLOG.md#ui-5)); do not
+- The `I18N.fr` strings are drafts pending review ([UI-5](../../docs/BACKLOG.md#ui-5)); do not
   present them as final.
 
 ## HTML injection seam
@@ -107,7 +107,7 @@ generic branch still prints the codes, so nothing is swallowed). The four drift 
 
 - **Parameter controls:** `fieldControlHtml` has dedicated controls only for DHIS2 and custom
   connections (dropdowns from `workspace { connections }`, which the proxy currently refuses even
-  with `USER_READ`, so today the text input always shows; [OH-2](docs/BACKLOG.md#oh-2)). Three outcomes:
+  with `USER_READ`, so today the text input always shows; [OH-5](../../docs/BACKLOG.md#oh-5)). Three outcomes:
   query loaded with matches → dropdown; loaded with none of that type → a "No … connection — add
   one on the Connections page" note (`.fnoconn`, `form.noConn`, links to
   `/workspaces/<slug>/connections/`); query failed or returned no

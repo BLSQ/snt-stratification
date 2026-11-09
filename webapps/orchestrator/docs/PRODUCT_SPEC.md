@@ -22,7 +22,7 @@
 > the technical-basis column of §6.
 >
 > **Related:** how it is built — [`ARCHITECTURE.md`](ARCHITECTURE.md); why — [`decisions/`](../../../docs/decisions/README.md);
-> repo-level open items — [`BACKLOG.md`](BACKLOG.md); SNT vocabulary — `snt_development`'s
+> repo-level open items — [`BACKLOG.md`](../../../docs/BACKLOG.md); SNT vocabulary — `snt_development`'s
 > [`docs/GLOSSARY.md`](https://github.com/BLSQ/snt_development/blob/main/docs/GLOSSARY.md); user
 > research — `research/personas/persona_questionnaire_answered-20260713.md` (not public);
 > UX target — [`design/wireframes/orchestrator_wireframe_cockpit.html`](../design/wireframes/orchestrator_wireframe_cockpit.html).
@@ -191,7 +191,7 @@ roadmap builds on. Technical detail: [`OPENHEXA_WEBAPP_RUNTIME.md`](../../../doc
 | F1  | **Live, persistent status board** | On every load, each pipeline shows its real last-run status; true for the whole team, across reloads and days. | `pipelines(workspaceSlug:)` → `runs(orderBy: EXECUTION_DATE_DESC, perPage:1)`, under `PIPELINES_READ`. | ✅ |
 | F2  | **Missing-pipeline detection** | Pipelines not installed here are greyed; a panel explains they're standard and deep-links to the templates page. Once installed, the step goes live as soon as the catalog is regenerated — no redeploy. | A step is available iff its `id` is in the workspace's catalog (with a `uuid`); otherwise greyed. | ✅ |
 | F3  | **Pipeline detail panel** | Name/code/type, a description of what the pipeline does, and its README for the installed version in a collapsible **Documentation** box. | Static content from the map, descriptions and catalog; the README is copied from the deployed version by the generator and read from the bucket when the box is opened ([ADR 0025](../../../docs/decisions/0025-readmes-from-deployed-version.md)). | ✅ |
-| F4  | **Parameter form + config preview** | A typed input per parameter (checkbox, number, dropdown, multi-select, **connection dropdown**), help text, sensible defaults; a "preview config" toggle shows the exact package to be sent. | Form generated from the catalog; connection dropdown from `workspace { connections }` (`USER_READ`, else a text fallback; the proxy currently refuses it, so the text fallback shows — [OH-2](BACKLOG.md#oh-2)). | ✅ |
+| F4  | **Parameter form + config preview** | A typed input per parameter (checkbox, number, dropdown, multi-select, **connection dropdown**), help text, sensible defaults; a "preview config" toggle shows the exact package to be sent. | Form generated from the catalog; connection dropdown from `workspace { connections }` (`USER_READ`, else a text fallback; the proxy currently refuses it, so the text fallback shows — [OH-5](../../../docs/BACKLOG.md#oh-5)). | ✅ |
 | F5  | **Run + poll** | A Run button launches the pipeline and polls it to completion, live-updating the step. | `runPipeline` mutation, params as a `config` object (connections passed by **slug**). Needs `PIPELINES_RUN`. | ✅ |
 | F6  | **Outputs & report links** | After a run, links to its output **datasets** and **files**; the **HTML report** opens via a signed URL. | `pipelineRun.outputs` (union) + `prepareObjectDownload` signed URL. Needs `FILES_READ`. | ✅ |
 | F7  | **Mutual exclusion (alt. groups)** | For a choose-one method group, shows which member is **in use** (holds the latest success) and marks the others superseded. | Derived client-side from run history + the map's `group`. Only a _succeeding_ run moves the "in use" mark. | ✅ |
@@ -311,9 +311,9 @@ confirm or move it. Item numbers are stable references; resolved items keep thei
 1. **French localization — _v1 (decided; ✅ built)._** French is the main interface language for
    v1; one app with a language toggle ([ADR 0017](../../../docs/decisions/0017-one-bilingual-app.md)).
    **Remaining for v1:** (a) **review/sign off the French copy** — currently draft
-   ([UI-5](BACKLOG.md#ui-5)); (b) decide whether **parameter labels/help** (which come from the
+   ([UI-5](../../../docs/BACKLOG.md#ui-5)); (b) decide whether **parameter labels/help** (which come from the
    pipeline source, not the app) should also be translated — today they stay English
-   ([UI-4](BACKLOG.md#ui-4)).
+   ([UI-4](../../../docs/BACKLOG.md#ui-4)).
 2. **In-app failure help — _v2._** On a failed run, surface a **plain-language summary in-app** and
    (deeper) **run messages / log excerpts**. v1 keeps the link-out to the OpenHEXA run (F10).
    _(Q24; PM re-prioritised from v1.)_
@@ -352,7 +352,7 @@ confirm or move it. Item numbers are stable references; resolved items keep thei
 9. **Condense the Dependencies section — _v1 (✅ built; one sub-question left)._** Every panel
    section is a collapsible box and Dependencies **starts collapsed** (§8). **Still open:** are the
    **per-type counts** in the collapsed header (_"Requires (2 pipelines)"_ / _"Unlocks (11
-   pipelines)"_) still wanted? Not built. ([UI-7](BACKLOG.md#ui-7))
+   pipelines)"_) still wanted? Not built. ([UI-7](../../../docs/BACKLOG.md#ui-7))
 10. **Embed the HTML report in-app — _v1 (✅ built; resolved)._** The run's HTML report renders in a
     box at the bottom of the step (§8).
 

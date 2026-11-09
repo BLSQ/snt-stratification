@@ -26,7 +26,7 @@ pipeline. **Changing the configuration means running a pipeline, not redeploying
 | [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) | Deploying a change, setting up a new workspace |
 | [`docs/OPENHEXA_WEBAPP_RUNTIME.md`](../../docs/OPENHEXA_WEBAPP_RUNTIME.md) | What OpenHEXA static webapps can do, and how |
 | [`docs/decisions/`](../../docs/decisions/README.md) | Why things are the way they are (ADRs) |
-| [`docs/BACKLOG.md`](docs/BACKLOG.md) | Open items and questions |
+| [`docs/BACKLOG.md`](../../docs/BACKLOG.md) | Open items and questions |
 | [`design/`](design/) | Wireframes and map previews |
 
 History before this repo — git history, the parked 2D-map ("Flowchart") UI and retired experiments

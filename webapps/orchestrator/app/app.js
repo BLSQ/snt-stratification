@@ -64,7 +64,7 @@ var STATUS_QUERY =
 
 // Workspace connections — populates the DHIS2Connection / CustomConnection
 // dropdowns in the form. Needs USER_READ, and the proxy currently refuses the
-// nested fields anyway (OH-2); on failure the form falls back to a text slug input.
+// nested fields anyway (OH-5); on failure the form falls back to a text slug input.
 var CONNECTIONS_QUERY =
   "query ($ws: String!) {" +
   "  workspace(slug: $ws) {" +
@@ -159,7 +159,7 @@ var CARDS_OBJECT_KEY =
 
 /* Where the same pipeline writes each curated pipeline's README, as <id>.md,
  * copied from the deployed version's code (the proxy does not let webapps read
- * PipelineVersion.files — OH-3). Lockstep with config.py (OUTPUT_DIR +
+ * PipelineVersion.files — OH-6). Lockstep with config.py (OUTPUT_DIR +
  * README_DIR). */
 var README_DIR_KEY = "utils_pipelines/create_pipeline_cards/pipeline_cards/readmes";
 

@@ -21,7 +21,7 @@ UI. It is never derived from `location.hostname`.
 
 - Links work on the SaaS in every workspace with no configuration.
 - A self-hosted OpenHEXA install would get links to the SaaS. Supporting one needs a change
-  ([PLAT-1](../../webapps/orchestrator/docs/BACKLOG.md#plat-1)).
+  ([PLAT-1](../BACKLOG.md#plat-1)).
 - The same applies to the generator's template deep link, which is built from the template's
   display name (`GENERATOR_TEMPLATE_NAME`); renaming the template breaks that link silently.
 

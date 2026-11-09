@@ -9,7 +9,7 @@ recorded in the repo** ([ADR 0020](../../../docs/decisions/0020-repo-is-not-a-de
 
 - **The webapp:** the five files in `webapps/orchestrator/app/`, flat, exactly as they are in the repo
   — **not** the folder's `CLAUDE.md` (agent notes), and **never a `pipeline_cards.json`** — a copy found inside a deployed webapp is a leftover nothing
-  fetches; remove it with `files_to_delete_json` ([OPS-2](BACKLOG.md#ops-2)).
+  fetches; remove it with `files_to_delete_json` ([OPS-2](../../../docs/BACKLOG.md#ops-2)).
 - **The generator:** `pipelines/create_pipeline_cards/`. Every merge to `main` that touches that
   folder pushes it to `snt-development` (code `create-pipeline-cards`) through
   [`.github/workflows/push_create_pipeline_cards.yaml`](https://github.com/BLSQ/snt_webapp_orchestrator/blob/603a831f8d996b99908819f27afa4a241dc941b9/.github/workflows/push_create_pipeline_cards.yaml),
@@ -119,7 +119,7 @@ Read tools take the **slug**; write tools take the **`id`**.
   as the user.
 - The OpenHEXA **CLI deploys pipelines only**, and the Python SDK's webapp surface is read-only
   (`workspace.get_webapp(slug)`, `OpenHexaClient().get_webapp_by_slug(...)`) — neither can deploy a
-  webapp ([OH-1](BACKLOG.md#oh-1)).
+  webapp ([OH-4](../../../docs/BACKLOG.md#oh-4)).
 
 ### Version history and rollback
 
@@ -127,7 +127,7 @@ Because webapps are git-backed, the GraphQL `Webapp` type exposes `versions` (`W
 message, authorName, authorEmail, date }`), `commitDiff(ref)`, `files(ref:)`, `previewUrl`,
 `serveUrl` and `subdomain`; `UpdateWebappInput.publishedVersionId` selects which commit is served.
 **No MCP tool exposes these** — only the OpenHEXA UI or raw GraphQL. A tested rollback procedure is
-open ([REL-3](BACKLOG.md#rel-3)).
+open ([REL-3](../../../docs/BACKLOG.md#rel-3)).
 
 ## Setting scopes
 

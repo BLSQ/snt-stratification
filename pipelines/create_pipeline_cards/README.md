@@ -42,7 +42,7 @@ from the deployed version) and [0013](../../docs/decisions/0013-generator-curate
 (curation against the deployed map).
 
 Each card also records the **deployed version** its parameters were read from (`version_name`,
-`version_number`). The orchestrator does not read them yet ([UI-8](../../webapps/orchestrator/docs/BACKLOG.md#ui-8)).
+`version_number`). The orchestrator does not read them yet ([UI-8](../../docs/BACKLOG.md#ui-8)).
 
 ## Parameters
 

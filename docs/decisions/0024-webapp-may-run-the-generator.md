@@ -32,4 +32,4 @@ and the generator takes no parameters.
   catalogue stays the generator's output (R3); the app never writes it.
 - One more workspace-wide side effect is one click away. A double click starts one run only.
 - The run-error drift hint and the boot "no catalogue" panel still only link to the generator
-  ([APP-6](../../webapps/orchestrator/docs/BACKLOG.md#app-6), [APP-7](../../webapps/orchestrator/docs/BACKLOG.md#app-7)).
+  ([APP-6](../BACKLOG.md#app-6), [APP-7](../BACKLOG.md#app-7)).

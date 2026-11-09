@@ -744,10 +744,10 @@ proceed in parallel against the new schema.
       the release and upload it. Never deploy from `main`.
 - [ ] Checker: compare the deployed webapp files with the manifest hashes (needs the files to be
       readable; S5).
-- [ ] Deployer webapp support (REL-2), gated on S5 / OpenHEXA OH-1. Scopes stay manual (they aren't
+- [ ] Deployer webapp support (REL-2), gated on S5 / OpenHEXA OH-4. Scopes stay manual (they aren't
       part of the bundle).
 - [ ] Keep the runtime contracts unchanged: webapp slug `snt-pipelines-orchestrator-cockpit`, bucket key
-      `utils_pipelines/…` (REPO-3), template name `Create pipeline_cards.json`, `GENERATOR_KEY_MATCH`.
+      `utils_pipelines/…` (APP-12), template name `Create pipeline_cards.json`, `GENERATOR_KEY_MATCH`.
 
 ### Phase 8 — Adoption and sunset
 - [ ] New country workspaces start from the new repo (deployer or new templates).
@@ -775,7 +775,7 @@ proceed in parallel against the new schema.
 | Deployer downloads the whole repo tarball | Slim release tarball asset (Phase 3) |
 | Everyone with write access can change everything | Branch protection. CODEOWNERS per area declined for now (D-15); to be discussed with the team |
 | `.gitignore` `*.json` trap silently drops webapp/contract JSON | Allowlist + `git check-ignore` check in Phase 1 |
-| Webapp deployment still can't be automated (no CLI/SDK route, OH-1) | Not caused or fixed by the monorepo. Stamped zips make the manual route reproducible |
+| Webapp deployment still can't be automated (no CLI/SDK route, OH-4) | Not caused or fixed by the monorepo. Stamped zips make the manual route reproducible |
 | Two live systems (old repo/templates + new) for a long period | D-4 maintenance-only + explicit archive criteria |
 | `snt_lib` stays external for now: config, Pull-scripts and path changes still need cross-repo PRs | Pin a tag (D-3). Plan `snt_lib` releases as named steps in Phases 1, 5 and 6. Long term: bring it in (§10) |
 

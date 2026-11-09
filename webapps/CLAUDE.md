@@ -78,7 +78,7 @@ Status: `enforced` — something fails mechanically · `convention` — manual; 
 - **Bucket key ≠ repo path.** `utils_pipelines/create_pipeline_cards/pipeline_cards/pipeline_cards.json`
   is a runtime path in every bucket: `CARDS_OBJECT_KEY` (`app.js`) ↔ `OUTPUT_DIR` +
   `WEBAPP_CARDS_PATH` (`config.py`), in lockstep. Do not "fix" it to match `pipelines/`
-  ([REPO-3](orchestrator/docs/BACKLOG.md#repo-3)). Same for the READMEs next to it: `README_DIR_KEY` (`app.js`)
+  ([APP-12](../docs/BACKLOG.md#app-12)). Same for the READMEs next to it: `README_DIR_KEY` (`app.js`)
   ↔ `OUTPUT_DIR` + `README_DIR` (`config.py`).
 - **Generator after webapp.** `create_pipeline_cards` curates against the *deployed* map of
   `config.WEBAPP_SLUG` and fails if that webapp is absent.
@@ -86,7 +86,7 @@ Status: `enforced` — something fails mechanically · `convention` — manual; 
   derive the app host from the webapp hostname.
 - **Public webapps cannot call the proxy**; **`FILES_READ` is boot-critical**; the proxy also
   filters **nested fields**: `workspace { connections }` is refused even with `USER_READ`, so
-  the connection dropdowns fall back to a text input ([OH-2](orchestrator/docs/BACKLOG.md#oh-2)).
+  the connection dropdowns fall back to a text input ([OH-5](../docs/BACKLOG.md#oh-5)).
 - **`workspace { pipelines }` does not parse** — use top-level `pipelines(workspaceSlug:)`.
 - **`runPipeline.errors` is an enum**, never prose. **`terminating` is not terminal** — keep polling.
   Statuses are lowercase.
@@ -98,7 +98,7 @@ Status: `enforced` — something fails mechanically · `convention` — manual; 
 
 Docs state **current truth only** — no "verified on DATE", no "this used to be broken" prose.
 History → git and ADRs ([`docs/decisions/`](../docs/decisions/README.md)). Open items →
-[`docs/BACKLOG.md`](orchestrator/docs/BACKLOG.md) only, with stable IDs. Each fact has one canonical home; other
+[`docs/BACKLOG.md`](../docs/BACKLOG.md) only, with stable IDs. Each fact has one canonical home; other
 docs link to it.
 
 ## Session start
@@ -123,7 +123,7 @@ docs link to it.
 | How to deploy (a CSS change, a full bundle, a new workspace), scopes, rollback, schema refresh | [`docs/DEPLOYMENT.md`](orchestrator/docs/DEPLOYMENT.md) |
 | Rules for editing the app code | [`webapps/orchestrator/CLAUDE.md`](orchestrator/CLAUDE.md) |
 | Why something is the way it is | [`docs/decisions/`](../docs/decisions/README.md) |
-| What is open / undecided | [`docs/BACKLOG.md`](orchestrator/docs/BACKLOG.md) |
+| What is open / undecided | [`docs/BACKLOG.md`](../docs/BACKLOG.md) |
 | Field definitions of the JSON files | [`contracts/`](../contracts/orchestrator/) |
 | The catalog generator | [`pipelines/create_pipeline_cards/README.md`](../pipelines/create_pipeline_cards/README.md) |
 | GraphQL types | grep [`reference/openhexa/schema.generated.graphql`](../reference/openhexa/schema.generated.graphql) |
