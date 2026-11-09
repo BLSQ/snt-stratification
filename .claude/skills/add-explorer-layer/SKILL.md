@@ -32,7 +32,7 @@ index), not raw JSON line numbers.
    stop and report it — the layer cannot be displayed over time.
 3. **`DATASET.NAME` is a config key** (contract README §2.5), not the dataset's UI name: it must be
    a key of `SNT_DATASET_IDENTIFIERS` in
-   [`contracts/snt_config_json/SNT_config.skeleton.json`](../../../contracts/snt_config/SNT_config.skeleton.json)
+   [`contracts/snt_config/SNT_config.skeleton.json`](../../../contracts/snt_config/SNT_config.skeleton.json)
    *and* the key the pipeline's `add_files_to_dataset(dataset_id=…)` resolves. Copy it when adding;
    confirm it matches when checking.
 4. **Edit** following contract README §4 *Add a layer* (id, all nine fields, `CATEGORY` reused string
@@ -47,8 +47,8 @@ index), not raw JSON line numbers.
    python3 .claude/skills/add-explorer-layer/validate_metadata.py <file>     # any other copy
    ```
 
-   Exit code 1 = fix and rerun. If `jsonschema` is missing it exits with an install hint (it is not
-   in `dev/environment.yml`).
+   Exit code 1 = fix and rerun. It needs `jsonschema`, which is in `dev/environment.yml`: run it in
+   the `snt-stratification` env. If `jsonschema` is missing it exits with an install hint.
 6. **Report** the trace from steps 1–3 with `file:line` / cell evidence, the validator output, and
    what the validator cannot catch (contract README §5): that `FILENAME`/`COLUMN` exist in a *live*
    dataset, `CATEGORY` consistency, whether `SCALE` suits the country's value range. Those need a

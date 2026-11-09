@@ -1,14 +1,15 @@
-# 0005. The catalog is not stored in `workspace.configuration`
+# 0014. The catalog is not stored in `workspace.configuration`
 
-Date: not recorded (noted around 2026-08, after [0002](0002-catalog-in-workspace-bucket.md))
+Date: not recorded (noted around 2026-08, after [0011](0011-catalog-in-workspace-bucket.md))
 Status: Accepted
+Originally: `snt_webapp_orchestrator` ADR 0005
 
 ## Context
 
 `Workspace.configuration: JSON!` is a workspace-wide JSON dictionary. A pipeline can write it (SDK
 `workspace.configuration = config`, or the `updateWorkspace` mutation), and a webapp can read it
 with no extra scope (`USER_READ` grants `workspace`). That made it an apparent alternative to the
-bucket file chosen in [0002](0002-catalog-in-workspace-bucket.md).
+bucket file chosen in [0011](0011-catalog-in-workspace-bucket.md).
 
 ## Decision
 

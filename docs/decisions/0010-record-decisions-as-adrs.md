@@ -1,7 +1,8 @@
-# 0001. Record architecture decisions as ADRs; working plans stay local
+# 0010. Record architecture decisions as ADRs; working plans stay local
 
 Date: 2026-10-19
 Status: Accepted
+Originally: `snt_webapp_orchestrator` ADR 0001
 
 ## Context
 
@@ -27,7 +28,7 @@ Those are working documents: most of their content is superseded within days.
 - `CLAUDE.md` can stay short: its rule register links to an ADR for each "why".
 - The same ADR format in both repos keeps a future merge of the two (backlog REPO-1) simple.
 - Some decisions made before this ADR have no recorded date or full rationale. Their ADRs say
-  "not recorded" rather than guess (see [DOC-2](../BACKLOG.md#doc-2)).
+  "not recorded" rather than guess (see [DOC-7](../BACKLOG.md#doc-7)).
 - Plans in `ignore/` are not shared. Anything a teammate needs must reach an ADR, a doc or the
   backlog.
 

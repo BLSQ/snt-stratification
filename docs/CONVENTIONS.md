@@ -2,7 +2,8 @@
 
 The rules themselves, with their enforcement status and known exceptions, are the **Register** in
 [`../CLAUDE.md`](../CLAUDE.md#register). This file holds the *why* and the *how*, one anchor per rule
-ID (`#r1` … `#r22`). Decisions with a longer history are in [`decisions/`](decisions/README.md).
+ID (`#r1` … `#r26`); the webapp rules W1–W9 are in
+[`../webapps/CLAUDE.md`](../webapps/CLAUDE.md#register). Decisions with a longer history are in [`decisions/`](decisions/README.md).
 
 Adding a rule: add a row to the Register *and* a section here. A rule that is only here will be
 missed; a rule that is only in the Register will be misapplied.
@@ -40,11 +41,23 @@ dataset is invisible downstream. When you add an output, add it to the dataset *
 pipeline's `readme.md`.
 
 <a id="r6"></a>
-### R6 — Every new notebook / `.r` file registered in `pull_scripts_from_repository(...)`
+### R6 — Every notebook listed in `pull_scripts_from_repository(...)`; other `.r` names in `extra_util_scripts`
 
-Register filenames in `pull_scripts_from_repository(report_scripts=[...], code_scripts=[...])`. A
-file not listed there will never reach a workspace. (Country-specific `_<CC>` variants are the
-deliberate exception — see [`../pipelines/CLAUDE.md`](../pipelines/CLAUDE.md#country-specific-notebook-variants).)
+`pull_scripts_from_repository()` (in `snt_lib`) copies only what it is told about:
+
+- **Notebooks** must be listed: `code_scripts=[...]` for `code/`, `report_scripts=[...]` for
+  `reporting/`. An unlisted notebook never reaches a workspace.
+- **Util files are derived, not listed:** `utils/{pipeline_name}.r` (when `code_scripts` is given),
+  `utils/{pipeline_name}_report.r` (when `report_scripts` is given) and `utils/{stem}.r` for every
+  listed notebook. A missing derived file is skipped quietly.
+- **Any other `.r` name** goes in `extra_util_scripts=[...]`; a listed one that is missing logs a
+  warning.
+- The three shared files (`snt_utils.r`, `snt_report.r`, `snt_palettes.r`) are always pulled.
+
+Country-specific `_<CC>` variants are deliberately never listed — see
+[`../pipelines/CLAUDE.md`](../pipelines/CLAUDE.md#country-specific-notebook-variants). Today the
+function pulls from the **old** `snt_development` repo and its `code/` folder, whatever this repo
+holds; pointing it here needs a `snt_lib` release (migration plan, Phase 6).
 
 <a id="r16"></a>
 ### R16 — `readme.md` updated in the same PR as the `pipeline.py` change it describes
@@ -55,20 +68,24 @@ and how to verify each one against the code — re-verify, do not patch from mem
 
 ### Adding or changing a pipeline
 
-1. `<name>/pipeline.py` — `@pipeline("<name>")`, `@parameter(...)`, orchestration only (R3).
-2. `<name>/requirements.txt` — match the existing two-line pattern unless more is genuinely needed.
-3. `<name>/readme.md` — the user-facing contract (R16).
-4. `.github/workflows/push_<name>.yaml` — copy an existing one; update **every** occurrence of the
-   pipeline name, including the `paths:` filter and the `--code "<kebab-case-name>"` slug (directory
-   name with underscores → hyphens). **Leave `workspace: "snt-development"` alone** (R5).
-5. `pipelines/<name>/{code,reporting,utils}/` — analytics; register the filenames (R6).
+All in one folder, `pipelines/<name>/`, where `<name>` is the `@pipeline` id (R26,
+[ADR 0038](decisions/0038-repo-path-is-workspace-path.md)):
+
+1. `pipeline.py` — `@pipeline("<name>")`, `@parameter(...)`, orchestration only (R3).
+2. `requirements.txt` — match the existing two-line pattern unless more is genuinely needed.
+3. `readme.md` — the user-facing contract (R16).
+4. `{code,reporting,utils}/` — analytics; register the filenames (R6).
+5. An entry in [`../pipelines/registry.json`](../pipelines/registry.json) with its `kind`.
 6. Add the dataset id to `SNT_DATASET_IDENTIFIERS` in the config, and to the lineage tables in
    [`DATA_ARCHITECTURE.md`](DATA_ARCHITECTURE.md).
+
+There is no deploy workflow to add yet: Phase 3 of the migration generates them from
+`registry.json`.
 
 ## Publishing and releases
 
 <a id="r5"></a>
-### R5 — Publish only from the `snt-development` workspace
+### R5 — Each template set is published from exactly one workspace
 
 OpenHEXA ties template publication to the workspace a pipeline is pushed from:
 
@@ -77,35 +94,44 @@ OpenHEXA ties template publication to the workspace a pipeline is pushed from:
 - Push from **any other workspace** → creates a **separate new template pipeline**: a duplicate
   nobody is subscribed to, competing with the real one in the template list.
 
-So: never edit `workspace:` in a `push_snt_*.yaml`, and never run `openhexa pipelines push` for an
-SNT pipeline from a country or personal workspace. `--description` and `--link` in those workflows
-stamp each published version with the commit message and a link to the commit, which makes the
-OpenHEXA version list a usable deployment history — write commit messages that will read well
-there. Decision record: [ADR 0004](decisions/0004-publish-only-from-snt-development.md).
+There are two template sets ([ADR 0041](decisions/0041-new-templates-publishing-workspace.md)):
+
+- The **old** set is published from **`snt-development`**, by the old `snt_development` repo's CI
+  only. Countries are subscribed to it. **Never push a pipeline from this repo to
+  `snt-development`**: it would publish this repo's code to every subscribed country.
+- The **new** set (Phase 6, [ADR 0040](decisions/0040-templates-kept-alongside-the-deployer.md))
+  is published from its own dedicated workspace, not created yet.
+
+Never run `openhexa pipelines push` for an SNT pipeline from a country or personal workspace. A
+manual push from this repo goes to a test workspace only. In the old repo's workflows,
+`--description` and `--link` stamp each published version with the commit message and a link to the
+commit, which makes the OpenHEXA version list a usable deployment history. Decision record:
+[ADR 0004](decisions/0004-publish-only-from-snt-development.md), amended by ADR 0041.
 
 <a id="r22"></a>
-### R22 — `release_manifest.json` shape changes only together with its schema
+### R22 — A shape change to the release manifest or the checker's report updates its schema in the same PR
 
-A GitHub release of this repo is the unit that the tools in
-[`BLSQ/snt_workspace_bootstrap`](https://github.com/BLSQ/snt_workspace_bootstrap) deploy into a
-workspace and check it against. This repo holds only the producer side:
-[`../.github/workflows/generate_manifest.yaml`](https://github.com/BLSQ/snt_development/blob/94cfc383c0f8804d2eba264f26a4bd3d372d94da/.github/workflows/generate_manifest.yaml) runs when
-a release is published, hashes every file the release ships, and attaches `release_manifest.json`
-to the release.
+Two JSON documents are read by code that is not their producer:
 
-**The manifest's shape is a cross-repo contract.** `snt_workspace_deployer` and
-`snt_workspace_checker` read it, and its schema lives in that repo:
-[`docs/contracts/release_manifest.schema.json`](https://github.com/BLSQ/snt_workspace_bootstrap/blob/main/docs/contracts/release_manifest.schema.json),
-with the prose in
-[`release_manifest.md`](https://github.com/BLSQ/snt_workspace_bootstrap/blob/main/docs/contracts/release_manifest.md).
-Do not change the shape (a key, a type, or what a value means) without updating that schema in the
-same change — in practice a paired PR in `snt_workspace_bootstrap`, merged together with this one.
-The schema's description says which changes break compatibility.
+- **`release_manifest.json`**, attached to every GitHub release: the deployer installs what it
+  lists, and the checker compares a workspace against it. Schema
+  [`../contracts/release_manifest.schema.json`](../contracts/release_manifest.schema.json), prose
+  [`../contracts/release_manifest.md`](../contracts/release_manifest.md).
+- **The checker's status report**, frozen at `schema_version: 1`. Schema
+  [`../contracts/status_report.schema.json`](../contracts/status_report.schema.json), which wins
+  over the prose in `docs/bootstrap/checker.md` §5.5.
 
-*Which* paths a release ships is this repo's choice, not part of the schema: the four R glob
-patterns, plus every top-level directory holding a `pipeline.py`. Changing that does not break the
-contract, but it changes what the deployer installs and the checker compares, so say so in the PR.
-For example, a new top-level directory with a `pipeline.py` ships in the next release.
+Do not change either shape (a key, a type, or what a value means) without changing its schema in
+the same PR. Each schema's `description` says what is breaking: a new key or enum value is not; a
+rename, a removal or a change of meaning is. Why the manifest is frozen as a schema:
+[ADR 0033](decisions/0033-release-manifest-frozen-json-schema.md).
+
+The manifest's **producer is still in the old repo**:
+[`generate_manifest.yaml`](https://github.com/BLSQ/snt_development/blob/94cfc383c0f8804d2eba264f26a4bd3d372d94da/.github/workflows/generate_manifest.yaml)
+in `snt_development`, not imported. Until Phase 3 brings it here as `tools/build_manifest.py`
+(manifest v2), a shape change there still needs a paired PR here. *Which* paths a release ships is
+the producer's choice, not part of the schema, but it changes what the deployer installs and the
+checker compares, so say so in the PR.
 
 ## Naming
 
@@ -115,7 +141,8 @@ For example, a new top-level directory with a `pipeline.py` ships in the next re
 Country code `{CC}` comes from `SNT_CONFIG.COUNTRY_CODE`, uppercase: `{CC}_routine.parquet`,
 `{CC}_incidence.csv`, `{CC}_shapes.geojson`. Exception: the WorldPop raster cache
 `data/worldpop/rasters/{cc_lower}_pop_{year}_*.tif`, shared by three pipelines — don't rename those
-files (see the Traps in [`../CLAUDE.md`](../CLAUDE.md#traps)).
+files (see the pipeline traps in
+[`../pipelines/CLAUDE.md`](../pipelines/CLAUDE.md#pipeline-traps)).
 
 <a id="r8"></a>
 ### R8 — Parquet is the machine contract; write the `.csv` twin beside it
@@ -127,7 +154,8 @@ The `.csv` twin is for humans. Write both where the existing pipeline does.
 
 Write run parameters with `save_pipeline_parameters(...)` and always publish the file to the dataset
 alongside the data. It is the only provenance record — for example, the only way to tell which
-outlier method produced the current files (see *Last run wins* in the Traps). Known exceptions: ERA5
+outlier method produced the current files (see *Last run wins* in the
+[pipeline traps](../pipelines/CLAUDE.md#pipeline-traps)). Known exceptions: ERA5
 stamps `pipeline_name="snt_era5_aggregate"`; `snt_healthcare_access` stores the `File` object, not
 `.path`.
 
@@ -162,7 +190,7 @@ runs it in CI ([BACKLOG TOOL-2](BACKLOG.md#tool-2)) — run `ruff check` yoursel
 
 R: snake_case functions, `<-` assignment, roxygen2 docstrings above the function signature
 (`#' Title`, blank `#'`, description, `@param` per argument, `@return`, `@export`) — see
-[`../code/snt_utils.r`](../shared/r/snt_utils.r) for examples.
+[`../shared/r/snt_utils.r`](../shared/r/snt_utils.r) for examples.
 
 ## Schema
 
@@ -208,10 +236,11 @@ not assume every current output already complies.
 - A published column reaches the SNT Explorer only if a layer in
   [`../catalogs/SNT_metadata_master.json`](../catalogs/README.md) points at it. Adding an indicator
   means adding its layer there too, in the same PR.
-- **`SNT_metadata.json` is mid-format-change.** The copy archived in `deprecated/configuration/` is
-  the old shape; its only reader, `snt_assemble_results`, is retired, so nothing reads it today. The
-  **target** shape — one entry per SNT Explorer data layer, with a `SOURCE_DATA` pointer and
-  bilingual labels — is specified in
+- **`SNT_metadata.json` is mid-format-change.** The old-shape copy (archived in
+  `snt_development/deprecated/configuration/`, not imported) had one reader,
+  `snt_assemble_results`, which is retired, so nothing reads it today. The **target** shape — one
+  entry per SNT Explorer data layer, with a `SOURCE_DATA` pointer and bilingual labels — is
+  specified in
   [`../contracts/snt_metadata_json/`](../contracts/snt_metadata_json/README.md), with a JSON Schema
   as its source of truth. Write new metadata entries to that schema, and read its open questions
   ([BACKLOG `META-*`](BACKLOG.md#snt-explorer-metadata)) before assuming a field's meaning: the
@@ -222,19 +251,19 @@ not assume every current output already complies.
 - Pipelines read `<workspace>/configuration/SNT_config.json` — one file, one country, one workspace.
   (That is the workspace path — this repo has no `configuration/` folder.)
 - The current structure of that file is
-  [`../contracts/snt_config_json/SNT_config.skeleton.json`](../contracts/snt_config/README.md) —
-  keep it in sync when a schema key changes. The old `SNT_config_<CC>.json` copies in
-  `deprecated/configuration/` are **examples only, not loadable**, and were never verified against
-  the workspaces. Do not add logic that reads the `_<CC>` names.
-- `.gitignore` blocks `*.json` except `deprecated/configuration/*.json`, `.claude/settings.json`,
-  `contracts/**/*.json` and `catalogs/SNT_metadata_master.json` — a new JSON file needs a deliberate
-  negation, not a force-add. The `.claude/settings.json` negation is load-bearing: without it the
-  destructive-git guardrail (R19) is ignored by git and never reaches a colleague's clone.
+  [`../contracts/snt_config/SNT_config.skeleton.json`](../contracts/snt_config/README.md), the one
+  copy for the pipelines and the config editor — keep it in sync when a schema key changes. The old
+  `SNT_config_<CC>.json` copies (in `snt_development/deprecated/configuration/`, not imported) were
+  examples only, never loadable. Do not add logic that reads the `_<CC>` names.
+- `.gitignore` blocks `*.json`, `*.yaml` and `*.yml` except an allowlist of negations (see the
+  `.gitignore` trap in the root [`CLAUDE.md`](../CLAUDE.md#traps)) — a new JSON file needs a
+  deliberate negation, not a force-add. The `.claude/settings.json` negation is load-bearing: without
+  it the destructive-git guardrail (R19) is ignored by git and never reaches a colleague's clone.
 
 ## Logging
 
 <a id="r17"></a>
-### R17 — R failure messages prefixed `[ERROR]` or `[WARNING]`, chosen deliberately
+### R17 — Failure messages a run surfaces start `[ERROR]` or `[WARNING]`, chosen deliberately
 
 Python: `current_run.log_info / log_warning / log_error / log_debug`. R: `log_msg(msg, level)`, or
 `pipeline_msg()` when the code may run outside a pipeline.
@@ -243,10 +272,11 @@ Python: `current_run.log_info / log_warning / log_error / log_debug`. R: `log_ms
 mapped to OpenHEXA severity by
 `error_label_severity_map={"[ERROR]": "error", "[WARNING]": "warning"}`. A `[WARNING]`-labelled
 failure suppresses HTML report generation but does **not** fail the run — so labelling a real
-data-loss condition `[WARNING]` hides it.
+data-loss condition `[WARNING]` hides it. The same holds for the Python pipelines: the deployer's
+`[ERROR] Cannot deploy: …` (bootstrap D24) relies on the prefix.
 
 Keep messages actionable: at minimum, name the missing file — `load_dataset_file()` in
-`code/snt_utils.r` (the shared loader most pipelines call to read a dataset file) does this by
+`shared/r/snt_utils.r` (the shared loader most pipelines call to read a dataset file) does this by
 default. It has no way to know which upstream pipeline produces a given file, so when that context
 is useful, add it in the caller: see the routine-data load cell in
 `pipelines/snt_dhis2_incidence/code/snt_dhis2_incidence.ipynb`, which wraps `load_dataset_file()` in
@@ -259,4 +289,46 @@ when the routine file is missing.
 ### R19 — Agents never run destructive / history-rewriting `git` or `gh` commands
 
 The rule is in [`../CLAUDE.md`](../CLAUDE.md) → *Agent guardrails*; how it is enforced, tested and
-changed is in [`../.claude/README.md`](../.claude/README.md).
+changed is in [`../.claude/README.md`](../.claude/README.md). All three source repos had it; it is
+one rule and one hook here.
+
+## Docs and decisions
+
+These four came from the source repos' doc rules (orchestrator R11–R12, bootstrap DOC1–DOC4). Where
+a doc goes is [ADR 0039](decisions/0039-docs-placement-rule.md).
+
+<a id="r23"></a>
+### R23 — Docs state current truth only
+
+No "verified on DATE", no "this used to be broken", no paragraph about what something *used to be*.
+History goes to git, to an ADR, or — for the bootstrap pipelines — to
+[`bootstrap/HISTORY.md`](bootstrap/HISTORY.md), leaving a link where the paragraph was. A closed
+problem keeps its write-up there: relocated, not deleted. The exception is a document that says it
+is a plan or a log, such as [`MIGRATION_PLAN.md`](MIGRATION_PLAN.md).
+
+<a id="r24"></a>
+### R24 — Decisions are ADRs, cited, never re-argued
+
+A decision that shapes how the repo works is an ADR in [`decisions/`](decisions/README.md): one
+sequence for the whole repo. Implementation detail of the bootstrap pipelines stays as `D<n>` in
+[`bootstrap/decisions.md`](bootstrap/decisions.md), append-only. Cite a decision rather than
+re-arguing it. Never edit an accepted ADR to change the decision: write a new one that supersedes
+it.
+
+<a id="r25"></a>
+### R25 — Each fact lives in one file; open items live only in the BACKLOG
+
+A fact has one canonical home; other docs link to it instead of restating it, because copies
+drift. Put a new fact where the routing tables (root `CLAUDE.md` "Where to find things", the nested
+`CLAUDE.md` files) send a reader looking for it. Open items, questions and TODOs go to
+[`BACKLOG.md`](BACKLOG.md), with a stable ID — never into a new list elsewhere.
+
+<a id="r26"></a>
+### R26 — One self-contained folder per deployable unit
+
+Each pipeline is `pipelines/<name>/` (Python and R half together), each webapp `webapps/<name>/`
+with the deployable `app/` beside its `docs/` and `design/`
+([ADR 0021](decisions/0021-one-folder-per-deployable-unit.md),
+[ADR 0038](decisions/0038-repo-path-is-workspace-path.md)). A unit's own docs live with it; docs
+spanning several units live in `docs/`. A pipeline gets no `docs/` folder and no `CLAUDE.md`: the
+pipeline zip ships every `.md` in it ([ADR 0039](decisions/0039-docs-placement-rule.md)).

@@ -87,7 +87,7 @@ Pick the row that matches what you came for.
 
 | I want to… | Read |
 |---|---|
-| understand the system in 10 minutes | [`docs/DATA_ARCHITECTURE.md`](docs/DATA_ARCHITECTURE.md) §1–2 |
+| understand the system in 10 minutes | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — the units, how they connect, how they reach a workspace; Part 2 explains OpenHEXA |
 | know what a term means — `N1`, `PfPR`, `CSB`, ADM2, "Magic Glasses" | [`docs/GLOSSARY.md`](docs/GLOSSARY.md) |
 | run a pipeline, or know exactly what it produces | that pipeline's own `readme.md` |
 | follow the data end to end | [`docs/DATA_ARCHITECTURE.md`](docs/DATA_ARCHITECTURE.md) §3 |
@@ -107,8 +107,8 @@ deliberate; none is a bug to fix.
 
 1. **These pipelines are not a DAG.** Nothing schedules them; a person presses Run, one at a time,
    so a results table can mix data vintages. → [§4](docs/DATA_ARCHITECTURE.md#4-orchestration-model)
-2. **The Python and R halves ship by different routes.** Merging a notebook deploys **nothing** —
-   it reaches a workspace only via a run with **`Pull scripts` = ON**.
+2. **Merging here deploys nothing.** Live countries still run the old `snt_development` repo, and
+   `Pull scripts` = ON pulls from there; the routes from this repo are still being built.
    → [`CLAUDE.md` rule 2](CLAUDE.md#the-five-rules-that-matter-most)
 3. **A country may not be running the notebook you are looking at.** A `<generic_name>_<CC>.ipynb`
    variant runs *instead*, in that one country's workspace, and no mechanism propagates it.
@@ -116,9 +116,9 @@ deliberate; none is a bug to fix.
 4. **OpenHEXA datasets are the contract, not the filesystem.** A file not registered with
    `add_files_to_dataset(...)` is invisible downstream. → [R4](docs/CONVENTIONS.md#r4)
 5. **Some pipelines deliberately overwrite each other** — alternative methods, last run wins.
-   → [Traps](CLAUDE.md#traps)
-6. **There is no test suite and no CI lint.** `ruff` is the only automated check and nothing runs
-   it for you. → [`CLAUDE.md`](CLAUDE.md#commands)
+   → [Pipeline traps](pipelines/CLAUDE.md#pipeline-traps)
+6. **There is no CI, and tests cover only the bootstrap pipelines and contracts.** Nothing runs
+   `ruff` or `pytest` for you. → [`CLAUDE.md`](CLAUDE.md#commands)
 
 ---
 
@@ -134,7 +134,8 @@ deliberate; none is a bug to fix.
 
 ### 🗓️ Your first day
 
-1. Read [`docs/DATA_ARCHITECTURE.md`](docs/DATA_ARCHITECTURE.md) §1–2, then skim
+1. Read [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), then
+   [`docs/DATA_ARCHITECTURE.md`](docs/DATA_ARCHITECTURE.md) §1, then skim
    [`docs/GLOSSARY.md`](docs/GLOSSARY.md).
 2. Read [`CLAUDE.md`](CLAUDE.md) — the [Register](CLAUDE.md#register) is the whole rulebook in one
    table. It applies to humans and AI agents alike.
@@ -151,7 +152,7 @@ person *or* an agent.
 - **[`CLAUDE.md`](CLAUDE.md) is the rulebook, and it is not Claude-specific.** [Claude
   Code](https://claude.com/claude-code) loads it automatically; with any other assistant (Cursor,
   Copilot, Gemini, …) paste it in or point the tool at it. The
-  [Register](CLAUDE.md#register) is all 22 rules in one table — the cheapest thing to give a model
+  [Register](CLAUDE.md#register) is all 26 repo-wide rules in one table — the cheapest thing to give a model
   that is about to touch this repo.
 - **[`.claude/`](.claude/) ships live guardrails.** They are active the moment you clone: a hook
   that blocks destructive and history-rewriting `git` commands, plus a matching deny list. If an

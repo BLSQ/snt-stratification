@@ -64,7 +64,7 @@ var STATUS_QUERY =
 
 // Workspace connections — populates the DHIS2Connection / CustomConnection
 // dropdowns in the form. Needs USER_READ, and the proxy currently refuses the
-// nested fields anyway (OH-2); on failure the form falls back to a text slug input.
+// nested fields anyway (OH-5); on failure the form falls back to a text slug input.
 var CONNECTIONS_QUERY =
   "query ($ws: String!) {" +
   "  workspace(slug: $ws) {" +
@@ -87,7 +87,7 @@ var OUTPUTS_QUERY =
 
 // The run's dataset versions, queried separately: the proxy checks scopes per
 // field and refuses the whole query if one field is denied, and DatasetVersion /
-// Dataset fields need DATASETS_READ, which this app does not have (R9). So this
+// Dataset fields need DATASETS_READ, which this app does not have (W8). So this
 // query is best-effort and must never take the file outputs down with it.
 // Dataset.workspace is never granted to webapps, so it is not asked for.
 var DATASET_OUTPUTS_QUERY =
@@ -159,7 +159,7 @@ var CARDS_OBJECT_KEY =
 
 /* Where the same pipeline writes each curated pipeline's README, as <id>.md,
  * copied from the deployed version's code (the proxy does not let webapps read
- * PipelineVersion.files — OH-3). Lockstep with config.py (OUTPUT_DIR +
+ * PipelineVersion.files — OH-6). Lockstep with config.py (OUTPUT_DIR +
  * README_DIR). */
 var README_DIR_KEY = "utils_pipelines/create_pipeline_cards/pipeline_cards/readmes";
 
@@ -2678,7 +2678,7 @@ function missingBodyHtml(node) {
 }
 
 /* --- "Refresh the catalogue" (not-installed panel, step 2) ----------- *
- * The panel runs create_pipeline_cards itself (ADR 0015): it takes no
+ * The panel runs create_pipeline_cards itself (ADR 0024): it takes no
  * parameters and only rewrites the catalogue. What step 2 offers depends on
  * the generator's state, which changes, so it is looked up again on every
  * render of the panel and never cached. What is kept is the refresh run this

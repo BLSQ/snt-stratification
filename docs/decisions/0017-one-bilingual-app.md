@@ -1,7 +1,8 @@
-# 0008. One bilingual app with an EN/FR toggle, French first for v1
+# 0017. One bilingual app with an EN/FR toggle, French first for v1
 
 Date: 2026-07-15 (PM steer; the toggle was built on 2026-07-17)
 Status: Accepted
+Originally: `snt_webapp_orchestrator` ADR 0008
 
 ## Context
 

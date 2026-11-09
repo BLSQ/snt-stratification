@@ -1,14 +1,15 @@
-# 0015. The webapp may run the catalogue generator
+# 0024. The webapp may run the catalogue generator
 
 Date: 2026-10-21
 Status: Accepted
+Originally: `snt_webapp_orchestrator` ADR 0015
 
 ## Context
 
 A newly installed pipeline stays "not installed" in the app until `create_pipeline_cards` has
-rewritten the workspace's catalogue ([ADR 0002](0002-catalog-in-workspace-bucket.md),
-[ADR 0003](0003-catalog-parameters-from-deployed-version.md)). Users had to leave the app, find the
-generator in OpenHEXA, run it, wait, and come back. The webapp already holds `PIPELINES_RUN` (R9),
+rewritten the workspace's catalogue ([ADR 0011](0011-catalog-in-workspace-bucket.md),
+[ADR 0012](0012-catalog-parameters-from-deployed-version.md)). Users had to leave the app, find the
+generator in OpenHEXA, run it, wait, and come back. The webapp already holds `PIPELINES_RUN` (W8),
 and the generator takes no parameters.
 
 ## Decision
@@ -22,13 +23,13 @@ and the generator takes no parameters.
 - After a successful run the app offers a **Reload page** button. It does not reload by itself and
   does not reload the catalogue in place (switching to auto-reload is the one constant
   `GEN_REFRESH_AUTO_RELOAD` in `app.js`).
-- The webapp **cannot install** pipelines (no scope for it; R9 is unchanged), so step 1 stays a
+- The webapp **cannot install** pipelines (no scope for it; W8 is unchanged), so step 1 stays a
   link to the templates.
 
 ## Consequences
 
 - Safe: the generator only rewrites the catalogue file, from what is deployed in the workspace. The
-  catalogue stays the generator's output (R3); the app never writes it.
+  catalogue stays the generator's output (W2); the app never writes it.
 - One more workspace-wide side effect is one click away. A double click starts one run only.
 - The run-error drift hint and the boot "no catalogue" panel still only link to the generator
   ([APP-6](../BACKLOG.md#app-6), [APP-7](../BACKLOG.md#app-7)).

@@ -25,14 +25,14 @@ pipeline. **Changing the configuration means running a pipeline, not redeploying
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | How the pieces fit together |
 | [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) | Deploying a change, setting up a new workspace |
 | [`docs/OPENHEXA_WEBAPP_RUNTIME.md`](../../docs/OPENHEXA_WEBAPP_RUNTIME.md) | What OpenHEXA static webapps can do, and how |
-| [`docs/decisions/`](docs/decisions/README.md) | Why things are the way they are (ADRs) |
-| [`docs/BACKLOG.md`](docs/BACKLOG.md) | Open items and questions |
+| [`docs/decisions/`](../../docs/decisions/README.md) | Why things are the way they are (ADRs) |
+| [`docs/BACKLOG.md`](../../docs/BACKLOG.md) | Open items and questions |
 | [`design/`](design/) | Wireframes and map previews |
 
 History before this repo — git history, the parked 2D-map ("Flowchart") UI and retired experiments
 — is in the archived predecessor repo `BLSQ/OpenHEXA-WebApp-Diary`
 ([`deprecated/` at the cut-over](https://github.com/BLSQ/OpenHEXA-WebApp-Diary/tree/bbd02388f0104d809e55a81f5b84b29ce6b569bd/deprecated);
-[ADR 0013](docs/decisions/0013-fresh-repo-without-history.md)).
+[ADR 0022](../../docs/decisions/0022-fresh-repo-without-history.md)).
 
 SNT vocabulary is defined in `snt_development`'s
 [`docs/GLOSSARY.md`](https://github.com/BLSQ/snt_development/blob/main/docs/GLOSSARY.md).

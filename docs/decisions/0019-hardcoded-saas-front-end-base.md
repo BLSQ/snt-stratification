@@ -1,7 +1,8 @@
-# 0010. The SaaS front-end base `app.openhexa.org` is hardcoded
+# 0019. The SaaS front-end base `app.openhexa.org` is hardcoded
 
 Date: not recorded (the `.io` / `.org` split behind it was found on 2026-06-18)
 Status: Accepted
+Originally: `snt_webapp_orchestrator` ADR 0010
 
 ## Context
 
@@ -25,4 +26,4 @@ UI. It is never derived from `location.hostname`.
   display name (`GENERATOR_TEMPLATE_NAME`); renaming the template breaks that link silently.
 
 Sources: former `CLAUDE.md` *Constructing OpenHEXA front-end URLs*;
-[`../OPENHEXA_WEBAPP_RUNTIME.md`](../../../../docs/OPENHEXA_WEBAPP_RUNTIME.md#openhexa-front-end-urls).
+[`docs/OPENHEXA_WEBAPP_RUNTIME.md`](../OPENHEXA_WEBAPP_RUNTIME.md#openhexa-front-end-urls).

@@ -1,12 +1,13 @@
-# 0012. One self-contained folder per deployable unit
+# 0021. One self-contained folder per deployable unit
 
 Date: 2026-10-19
 Status: Accepted
+Originally: `snt_webapp_orchestrator` ADR 0012
 
 ## Context
 
 The repo may later merge with `snt_development`, or both may move into a new "SNT stratification"
-repo; the direction is undecided ([REPO-1](../BACKLOG.md#repo-1)). The old layout mixed concerns:
+repo; the direction is undecided (orchestrator REPO-1; settled since by [ADR 0036](0036-one-monorepo.md)). The old layout mixed concerns:
 `app/<variant>/` plus a shared file assembled at deploy time, generator code under
 `utils_pipelines/`, contracts and the external GraphQL schema together under `schemas/`.
 
@@ -29,8 +30,8 @@ route, which makes it hard to see or move one unit as a whole.
   only when an agent works there.
 - Repo paths and **runtime** paths are separate things. The generator's bucket key still starts
   `utils_pipelines/…` after the folder moved to `pipelines/`; that is deliberate
-  ([REPO-3](../BACKLOG.md#repo-3)).
+  ([APP-12](../BACKLOG.md#app-12)).
 - If the repos converge, `snt_development`'s split layout is worth fixing the same way
-  ([REPO-2](../BACKLOG.md#repo-2)).
+  (orchestrator REPO-2; done since, [ADR 0038](0038-repo-path-is-workspace-path.md)).
 
 Source: `ignore/PLAN.md` §1 *Deliberate improvements over `snt_development`'s layout*.

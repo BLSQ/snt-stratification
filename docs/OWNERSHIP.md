@@ -31,6 +31,14 @@ there is no `CODEOWNERS` file — one was drafted and the team decided against i
 - **Silence is not approval.** If nobody with context has read a change to `pipelines/*/code/` or
   `code/`, it has not been reviewed, regardless of how the merge button looked.
 
+**Two review habits:**
+
+- **A PR that resolved merge conflicts:** also review the resolution itself with
+  `git show <merge-commit> --cc`. It shows only the lines that were edited by hand while merging,
+  which is where silent regressions hide: the normal PR diff mixes them in with everything else.
+- **A hard-won fix:** leave a short comment next to it in the code, pointing to the doc, ADR,
+  BACKLOG item or Jira ticket that explains it, so a later "cleanup" does not undo it.
+
 **Why this matters more here than in most repositories.** These pipelines compute epidemiological
 indicators that inform where malaria interventions are deployed. A change that shifts a number
 does not fail, does not warn, and is not caught by any test — there are none, as
@@ -101,7 +109,7 @@ Not owned by any one pipeline; a change here affects many.
 of the generic notebook in one country's workspace. Whoever owns the country engagement should be
 consulted before changing either — and note that a variant lives in the workspace, not in `main`,
 so this repository is not a reliable record of which ones exist.
-→ [Traps](../CLAUDE.md#traps) · [Country-specific notebook
+→ [Pipeline traps](../pipelines/CLAUDE.md#pipeline-traps) · [Country-specific notebook
 variants](../pipelines/CLAUDE.md#country-specific-notebook-variants)
 
 ---

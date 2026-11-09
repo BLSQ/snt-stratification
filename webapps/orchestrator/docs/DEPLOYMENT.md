@@ -2,21 +2,21 @@
 
 How changes in this repo reach an OpenHEXA workspace. The repo is the source of truth for the app;
 each workspace's bucket is the source of truth for its catalog; **nothing about deployments is
-recorded in the repo** ([ADR 0011](decisions/0011-repo-is-not-a-deployment-record.md)) — webapp
+recorded in the repo** ([ADR 0020](../../../docs/decisions/0020-repo-is-not-a-deployment-record.md)) — webapp
 `id`, `slug`, URL, scopes and `isPublic` are always resolved live.
 
 ## What gets deployed
 
 - **The webapp:** the five files in `webapps/orchestrator/app/`, flat, exactly as they are in the repo
   — **not** the folder's `CLAUDE.md` (agent notes), and **never a `pipeline_cards.json`** — a copy found inside a deployed webapp is a leftover nothing
-  fetches; remove it with `files_to_delete_json` ([OPS-2](BACKLOG.md#ops-2)).
+  fetches; remove it with `files_to_delete_json` ([OPS-2](../../../docs/BACKLOG.md#ops-2)).
 - **The generator:** `pipelines/create_pipeline_cards/`. Every merge to `main` that touches that
   folder pushes it to `snt-development` (code `create-pipeline-cards`) through
   [`.github/workflows/push_create_pipeline_cards.yaml`](https://github.com/BLSQ/snt_webapp_orchestrator/blob/603a831f8d996b99908819f27afa4a241dc941b9/.github/workflows/push_create_pipeline_cards.yaml),
   which also publishes a new version of its template. Other workspaces install it from the template
   `Create pipeline_cards.json`; never `openhexa pipelines push` it from another workspace, which
-  creates a duplicate template (snt_development
-  [CONVENTIONS R5](https://github.com/BLSQ/snt_development/blob/main/docs/CONVENTIONS.md#r5--publish-only-from-the-snt-development-workspace)).
+  creates a duplicate template
+  ([R5](../../../docs/CONVENTIONS.md#r5)).
   The workflow needs the repo secret `OH_TOKEN`. Giulia runs pipelines herself; the agent stops at
   "ready to push" with a test plan.
 - **The catalog** is never deployed — it is produced by running the generator in the workspace.
@@ -24,7 +24,7 @@ recorded in the repo** ([ADR 0011](decisions/0011-repo-is-not-a-deployment-recor
 ## Developing locally
 
 Try bundle edits against a real workspace **before** deploying them. OpenHEXA's `dev.js` (already
-in `index.html`, [ADR 0014](decisions/0014-ship-openhexa-dev-js.md)) routes the local page's
+in `index.html`, [ADR 0023](../../../docs/decisions/0023-ship-openhexa-dev-js.md)) routes the local page's
 GraphQL calls through a deployed webapp. How it works:
 [`OPENHEXA_WEBAPP_RUNTIME.md`](../../../docs/OPENHEXA_WEBAPP_RUNTIME.md#local-development-devjs).
 
@@ -59,7 +59,7 @@ What comes from where once connected:
 - The credential lasts for one tab. A new tab, or an expired credential, shows the Connect button
   again. **Switch** on the pill picks another webapp.
 - **Never commit a pinned tag** (`data-workspace-slug` / `data-webapp-slug`): the bundle is
-  workspace-independent (R6), so use the picker.
+  workspace-independent (W5), so use the picker.
 - Local testing does not replace the post-deploy check below.
 
 ## Before you edit a deployed webapp
@@ -119,7 +119,7 @@ Read tools take the **slug**; write tools take the **`id`**.
   as the user.
 - The OpenHEXA **CLI deploys pipelines only**, and the Python SDK's webapp surface is read-only
   (`workspace.get_webapp(slug)`, `OpenHexaClient().get_webapp_by_slug(...)`) — neither can deploy a
-  webapp ([OH-1](BACKLOG.md#oh-1)).
+  webapp ([OH-4](../../../docs/BACKLOG.md#oh-4)).
 
 ### Version history and rollback
 
@@ -127,7 +127,7 @@ Because webapps are git-backed, the GraphQL `Webapp` type exposes `versions` (`W
 message, authorName, authorEmail, date }`), `commitDiff(ref)`, `files(ref:)`, `previewUrl`,
 `serveUrl` and `subdomain`; `UpdateWebappInput.publishedVersionId` selects which commit is served.
 **No MCP tool exposes these** — only the OpenHEXA UI or raw GraphQL. A tested rollback procedure is
-open ([REL-3](BACKLOG.md#rel-3)).
+open ([REL-3](../../../docs/BACKLOG.md#rel-3)).
 
 ## Setting scopes
 

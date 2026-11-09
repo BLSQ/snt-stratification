@@ -36,13 +36,13 @@ The output matches the contract in `contracts/pipeline_cards.schema.json`. **It 
 the orchestrator webapp fetches it straight out of the workspace's file storage at page load, so
 running this pipeline is all that's needed to update a workspace's configuration — nothing to copy,
 commit, or redeploy. The full picture is in [`docs/ARCHITECTURE.md`](../../webapps/orchestrator/docs/ARCHITECTURE.md#the-pipeline-catalog);
-the reasons in ADRs [0002](../../webapps/orchestrator/docs/decisions/0002-catalog-in-workspace-bucket.md) (catalog in the
-bucket), [0003](../../webapps/orchestrator/docs/decisions/0003-catalog-parameters-from-deployed-version.md) (parameters
-from the deployed version) and [0004](../../webapps/orchestrator/docs/decisions/0004-generator-curates-against-deployed-map.md)
+the reasons in ADRs [0011](../../docs/decisions/0011-catalog-in-workspace-bucket.md) (catalog in the
+bucket), [0012](../../docs/decisions/0012-catalog-parameters-from-deployed-version.md) (parameters
+from the deployed version) and [0013](../../docs/decisions/0013-generator-curates-against-deployed-map.md)
 (curation against the deployed map).
 
 Each card also records the **deployed version** its parameters were read from (`version_name`,
-`version_number`). The orchestrator does not read them yet ([UI-8](../../webapps/orchestrator/docs/BACKLOG.md#ui-8)).
+`version_number`). The orchestrator does not read them yet ([UI-8](../../docs/BACKLOG.md#ui-8)).
 
 ## Parameters
 
@@ -83,7 +83,7 @@ The READMEs go to `<workspace files>/utils_pipelines/create_pipeline_cards/pipel
 (`config.OUTPUT_DIR` / `config.README_DIR`). The folder is emptied on every run, with no
 `historical/` copy, so it only holds the READMEs of the current catalog. This path is a contract
 too: `README_DIR_KEY` in `app.js`. The app's **Documentation** section reads these files
-([ADR 0016](../../webapps/orchestrator/docs/decisions/0016-readmes-from-deployed-version.md)).
+([ADR 0025](../../docs/decisions/0025-readmes-from-deployed-version.md)).
 
 Nothing needs to be downloaded, committed, or redeployed after a run: the app reads the new file on
 its next page load. The pipeline does not push to the repo or touch the webapp bundle.

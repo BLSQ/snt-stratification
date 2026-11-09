@@ -1,20 +1,25 @@
-# BACKLOG — open items for `snt_development`
+# BACKLOG — open items for `snt-stratification`
 
-The **single list** of open work, unanswered questions and pending decisions for this repository.
-Other documents state facts and link here for anything still open; they do not keep lists of their
-own.
+The **single list** of open work, unanswered questions and pending decisions for this repository:
+pipelines, webapps, bootstrap and contracts alike. Other documents state facts and link here for
+anything still open; they do not keep lists of their own. Jira (project `SNT25`) tracks planned
+work and is managed by Giulia; this file holds the repo-level items behind it.
 
 > **Interim home.** GitHub issues are the intended future home for these items. Until they move,
 > this file is the one place to look.
 
-> **One exception:** the migration to the `snt-stratification` monorepo is tracked in its own plan,
-> [`MIGRATION_PLAN.md`](MIGRATION_PLAN.md). The items below carry over into the new repo's backlog
-> (plan Phase 2).
+> **Exceptions.** The migration to this monorepo is tracked in its own plan,
+> [`MIGRATION_PLAN.md`](MIGRATION_PLAN.md). Design-level open questions of the bootstrap pipelines
+> stay in their specs ([`bootstrap/checker.md`](bootstrap/checker.md) §7,
+> [`bootstrap/roadmap.md`](bootstrap/roadmap.md)); actionable bootstrap work is a `BOOT-*` item here.
+> Product decisions owned by the PM stay in the orchestrator's
+> [`PRODUCT_SPEC.md` §10](../webapps/orchestrator/docs/PRODUCT_SPEC.md#10-open-decisions-for-the-pm-with-recommended-version-placement);
+> the `PM-*` items here only point at them.
 
 **How this file works**
 
-- Each item has a stable ID (`META-3`, `PIPE-2`, …). Link to it as `docs/BACKLOG.md#meta-3`. Do not
-  renumber: other documents point at these IDs.
+- Each item has a stable ID (`META-3`, `PIPE-2`, …). Link to it as `docs/BACKLOG.md#meta-3`. **Do
+  not renumber, and do not reuse an ID**: other documents point at these IDs.
 - **When an item is resolved, delete it.** There is no "done" section. If a decision settled it,
   write an ADR in [`decisions/`](decisions/README.md). If a fix settled it, the PR is the record.
 - **Owner** is who can move the item forward, if known. **Source** is where the item was recorded
@@ -29,9 +34,24 @@ own.
 | [Config & contracts](#config--contracts) | `CFG-*` |
 | [SNT Explorer metadata](#snt-explorer-metadata) | `META-*` — most are questions for the IASO developers |
 | [Pipelines & code](#pipelines--code) | `PIPE-*` |
+| [Bootstrap pipelines](#bootstrap-pipelines) | `BOOT-*` |
+| [Releases & deploy](#releases--deploy) | `REL-*` |
+| [Orchestrator webapp](#orchestrator-webapp) | `APP-*`, `UI-*`, `OPS-*`, `GEN-*`, `PLAT-*`, `PM-*` |
 | [Documentation](#documentation) | `DOC-*` |
 | [Questions for the OpenHEXA developers](#questions-for-the-openhexa-developers) | `OH-*` |
 | [Questions for the SNT team (domain)](#questions-for-the-snt-team-domain) | `DOM-*` |
+
+**Imported IDs.** This file merges the backlogs of `snt_development` (IDs unchanged) and
+`snt_webapp_orchestrator` (IDs unchanged where they did not collide). The bootstrap repo had no
+backlog. Renumbered on import, each with an **Old ID** line:
+
+| Old ID (orchestrator) | New ID |
+|---|---|
+| `REPO-3` | [`APP-12`](#app-12) |
+| `TOOL-1` | [`TOOL-6`](#tool-6) |
+| `DOC-2` | [`DOC-7`](#doc-7) |
+| `OH-1` · `OH-2` · `OH-3` | [`OH-4`](#oh-4) · [`OH-5`](#oh-5) · [`OH-6`](#oh-6) |
+| `REPO-1`, `REPO-2` | resolved by the monorepo: [ADR 0036](decisions/0036-one-monorepo.md), [ADR 0038](decisions/0038-repo-path-is-workspace-path.md) |
 
 ---
 
@@ -44,14 +64,12 @@ outputs (rule R2) stops depending on each developer remembering.
 
 **Source:** CLAUDE.md *Suggestions*.
 
-### <a id="tool-2"></a>TOOL-2 · A `ruff check` CI job on pull requests
+### <a id="tool-2"></a>TOOL-2 · A CI job on pull requests
 
-Today no linting runs anywhere, before or after merge. The only workflows are the 20
-`push_snt_*.yaml` deployment files and `generate_manifest.yaml`. Each deployment workflow triggers on
-`push` to `main` (so after merge, never on the PR), and its `paths:` filter does not list
-`pipelines/**`, so a notebook-only PR shows no checks at all. One small `pull_request`-triggered
-workflow running `ruff check .` would cover every PR at once without touching the 20 deployment
-files. Facts: [`DATA_ARCHITECTURE.md` §7.3](DATA_ARCHITECTURE.md#73-ci-coverage).
+No check runs on a pull request: the repo has no workflows yet (the old `push_snt_*.yaml` were not
+imported). `ruff check .` and `pytest` run only when someone runs them. Planned as `ci.yaml` in
+[`MIGRATION_PLAN.md`](MIGRATION_PLAN.md) Phase 3, together with [TOOL-5](#tool-5) to
+[TOOL-7](#tool-7). Facts about the old repo's CI: [`DATA_ARCHITECTURE.md` §7.3](DATA_ARCHITECTURE.md#73-ci-coverage).
 
 **Source:** CLAUDE.md *Suggestions*; DATA_ARCHITECTURE §9 #9.
 
@@ -74,11 +92,43 @@ is absent, so the helpers are closer to runnable than they look. Pairs with [DEP
 
 ### <a id="tool-5"></a>TOOL-5 · Commit the docs link checker
 
-`ignore/docs-restructure/check_links.py` (local, untracked) checks every relative link and `#anchor`
-in the repo's Markdown. Decide whether to commit it as a dev tool (e.g. `dev/check_links.py`)
-and/or run it in CI.
+A stdlib-only script that checks every relative link and `#anchor` in the repo's Markdown exists
+only outside the repo (the old repo's git-ignored `ignore/docs-restructure/check_links.py`, and a
+copy used during the migration). Commit it as `tools/check_links.py` and run it in `ci.yaml`
+([TOOL-2](#tool-2)).
 
-**Owner:** Giulia. **Source:** docs restructure plan, 2026-10.
+**Owner:** Giulia. **Source:** docs restructure plan, 2026-10; Phase 2 sweep, 2026-11.
+
+### <a id="tool-6"></a>TOOL-6 · Dependency-free check script
+
+Validate the JSON files against `contracts/`, check map node ids == description keys, and check
+that relative links in every `.md` resolve.
+
+The link-check part of it is [TOOL-5](#tool-5).
+
+**Source:** `snt_webapp_orchestrator` BACKLOG. **Old ID:** orchestrator `TOOL-1`.
+
+### <a id="tool-7"></a>TOOL-7 · CI check for country data and notebook outputs (R1, R2)
+
+Nothing stops a PR that adds a `.csv`/`.xlsx`/`.parquet`/`.rds`/`.geojson` file or a notebook with
+outputs. `.gitignore` covers most data files, but `git add -f` gets past it, and the `nbstripout`
+filter ([TOOL-1](#tool-1)) lives in each developer's `.git/config`, so a clone without it commits
+outputs silently. Add both checks to `ci.yaml` ([TOOL-2](#tool-2)). Test notebooks by reading their
+`outputs` directly, not with `nbstripout --verify` (the handover skill explains why).
+
+**Source:** Giulia's git-practices notes (local), 2026-10; Phase 2 sweep, 2026-11.
+
+### <a id="tool-8"></a>TOOL-8 · Merge policy for pull requests
+
+Decide which GitHub merge buttons stay enabled. Proposal: squash-only, with the PR title and
+description as the commit message, and branches required to be up to date. Why it matters here: the
+template-push workflow stamps the head commit's message into each published OpenHEXA version
+description ([ADR 0004](decisions/0004-publish-only-from-snt-development.md)), so a merge commit
+publishes "Merge pull request #N …" as the version's description. The migration PRs use merge
+commits on purpose, to keep the import commit separate. Decide together with `push_templates.yaml`
+([`MIGRATION_PLAN.md`](MIGRATION_PLAN.md) Phase 3), then set it in the `main` ruleset.
+
+**Owner:** Giulia. **Source:** Giulia's git-practices notes (local), 2026-10; Phase 2, 2026-11.
 
 ---
 
@@ -366,12 +416,13 @@ bins.
 
 **Owner:** SNT team.
 
-### <a id="meta-16"></a>META-16 · Lowercase quality-of-care rates
+### <a id="meta-16"></a>META-16 · Add the quality-of-care rates to the master list
 
-`testing_rate`, `treatment_rate`, `case_fatality_rate`, `prop_adm_malaria` and
-`prop_malaria_deaths` from `snt_dhis2_quality_of_care` are written in lowercase, which breaks rule
-R10 and which `COLUMN`'s pattern rejects. Restoring them as layers needs a pipeline change to
-uppercase names.
+`snt_dhis2_quality_of_care` now writes `TESTING_RATE`, `TREATMENT_RATE`, `CASE_FATALITY_RATE`,
+`PROP_ADM_MALARIA` and `PROP_MALARIA_DEATHS` in uppercase (R10). None of them is a layer in
+`catalogs/SNT_metadata_master.json` yet. Add them (the `add-explorer-layer` skill traces each one).
+
+**Source:** docs restructure plan, 2026-10 (then lowercase); re-checked in the Phase 2 sweep, 2026-11.
 
 ### <a id="meta-17"></a>META-17 · Niger's earlier catalogue versus the master list
 
@@ -518,6 +569,323 @@ master-list check of the healthcare-access layers, 2026-10-29.
 
 ---
 
+## Bootstrap pipelines
+
+### <a id="boot-1"></a>BOOT-1 · The checker should read `<tag>+redeploy-<date>` as `<tag>`
+
+A redeploy names a pipeline version `<tag>+redeploy-<YYYYMMDD>` (D22). The checker's
+`claimed_release_tag()` (`pipelines/snt_workspace_checker/pipeline.py`) strips only a `[vN]` suffix,
+so such a version claims no release. Known and stated in [`bootstrap/deployer.md`](bootstrap/deployer.md);
+this is the action.
+
+**Source:** Giulia's plan of action (local), 2026-09-30.
+
+### <a id="boot-2"></a>BOOT-2 · A readable status page from the checker
+
+Besides the JSON report ([ADR 0027](decisions/0027-checker-report-is-a-workspace-file.md)), write a
+human-readable HTML status page. In a fresh workspace, a placeholder page would say "run the checker",
+linked from the workspace README. Not checked: whether a pipeline can edit the workspace README.
+
+**Source:** Giulia's plan of action (local), 2026-09-30.
+
+### <a id="boot-3"></a>BOOT-3 · Delete the fork `BLSQ/snt_development_test-release`
+
+An abandoned test fork from the release work. A colleague made a commit there; delete it once they
+confirm nothing in it is needed. The other sandbox leftovers (probe pipelines in
+`snt-development-sandbox`) are already gone.
+
+**Owner:** Giulia. **Blocked on:** the colleague's confirmation. **Source:** Phase 2 sweep, 2026-11.
+
+### <a id="boot-4"></a>BOOT-4 · Rename the report key before the first release
+
+Rename `snt_workspace_check_version` → `snt_workspace_checker_version` in the checker's report and
+in [`contracts/status_report.schema.json`](../contracts/status_report.schema.json). Decided on
+2026-10-02 and deferred to "before the first release": after a release it needs `schema_version: 2`
+and a migration. The first release of this repo is `v0.1.0` ([`MIGRATION_PLAN.md`](MIGRATION_PLAN.md)
+Phase 4).
+
+**Source:** `docs/bootstrap/roadmap.md` §2 (superseded), 2026-10-02.
+
+---
+
+## Releases & deploy
+
+### <a id="rel-1"></a>REL-1 · Release versioning
+
+GitHub releases plus a `version.json` in the bundle, shown in the app footer, so a workspace's
+deployed version is one file read. Check first whether git-backed webapps already answer it:
+`Webapp.versions` / `GitSource.publishedVersion` may expose the deployed commit without a baked file.
+
+Planned: [`MIGRATION_PLAN.md`](MIGRATION_PLAN.md) Phase 7 stamps `version.json` into each
+webapp release zip ([ADR 0037](decisions/0037-one-release-train.md)).
+
+**Source:** `snt_webapp_orchestrator` BACKLOG.
+
+### <a id="rel-2"></a>REL-2 · Webapp deployer
+
+Likely a "webapps" section in `pipelines/snt_workspace_deployer`'s release manifest,
+using `updateWebapp(files: …)`; needs a CUSTOM-connection token like the pipeline deployer. Check
+what git-backed webapp versions already give.
+
+Planned: [`MIGRATION_PLAN.md`](MIGRATION_PLAN.md) Phase 7, gated on spike S5.
+
+**Source:** `snt_webapp_orchestrator` BACKLOG.
+
+### <a id="rel-3"></a>REL-3 · Tested rollback procedure
+
+`UpdateWebappInput.publishedVersionId` can pin the served commit (raw GraphQL / UI only; no MCP
+tool). Verify whether a later file update re-publishes HEAD automatically and whether `previewUrl`
+serves an unpublished head, then document the procedure in [`DEPLOYMENT.md`](../webapps/orchestrator/docs/DEPLOYMENT.md#version-history-and-rollback).
+
+**Source:** `snt_webapp_orchestrator` BACKLOG.
+
+### <a id="rel-4"></a>REL-4 · The manifest should carry the release commit
+
+Add the release commit (`github.sha`) to manifest v2. One releases API call then gives a
+tag-to-commit table, and the deployer stops relying on GitHub's undocumented
+`<owner>-<repo>-<short_sha>` folder name inside the release tarball. Part of the manifest v2 work
+([`MIGRATION_PLAN.md`](MIGRATION_PLAN.md) Phase 3).
+
+**Source:** SNT25-670 GitHub releases primer (local), 2026-10.
+
+### <a id="rel-5"></a>REL-5 · Release notes or a `CHANGELOG.md` (optional)
+
+Decide whether each release gets written notes, and where: GitHub release notes, a `CHANGELOG.md`,
+or both. A fix is recorded by its PR ([how this file works](#backlog--open-items-for-snt-stratification)),
+so this is about a readable per-release summary for users. Natural place: `release.yaml`
+([`MIGRATION_PLAN.md`](MIGRATION_PLAN.md) Phase 3).
+
+**Source:** docs restructure plan, 2026-10.
+
+---
+
+## Orchestrator webapp
+
+The SNT Pipelines Orchestrator ([`webapps/orchestrator/`](../webapps/orchestrator/)) and its
+catalog generator `create_pipeline_cards`.
+
+### <a id="app-12"></a>APP-12 · Bucket key keeps the old `utils_pipelines/` name
+
+The catalog's bucket key `utils_pipelines/create_pipeline_cards/pipeline_cards/pipeline_cards.json`
+no longer matches the repo folder (`pipelines/`). Migrate it deliberately or keep it forever.
+Migrating touches `CARDS_OBJECT_KEY` in `app.js`, `config.py`, and every workspace bucket (redeploy
+both, re-run the generator everywhere).
+
+**Source:** `snt_webapp_orchestrator` BACKLOG. **Old ID:** orchestrator `REPO-3`.
+
+### <a id="ops-1"></a>OPS-1 · Unpublish the live Flowchart webapps?
+
+Flowchart webapps may still be deployed (`snt-app-dev`, `snt-testing`, `xxx-snt-process` as of the
+2026-10 cleanup). Decide whether to remove them ([ADR 0018](decisions/0018-cockpit-only-flowchart-parked.md)).
+
+**Source:** `snt_webapp_orchestrator` BACKLOG.
+
+### <a id="ops-2"></a>OPS-2 · Delete leftover `pipeline_cards.json` inside deployed webapps
+
+Webapps deployed before the catalog moved to the bucket may still carry a `pipeline_cards.json`;
+nothing fetches it. Remove with `update_static_webapp(files_to_delete_json=…)`.
+
+**Source:** `snt_webapp_orchestrator` BACKLOG.
+
+### <a id="ops-3"></a>OPS-3 · Delete leftover spike webapps?
+
+`t0-9-status-proxy-spike` (snt-testing) and `report-embed-probe` (snt-app-dev) may still exist. Their
+source is in the archived repo's
+[`deprecated/`](https://github.com/BLSQ/OpenHEXA-WebApp-Diary/tree/bbd02388f0104d809e55a81f5b84b29ce6b569bd/deprecated).
+
+**Source:** `snt_webapp_orchestrator` BACKLOG.
+
+### <a id="gen-1"></a>GEN-1 · Push the generator to each workspace
+
+The repo's `config.NOTES` fills in the workspace slug, but a generator installed from an older
+version still writes a hardcoded "SNT App Dev workspace" note into its catalog until it is
+re-pushed and re-run in that workspace.
+
+**Source:** `snt_webapp_orchestrator` BACKLOG.
+
+### <a id="app-13"></a>APP-13 · Hint when a "not installed" step is in fact installed
+
+A step can show "not installed" while a matching pipeline exists in the workspace, because the
+catalog is stale. The panel could say "installed; refresh the catalogue" (a hint only, nothing to
+run). Open: is there a reliable live key to match on, the node id (Python function name) or the
+pipeline `code`? Not the same as [UI-8](#ui-8), which is about version drift.
+
+**Source:** orchestrator install-and-run fixes plan (local), task 5, 2026-10.
+
+### <a id="ui-2"></a>UI-2 · Show run progress
+
+`pipelineRun.progress` is available on every run; the status line shows only the status.
+
+**Source:** `snt_webapp_orchestrator` BACKLOG.
+
+### <a id="ui-3"></a>UI-3 · Render `DatabaseTable` outputs
+
+Add the `... on DatabaseTable` fragment if any SNT pipeline starts emitting tables.
+
+**Source:** `snt_webapp_orchestrator` BACKLOG.
+
+### <a id="ui-4"></a>UI-4 · Translate parameter labels
+
+Parameter labels, help and choices come from the catalog and are English only. PM decision:
+[`PRODUCT_SPEC.md` §10 item 1](../webapps/orchestrator/docs/PRODUCT_SPEC.md#10-open-decisions-for-the-pm-with-recommended-version-placement).
+
+**Source:** `snt_webapp_orchestrator` BACKLOG.
+
+### <a id="ui-5"></a>UI-5 · Review the French strings
+
+`I18N.fr` and the `fr` sides of the data files are drafts pending Giulia's review.
+
+**Source:** `snt_webapp_orchestrator` BACKLOG.
+
+### <a id="ui-7"></a>UI-7 · Per-type counts in the collapsed Dependencies header
+
+_"Requires (2 pipelines)"_ / _"Unlocks (11 pipelines)"_ — still wanted now that the section starts
+collapsed? ([`PRODUCT_SPEC.md` §10 item 9](../webapps/orchestrator/docs/PRODUCT_SPEC.md#10-open-decisions-for-the-pm-with-recommended-version-placement))
+
+**Source:** `snt_webapp_orchestrator` BACKLOG.
+
+### <a id="ui-8"></a>UI-8 · Version drift check
+
+Compare each card's `version_name` / `version_number` with the live
+`pipelineByCode.currentVersion` and prompt for a catalog refresh only on real change; optionally pin
+runs with `RunPipelineInput.versionId`.
+
+**Source:** `snt_webapp_orchestrator` BACKLOG.
+
+### <a id="ui-9"></a>UI-9 · Run notifications and debug logs
+
+`RunPipelineInput.sendMailNotifications` for long runs; `enableDebugLogs` when linking a user to a
+failed run.
+
+**Source:** `snt_webapp_orchestrator` BACKLOG.
+
+### <a id="ui-10"></a>UI-10 · Catalog read via `readFileContent` (optional)
+
+Instead of `prepareObjectDownload` + `fetch` — only if signed-URL expiry or CORS becomes a problem.
+
+**Source:** `snt_webapp_orchestrator` BACKLOG.
+
+### <a id="app-1"></a>APP-1 · `pipelines(…, perPage: 100)` never paginates
+
+The status and generator-diagnosis queries silently truncate past 100 pipelines. Low risk today;
+fix or accept.
+
+**Source:** `snt_webapp_orchestrator` BACKLOG.
+
+### <a id="app-2"></a>APP-2 · DRC-specific connection placeholder
+
+`form.connPlaceholder` (en + fr) reads `e.g. dhis2-nmdr-drc`. Use a neutral example? User-visible
+string, so not changed silently.
+
+**Source:** `snt_webapp_orchestrator` BACKLOG.
+
+### <a id="app-3"></a>APP-3 · Verify signed-URL expiry
+
+The `renderReportEmbeds` comment claims ~1 h. Check one `downloadUrl`'s `X-Goog-Expires` in DevTools.
+
+**Source:** `snt_webapp_orchestrator` BACKLOG.
+
+### <a id="app-4"></a>APP-4 · Verify the templates-tab deep link
+
+Check that `/pipelines/?tab=templates` still lands on the templates tab.
+
+**Source:** `snt_webapp_orchestrator` BACKLOG.
+
+### <a id="app-5"></a>APP-5 · Long runs stop being watched after 40 min
+
+Polling ends with "stopped watching — still running in OpenHEXA". Fine, or extend it / pair it with
+UI-9? Reloading the page resumes polling with a fresh 40-min budget.
+
+**Source:** `snt_webapp_orchestrator` BACKLOG.
+
+### <a id="app-6"></a>APP-6 · "Refresh the catalogue" button in the run-error drift hint
+
+The not-installed panel runs the generator itself ([ADR 0024](decisions/0024-webapp-may-run-the-generator.md)).
+The drift hint under a rejected run (`catalogueRefreshHintHtml`) still only links to it. Reuse the
+same control there? The status line is a flex row (`.rs-hint` for a second line).
+
+**Source:** `snt_webapp_orchestrator` BACKLOG.
+
+### <a id="app-7"></a>APP-7 · "Refresh the catalogue" button in the boot "no catalogue" panel
+
+Same question for the boot panel (`missingCatalogError`, states `neverRun` / `lastRunFailed`). The
+app has not booted there, so the control would need to work without `APP` state.
+
+**Source:** `snt_webapp_orchestrator` BACKLOG.
+
+### <a id="app-8"></a>APP-8 · Deep-link step 1 of the not-installed panel to the step's own template
+
+Step 1 links to the templates tab (`/pipelines/?tab=templates`). OpenHEXA also has a page per
+template, `/workspaces/<slug>/templates/<encoded template name>` (e.g. `…/templates/A.6%20DHIS2%20Incidence`),
+the same shape `generatorTemplateUrl` already uses. The map has no template-name field, though.
+`ohName` is display-only, and 5 of the 18 values don't match a current template name (see
+[APP-9](#app-9)). A wrong name gives a broken page, and the app can't detect that. Options: build the
+link from `ohName` once APP-9 is fixed and keep the two in lockstep, or add a `templateName` field to
+the map contract. Either way, fall back to the templates tab when the field is missing.
+
+**Source:** `snt_webapp_orchestrator` BACKLOG.
+
+### <a id="app-9"></a>APP-9 · `ohName` no longer matches the OpenHEXA template names
+
+The contract says `ohName` must match the name shown in OpenHEXA. Against the template list, these
+don't match: the four A.3 mean/median/IQR/magic-glasses nodes (templates are now `A.3.1 …`; PATH is
+still `A.3 …`), and `snt_seasonality_rainfall` (template `D.3 ERA5 Seasonality - Rainfall`, map
+`D.2 …`). Decide whether `ohName` mirrors the template name or the installed pipeline's name (they
+can differ), then update the map.
+
+**Source:** `snt_webapp_orchestrator` BACKLOG.
+
+### <a id="app-10"></a>APP-10 · Should a pipeline that has already run become locked again?
+
+Only an installed, **never-run** pipeline can be locked (`showLocked` = `lockedReason()` and state
+`none`, in the rail, the pill and `runRowHtml`). Example: A.2 succeeded last week, then A.1's latest
+run failed. A.2 still shows "Succeeded" and its Run button stays enabled. Decide whether "locked"
+should apply to an installed pipeline in any state whenever a hard prerequisite's latest run isn't a
+success. If yes: how to show it alongside the pipeline's own last-run status (the pill shows one
+state), and whether Run is disabled or only warned. Not-installed pipelines stay never-locked either
+way.
+
+**Source:** `snt_webapp_orchestrator` BACKLOG.
+
+### <a id="ui-11"></a>UI-11 · Confirm the "Queued" colours
+
+`--queue` / `--queue-bg` in `styles.css` (grey text on OpenHEXA's gray-100) are a guess: the queued
+badge shows for seconds in OpenHEXA and its colours weren't captured. Replace them once seen.
+
+**Source:** `snt_webapp_orchestrator` BACKLOG.
+
+### <a id="app-11"></a>APP-11 · Output dataset links need `DATASETS_READ`
+
+The proxy grants `DatasetVersion` / `Dataset` fields only under `DATASETS_READ`
+([runtime](OPENHEXA_WEBAPP_RUNTIME.md#allowed_operations-scopes)), which the app does not have
+(R9). So `DATASET_OUTPUTS_QUERY` is refused and the Latest outputs box lists no dataset links;
+files and the HTML report are unaffected. Decide: add `DATASETS_READ` (changes R9) and the links
+come back with no code change, or drop the query.
+
+**Source:** `snt_webapp_orchestrator` BACKLOG.
+
+### <a id="plat-1"></a>PLAT-1 · Self-hosted OpenHEXA
+
+The front-end base `https://app.openhexa.org` is hardcoded
+([ADR 0019](decisions/0019-hardcoded-saas-front-end-base.md)). A self-hosted install needs it from
+config, or from `window.OPENHEXA` if the platform ever exposes it.
+
+**Source:** `snt_webapp_orchestrator` BACKLOG.
+
+### Product (PM)
+
+Owned by the PM; full text and recommended version in
+[`PRODUCT_SPEC.md` §10](../webapps/orchestrator/docs/PRODUCT_SPEC.md#10-open-decisions-for-the-pm-with-recommended-version-placement).
+
+- <a id="pm-1"></a>**PM-1** · In-app failure help: plain-language summary + run messages/log
+  excerpts (v2) — §10 item 2.
+- <a id="pm-2"></a>**PM-2** · "Recommend the next step" banner/badge (v2) — §10 item 4.
+- <a id="pm-3"></a>**PM-3** · Team run model and "who is running what" (v2) — §10 item 5.
+- <a id="pm-4"></a>**PM-4** · Connections and setup ownership (v2) — §10 item 6.
+- <a id="pm-6"></a>**PM-6** · Full narrative layer / onboarding tour (v2, parked) — §7 and §9.
+
+---
+
 ## Documentation
 
 ### <a id="doc-1"></a>DOC-1 · Authoritative pipeline order and dependency map
@@ -591,6 +959,14 @@ Add the link to [`README.md`](../README.md) *Start here* and to
 
 **Owner:** Giulia. **Source:** OWNERSHIP §4.
 
+### <a id="doc-7"></a>DOC-7 · Fill "not recorded" ADR dates from git history
+
+ADRs 0013–0016 and 0019 (originally orchestrator 0004–0007 and 0010) say "Date: not recorded". `git log` on the old `CLAUDE.md` / `README.md`
+in the archived predecessor repo `BLSQ/OpenHEXA-WebApp-Diary` may date them. Needs Giulia's OK to run `git log`; update only the
+date line, never the decision.
+
+**Source:** `snt_webapp_orchestrator` BACKLOG. **Old ID:** orchestrator `DOC-2`.
+
 ---
 
 ## Questions for the OpenHEXA developers
@@ -621,6 +997,57 @@ both, and both currently arrive only as transitive dependencies. Facts:
 [`DATA_ARCHITECTURE.md` §7.4](DATA_ARCHITECTURE.md#74-the-workspace-runtime-image).
 
 **Source:** CLAUDE.md *Suggestions*; DATA_ARCHITECTURE §9 #12.
+
+### <a id="oh-4"></a>OH-4 · Ask OpenHEXA for a CLI/SDK webapp deploy command
+
+The CLI deploys pipelines only and the SDK webapp surface is read-only. A request was said to be in
+flight but is not tracked anywhere.
+
+**Source:** `snt_webapp_orchestrator` BACKLOG. **Old ID:** orchestrator `OH-1`.
+
+### <a id="oh-5"></a>OH-5 · Ask OpenHEXA to allow `workspace { connections }` through the webapp proxy
+
+The proxy refuses `Workspace.connections` and `Connection.{id,name,slug,type}` even with
+`USER_READ` ([runtime](OPENHEXA_WEBAPP_RUNTIME.md#allowed_operations-scopes)), so the
+DHIS2/custom connection dropdowns never load and users must type a slug. Ask for those fields (no
+secret fields) under `USER_READ` or a new scope. Until then the app's text fallback stands; the
+dropdown and the "no connection of this type" note activate on their own once the query passes.
+
+**Source:** `snt_webapp_orchestrator` BACKLOG. **Old ID:** orchestrator `OH-2`.
+
+### <a id="oh-6"></a>OH-6 · Ask OpenHEXA to allow `PipelineVersion.files` through the webapp proxy
+
+The app shows each pipeline's README for the version deployed in the workspace
+([ADR 0025](decisions/0025-readmes-from-deployed-version.md)). It would rather read it straight
+from the version's code:
+
+```graphql
+query ($id: UUID!) { pipelineVersion(id: $id) { files { name path content encoding } } }
+```
+
+`PIPELINES_READ` unlocks the top-level `pipelineVersion`, but its `SCOPE_GRANTS` entry
+(openhexa-app `backend/hexa/webapps/scopes.py`) lists only 16 `PipelineVersion` fields (`id`,
+`versionNumber`, `parameters`, `config`, …), not `files` or `zipfile`. `FileNode` is granted to
+no scope either, so the proxy refuses the whole query. Ask for `PipelineVersion.files` and
+`FileNode` (`name`, `path`, `type`, `content`, `encoding`) under `PIPELINES_READ` or a new
+read-only scope. A README is no more sensitive than the parameters and config that are already
+granted, but `files` also exposes the pipeline's source code, which is the question to put to the
+devs. Until then, `create_pipeline_cards` copies each README into the bucket and the app reads it
+with `FILES_READ`. If this is granted, the app could read READMEs directly, the copies could go,
+and a README would match the deployed version even before the generator re-runs.
+
+**Source:** `snt_webapp_orchestrator` BACKLOG. **Old ID:** orchestrator `OH-3`.
+
+### <a id="oh-7"></a>OH-7 · Getting the workspace token without the UI
+
+The deployer needs the workspace access token in a CUSTOM connection named `oh`, and today that is
+a copy-paste ([`bootstrap/openhexa_deployment.md`](bootstrap/openhexa_deployment.md) §7.3b). The
+GraphQL API has two untested mutations: `generateWorkspaceToken(slug)` and
+`issueWorkspaceToken(workspaceId or slug)`, which returns a JWT with an expiry. Ask: who may call
+them; does generating a new token invalidate the old one (which would break the `oh` connection);
+can the JWT deploy a pipeline version?
+
+**Source:** Giulia's OpenHEXA deployment notes (local), 2026-09.
 
 ---
 

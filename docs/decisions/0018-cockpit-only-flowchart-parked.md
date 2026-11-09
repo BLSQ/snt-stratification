@@ -1,7 +1,8 @@
-# 0009. Cockpit is the only maintained UI; Flowchart is parked
+# 0018. Cockpit is the only maintained UI; Flowchart is parked
 
 Date: 2026-10-19 (Cockpit became the v1 lead on 2026-07-15, PM steer)
 Status: Accepted
+Originally: `snt_webapp_orchestrator` ADR 0009
 
 ## Context
 
@@ -21,7 +22,7 @@ per-variant line references) and the deploy paths.
   to `deprecated/flowchart/SPEC.md` and revival steps in `deprecated/flowchart/README.md`. Since the
   cut-over these live only in the archived predecessor repo
   ([`deprecated/flowchart/`](https://github.com/BLSQ/OpenHEXA-WebApp-Diary/tree/bbd02388f0104d809e55a81f5b84b29ce6b569bd/deprecated/flowchart);
-  [ADR 0013](0013-fresh-repo-without-history.md)).
+  [ADR 0022](0022-fresh-repo-without-history.md)).
 
 ## Consequences
 

@@ -1,7 +1,8 @@
-# 0011. The repo is the reference source, not a deployment record
+# 0020. The repo is the reference source, not a deployment record
 
 Date: 2026-10-19
 Status: Accepted
+Originally: `snt_webapp_orchestrator` ADR 0011
 
 ## Context
 

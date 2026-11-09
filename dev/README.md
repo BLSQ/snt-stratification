@@ -20,7 +20,7 @@ Install by tier — you do not need all of it. Everything below is cross-platfor
 |---|---|---|---|
 | **1 — do this** | `conda env create -f dev/environment.yml` | Gets you `ruff` (the repo's only automated quality gate, and the only check you can run before opening a PR), plus `nbstripout` and `nbdime`. | ~3 min |
 | **2 — if you edit R notebooks** | VS Code + the Jupyter extension | Lets you edit locally and execute on the workspace kernel. | ~5 min |
-| **3 — rarely** | `openhexa` CLI | Already in `environment.yml`. CI deploys for you; only needed for a manual push — and read [R5](../docs/CONVENTIONS.md#r5) before you do. | — |
+| **3 — rarely** | `openhexa` CLI | Already in `environment.yml`. Only needed for a manual push to a test workspace — read [R5](../docs/CONVENTIONS.md#r5) first. `openhexa workspaces add` stores the workspace's token in **plain text** in `~/.openhexa.ini`: keep that file private, and delete the entries of workspaces you no longer push to. | — |
 
 ```bash
 conda env create -f dev/environment.yml

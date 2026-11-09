@@ -1,6 +1,6 @@
 ---
 name: write-pipeline-readme
-description: Write, update or audit a pipeline's readme.md in snt_development against docs/PIPELINE_README_STANDARD.md, verifying every claim against the code. Use when a pipeline.py's parameters, outputs or publication change, when asked to write/fix/check a pipeline readme, or when the handover skill reports one may be stale.
+description: Write, update or audit a pipeline's readme.md in snt-stratification against docs/PIPELINE_README_STANDARD.md, verifying every claim against the code. Use when a pipeline.py's parameters, outputs or publication change, when asked to write/fix/check a pipeline readme, or when the handover skill reports one may be stale.
 ---
 
 # Write (or audit) a pipeline readme
@@ -10,10 +10,10 @@ The standard is [`docs/PIPELINE_README_STANDARD.md`](../../../docs/PIPELINE_READ
 
 ## Steps
 
-1. **Read the code, in the standard's §0 order** — `<name>/pipeline.py`, then
+1. **Read the code, in the standard's §0 order** — `pipelines/<name>/pipeline.py`, then
    `pipelines/<name>/code/*.ipynb`, then `pipelines/<name>/utils/*.r`, plus any shared helper from
-   `code/*.r` the notebook calls (e.g. `load_dataset_file`, `init_snt_workspace` in
-   `code/snt_utils.r`). The report notebook and `utils/*_report.r` do not define the published
+   `shared/r/*.r` the notebook calls (e.g. `load_dataset_file`, `init_snt_workspace` in
+   `shared/r/snt_utils.r`). The report notebook and `utils/*_report.r` do not define the published
    contract — read them only to verify filesystem outputs the readme attributes to reporting. The
    existing readme is supplementary: it may enrich wording, never serve as evidence.
 2. **Collect the facts** (in your working notes, not a file) before writing anything:
