@@ -931,7 +931,7 @@
    ================================================================== */
 
       /* ============================ constants ============================ */
-      const EDITOR_VERSION = "0.2.0-prototype";
+      const EDITOR_VERSION = "0.3.0-prototype";
       const LEVELS = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => `level_${n}_name`);
 
       const DATASET_IDS = {
@@ -949,7 +949,7 @@
         SNT_SEASONALITY_RAINFALL: "snt-seasonality-rainfall",
         SNT_SEASONALITY_CASES: "snt-seasonality-cases",
         SNT_MAP_EXTRACTS: "snt-map-extracts",
-        SNT_RESULTS: "snt-results",
+        SNT_POPULATION_USER_PROVIDED: "snt-pop-user-provided",
       };
 
       const POP_KEYS = [
@@ -1297,21 +1297,36 @@
         Object.keys(state.extra).forEach(
           (k) => (ind[k] = state.extra[k].slice()),
         );
-        const rep = { REPORTING_DATASETS: [], REPORTING_INDICATORS: {} };
-        if (state.rep.mode === "datasets") {
-          rep.REPORTING_DATASETS = state.rep.datasets.map((d) => ({
+        /* Unfilled strings are null, as in the skeleton (never "" or a sentinel). */
+        const orNull = (s) => (s && s.trim() ? s.trim() : null);
+        /* DHIS2_REPORTING_RATES always carries the skeleton's full shape: the
+           branch not chosen keeps its null placeholders. The extract only acts
+           on a non-empty DATASET / indicator value, so placeholders are inert. */
+        const dsList =
+          state.rep.mode === "datasets" && state.rep.datasets.length
+            ? state.rep.datasets
+            : [null];
+        const useInd = state.rep.mode === "indicators";
+        const rep = {
+          REPORTING_DATASETS: dsList.map((d) => ({
             DATASET: d,
             METRICS: { ACTUAL_REPORTS: "float", EXPECTED_REPORTS: "float" },
-          }));
-        } else if (state.rep.mode === "indicators") {
-          rep.REPORTING_INDICATORS = { ...state.rep.indicators };
-        }
+          })),
+          REPORTING_INDICATORS: {
+            ACTUAL_REPORTS: useInd
+              ? orNull(state.rep.indicators.ACTUAL_REPORTS)
+              : null,
+            EXPECTED_REPORTS: useInd
+              ? orNull(state.rep.indicators.EXPECTED_REPORTS)
+              : null,
+          },
+        };
         return {
           SNT_CONFIG: {
-            COUNTRY_CODE: state.cfg.COUNTRY_CODE.trim(),
-            COUNTRY_NAME: state.cfg.COUNTRY_NAME.trim(),
-            DHIS2_ADMINISTRATION_1: state.cfg.DHIS2_ADMINISTRATION_1,
-            DHIS2_ADMINISTRATION_2: state.cfg.DHIS2_ADMINISTRATION_2,
+            COUNTRY_CODE: orNull(state.cfg.COUNTRY_CODE),
+            COUNTRY_NAME: orNull(state.cfg.COUNTRY_NAME),
+            DHIS2_ADMINISTRATION_1: orNull(state.cfg.DHIS2_ADMINISTRATION_1),
+            DHIS2_ADMINISTRATION_2: orNull(state.cfg.DHIS2_ADMINISTRATION_2),
             ANALYTICS_ORG_UNITS_LEVEL: state.cfg.ANALYTICS_ORG_UNITS_LEVEL,
             REPORTING_RATE_PRODUCT_UID: state.productUids.slice(),
           },
@@ -1363,11 +1378,14 @@
           },
         );
         const rr = dd.DHIS2_REPORTING_RATES || {};
-        if ((rr.REPORTING_DATASETS || []).length) {
+        /* Same test as the extract: only a non-empty DATASET counts, so the
+           skeleton's {DATASET: null} placeholder reads back as "not chosen". */
+        const dsUids = (rr.REPORTING_DATASETS || [])
+          .map((d) => d && d.DATASET)
+          .filter(Boolean);
+        if (dsUids.length) {
           s.rep.mode = "datasets";
-          s.rep.datasets = rr.REPORTING_DATASETS.map(
-            (d) => d && d.DATASET,
-          ).filter(Boolean);
+          s.rep.datasets = dsUids;
         } else if (Object.values(rr.REPORTING_INDICATORS || {}).some(Boolean)) {
           s.rep.mode = "indicators";
           s.rep.indicators = {
