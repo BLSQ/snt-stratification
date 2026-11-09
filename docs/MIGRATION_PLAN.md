@@ -645,8 +645,8 @@ a time.
 The memory and `ignore/` sweep (last item below) runs first, as reading; what it finds lands in
 commits 3–5, wherever each item belongs.
 
-**Progress and hand-off (2026-11-09).** Commits 1–4 are on the branch, plus this hand-off commit.
-**Next: commit 5**, in a new session. What a new session needs, beyond the items below:
+**Hand-off for commits 5–8 (2026-11-09), now done.** Kept as the record of what was asked; what
+was done is in [Phase 2 results](#phase-2-results).
 - **Register IDs (D-16):** R1–R22 keep their IDs. Webapp-only rules become `W1…` in
   `webapps/CLAUDE.md`; its old R1 (git guardrail) is R19 and its old R12 (doc hygiene) merges into
   root rules from R23 on, together with bootstrap DOC1–DOC5 (`docs/bootstrap/CLAUDE.md`). Add an
@@ -674,11 +674,13 @@ commits 3–5, wherever each item belongs.
 - **Deviation to record in commit 8:** the BACKLOG kept every non-colliding ID and renumbered only
   the six orchestrator collisions, instead of area-prefixing every item.
 
-- [ ] Root `CLAUDE.md` router (≤15 KB) with the **merged Register**. Rules shared by all three repos
+- [x] Root `CLAUDE.md` router (≤15 KB) with the **merged Register**. Rules shared by all three repos
       (git guardrail, `[ERROR]`/`[WARNING]` prefixes, Python style) appear once. Webapp-only rules move
       to `webapps/CLAUDE.md` (prefix `W`); notebook rules stay in `pipelines/CLAUDE.md`.
-- [ ] `docs/ARCHITECTURE.md` (new): one-page system map. Units, the contracts between them, the
+      → Commit 5.
+- [x] `docs/ARCHITECTURE.md` (new): one-page system map. Units, the contracts between them, the
       deploy routes (deployer, new templates, old templates), and the release train.
+      → Commit 6.
 - [x] Import the ADRs per D-14 (was OD-5). Write the first new ADRs: monorepo (supersedes orchestrator REPO-1),
       release train (D-2), repo path = workspace path (D-9, §4.2), docs placement rule (D-10), templates kept alongside the deployer
       (**supersedes bootstrap D20**), publishing workspace for the new templates (**amends R5 / ADR 0004**).
@@ -688,11 +690,12 @@ commits 3–5, wherever each item belongs.
       and add an "old ID" column. Drop items this migration resolves: REPO-1/2, the multi-source
       roadmap §1, the CI path-filter typos.
       → Commit 4. The path-filter typos had no backlog item (the old workflows were not imported).
-- [ ] Update the skills for the new paths. The `release` skill is **moved to Phase 4**: it would
+- [x] Update the skills for the new paths. The `release` skill is **moved to Phase 4**: it would
       describe a release process that does not exist yet. (The skills' scripts were fixed in Phase 1,
       commit 8. Their text still says `code/*.r` and `contracts/snt_config_json/`, and
       `validate_metadata.py` still says jsonschema is not in `dev/environment.yml`, which is now wrong.)
-- [~] Sweep the local Claude memory and the `ignore/` plans of all source repos. Anything still true
+      → Commit 7.
+- [x] Sweep the local Claude memory and the `ignore/` plans of all source repos. Anything still true
       and useful goes **into the repo** (CLAUDE.md, ADR, BACKLOG, docs). Nothing may rely on local memory.
       → 2026-11-06, memory half done: the notes were Giulia's personal working preferences (moved to
       her global `~/.claude/CLAUDE.md`, as they hold for every repo) and two finished-history notes
@@ -700,6 +703,54 @@ commits 3–5, wherever each item belongs.
       `snt_workspace_bootstrap`) are still to read. `OpenHEXA-WebApp-Diary` is out of scope.
       → 2026-11-06, `ignore/` half read: 16 items still true and unrecorded. 12 placed in commits 3–4
       (ADR 0039, BACKLOG, OWNERSHIP); the rest are listed in the hand-off above.
+      → Commits 5–6 placed the rest: the `.gitignore` trap (root Traps), the `~/.openhexa.ini`
+      token (`dev/README.md`) and the newcomer explainer (`docs/ARCHITECTURE.md` Part 2).
+
+#### Phase 2 results
+
+Commits 1–8 on `phase-2/docs-and-agents`, 2026-11-06 → 09. Where the work differed from the runbook
+above, and what was found on the way:
+
+- **Commit 4 (BACKLOG).** Every non-colliding ID was kept; only the six orchestrator IDs that
+  collided were renumbered, instead of area-prefixing every item.
+- **Commit 5 (router and Register).** Root `CLAUDE.md` is 15,227 bytes (15,280 after commit 6's
+  routing row: a new row now needs a trim elsewhere). The Register is R1–R26 with an "Old ID"
+  column:
+  - R17–R19 are the rules all three repos shared, widened to R and Python where needed.
+  - Bootstrap DOC5 merged into **R22** (manifest *or* checker report shape → schema in
+    `contracts/`), instead of a new number.
+  - New: **R23** current truth only (orchestrator R12, bootstrap DOC1–2), **R24** decisions are
+    ADRs (DOC3), **R25** one fact one home, open items only in the BACKLOG (orchestrator R12, DOC4),
+    **R26** one folder per deployable unit. R26 is the orchestrator's R11, made a root rule rather
+    than a W-rule because it covers pipelines too.
+  - R5 reworded for both template sets (ADR 0041); R6 reworded as answered above.
+  - Orchestrator R2–R10 became **W1–W9** in `webapps/CLAUDE.md`. Their citations in ADRs
+    0023–0025, the orchestrator's `DEPLOYMENT.md`, `OPENHEXA_WEBAPP_RUNTIME.md` and one `app.js`
+    comment were updated (the comment needs no redeploy).
+  - **Root rule 2 rewritten:** merging here deploys nothing (no CI; `Pull scripts` pulls from the
+    old repo). It used to say notebooks reach a workspace through `Pull scripts`.
+  - **Not in the runbook:** the pipeline-specific Traps moved from the root to
+    `pipelines/CLAUDE.md#pipeline-traps`, to fit 15 KB. `docs/bootstrap/CLAUDE.md` was deleted;
+    its rules, reading table and § index are in `pipelines/CLAUDE.md#bootstrap-pipelines`.
+  - Stale text fixed on the way: `CONVENTIONS.md` (`code/` paths, `deprecated/`, the workflow
+    step in "Adding a pipeline"), the config editor's `CLAUDE.md` (it still called the skeleton a
+    vendored copy, against D-11), README claims and counts.
+- **Commit 6 (ARCHITECTURE.md).** Part 1 is the map, Part 2 the newcomer explainer. **Beyond the
+  runbook:** §2.5 also draws on §3, §4 and §8 of `openhexa_deployment_explained.md`, not only §1, 2,
+  5–7; accepted by Giulia on 2026-11-09. The `requirements.txt` claim was left out (DEP-1).
+  `contracts/README.md` was rewritten to list all eight contracts, and `DATA_ARCHITECTURE.md` §2 now
+  says it describes the old repo's routes.
+- **Commit 7 (skills).** **Beyond the runbook, agreed with Giulia:** besides the path fixes, the
+  handover skill's rows 7, 10 and 11, note steps 4–5 and description were aligned with the commit 5
+  rules (R6, R26, R22, rule 2, R5). Without it, the skill told agents to push from
+  `snt-development`.
+- **Left as they are:** `docs/bootstrap/HISTORY.md` still cites DOC5 (history; the Old ID column
+  resolves it). `DATA_ARCHITECTURE.md` §2 still describes the old repo's delivery in full.
+  `dev/README.md` still calls `ruff` the only automated check, though `pytest` now exists.
+
+Verification (2026-11-09): 1,007 relative links in all `.md` files, 0 broken; `ruff check .` and
+`ruff format --check .` clean; `pytest` 16 passed; the metadata validator returns `OK`. Nothing was
+run on OpenHEXA.
 
 ### Phase 3 — Tooling and CI
 - [ ] `tools/build_manifest.py` (from the `generate_manifest.yaml` heredoc) emitting **manifest v2**,
@@ -870,6 +921,7 @@ proceed in parallel against the new schema.
 | 2026-11-05 | Phase 1 executed, P1-0…P1-8. `BLSQ/snt-stratification` created **private**; `main` seeded with the README stub and `.claude/`, then protected (`main` and `v*` rulesets). Source SHAs (P1-5; full SHAs in the README Provenance table): `snt_development` `94cfc38`, `snt_webapp_orchestrator` `603a831`, `snt_workspace_bootstrap` `abbe8c0`, `openhexa-webapps-edit-snt-config-json` `bd0cbf9`. Second audit pass **passed**. Branch `phase-1/snapshot-import` built as commits 1–9. Deviations: [Phase 1 results](#phase-1-results) | P1-9 (verify, paste results into the PR description), push, open the PR; P1-10 merge with a merge commit, then decide on public (DOC-5); P1-11 pointer PR in `snt_development` |
 | 2026-11-05 | **Phase 1 closed.** P1-9 passed (results in the import PR description). Import PR merged with a merge commit. Repo made **public** under MIT; DOC-5 stays open as a later review (P1-10). `snt_development` pointer PR done (P1-11): its plan is now a pointer to this file, and it is maintenance-only (D-4) | Phase 2 — docs and agent setup |
 | 2026-11-06 → 09 | Phase 2 started on `phase-2/docs-and-agents`. Settled D-14 (one ADR sequence), D-15 (no CODEOWNERS for now), D-16 (Register IDs); `release` skill moved to Phase 4. Commits 1–4: plan, ADR import (0010–0035), new ADRs 0036–0041, one BACKLOG. Local memory moved to Giulia's global CLAUDE.md; `ignore/` sweep done. R6 answered and a Phase 1 fact corrected (`snt_lib` hardcodes `code/` for `Pull scripts`) | Commit 5 in a new session: see the Phase 2 hand-off |
+| 2026-11-09 | Phase 2 commits 5–8: root `CLAUDE.md` router with the merged Register R1–R26, `webapps/CLAUDE.md` W1–W9, bootstrap rules into `pipelines/CLAUDE.md` (interim `docs/bootstrap/CLAUDE.md` retired); `docs/ARCHITECTURE.md`; skills updated; deviations in [Phase 2 results](#phase-2-results) | Push, open the Phase 2 PR, merge it with a merge commit. Then Phase 3: settle OD-4 first |
 
 ---
 
