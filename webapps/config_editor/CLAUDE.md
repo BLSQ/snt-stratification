@@ -1,4 +1,4 @@
-# CLAUDE.md
+# `webapps/config_editor/` — the config editor
 
 Web app that produces a valid `SNT_config.json` for the SNT pipelines, aimed at country teams who
 know DHIS2 but not JSON. Ticket SNT25-661.
@@ -8,17 +8,17 @@ know DHIS2 but not JSON. Ticket SNT25-661.
 | File | What it is |
 |---|---|
 | [`docs/PRODUCT_SPEC.md`](docs/PRODUCT_SPEC.md) | **What we are building.** Scope, storage design, validation model, form structure, acceptance criteria. Start here. |
-| [`docs/config_analysis_notes.md`](../../contracts/snt_config/config_analysis_notes.md) | **The schema contract.** What "valid" means, per-field rules, traps. Source of truth. |
-| [`docs/config_field_matrix.md`](../../contracts/snt_config/config_field_matrix.md) | Field-by-field across the 5 existing countries — what is fixed vs variable. |
-| [`docs/SNT_config.skeleton.json`](../../contracts/snt_config/SNT_config.skeleton.json) | The exact shape and key order the app must emit. |
+| [`contracts/snt_config/config_analysis_notes.md`](../../contracts/snt_config/config_analysis_notes.md) | **The schema contract.** What "valid" means, per-field rules, traps. Source of truth. |
+| [`contracts/snt_config/config_field_matrix.md`](../../contracts/snt_config/config_field_matrix.md) | Field-by-field across the 5 existing countries — what is fixed vs variable. |
+| [`contracts/snt_config/SNT_config.skeleton.json`](../../contracts/snt_config/SNT_config.skeleton.json) | The exact shape and key order the app must emit. The one copy, shared with the pipelines. |
 
 Do not restate schema facts in new files — link to the analysis docs instead. They are maintained;
 copies drift.
 
 ## Current state
 
-Docs and spec only. No app code yet. `prototype/index.html` is a standalone throwaway prototype for
-reviewing the UX — not the codebase.
+Docs and spec only. No app code yet: `app/` is empty. [`design/index.html`](design/index.html) is a
+standalone throwaway prototype for reviewing the UX — not the codebase.
 
 ## Decisions already made — do not relitigate
 
@@ -43,13 +43,13 @@ reviewing the UX — not the codebase.
 
 ## Upstream alignment — read before touching validation
 
-This repo shares **no code** with the SNT pipelines; it reimplements their rules. Spec §12 lists
+This app shares **no code** with the SNT pipelines; it reimplements their rules. Spec §12 lists
 every upstream component relied on and what breaks here if it changes. The critical one:
 `validate_config()` now exists twice — Python upstream (unpinned) and JavaScript here — with nothing
 keeping them in agreement. Spec §12.2 has the options; **no mitigation is chosen yet.**
 
-Do not edit [`docs/SNT_config.skeleton.json`](../../contracts/snt_config/SNT_config.skeleton.json) to suit the app. It is
-a vendored copy of an upstream truth. Spec §12.3.
+Do not edit [`SNT_config.skeleton.json`](../../contracts/snt_config/SNT_config.skeleton.json) to suit the app.
+It is the pipelines' contract; a change there is a pipeline change too. Spec §12.3.
 
 ## Rules the code must not break
 

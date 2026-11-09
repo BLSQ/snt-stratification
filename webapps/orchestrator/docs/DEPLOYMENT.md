@@ -15,8 +15,8 @@ recorded in the repo** ([ADR 0020](../../../docs/decisions/0020-repo-is-not-a-de
   [`.github/workflows/push_create_pipeline_cards.yaml`](https://github.com/BLSQ/snt_webapp_orchestrator/blob/603a831f8d996b99908819f27afa4a241dc941b9/.github/workflows/push_create_pipeline_cards.yaml),
   which also publishes a new version of its template. Other workspaces install it from the template
   `Create pipeline_cards.json`; never `openhexa pipelines push` it from another workspace, which
-  creates a duplicate template (snt_development
-  [CONVENTIONS R5](https://github.com/BLSQ/snt_development/blob/main/docs/CONVENTIONS.md#r5--publish-only-from-the-snt-development-workspace)).
+  creates a duplicate template
+  ([R5](../../../docs/CONVENTIONS.md#r5)).
   The workflow needs the repo secret `OH_TOKEN`. Giulia runs pipelines herself; the agent stops at
   "ready to push" with a test plan.
 - **The catalog** is never deployed — it is produced by running the generator in the workspace.
@@ -59,7 +59,7 @@ What comes from where once connected:
 - The credential lasts for one tab. A new tab, or an expired credential, shows the Connect button
   again. **Switch** on the pill picks another webapp.
 - **Never commit a pinned tag** (`data-workspace-slug` / `data-webapp-slug`): the bundle is
-  workspace-independent (R6), so use the picker.
+  workspace-independent (W5), so use the picker.
 - Local testing does not replace the post-deploy check below.
 
 ## Before you edit a deployed webapp

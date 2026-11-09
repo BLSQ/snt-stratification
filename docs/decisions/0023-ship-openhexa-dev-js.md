@@ -19,7 +19,7 @@ reviewed change (backlog item DEV-1, closed by this ADR).
 - `index.html` loads `dev.js` as a plain script **immediately before `app.js`** (no `async` /
   `defer`): it must set `window.OPENHEXA` and the `/graphql/` reroute before the app boots.
 - The tag carries **no `data-workspace-slug` / `data-webapp-slug`**: the bundle stays
-  workspace-independent (R6), and the developer picks the webapp in the Connect picker.
+  workspace-independent (W5), and the developer picks the webapp in the Connect picker.
 - `dev.js` is the **only** third-party script allowed. ADR 0016's rule stands for everything else.
 - `app.js` detects the same local hosts (`isLocalDev()`) only to word the "not connected yet" boot
   error. It changes no other behaviour.

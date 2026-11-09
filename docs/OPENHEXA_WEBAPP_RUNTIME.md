@@ -82,7 +82,7 @@ check before relying on them. `__typename`, `__schema` and `__type` are always a
   with `Fields not allowed: Connection.id, Connection.name, Connection.slug, Connection.type,
   Workspace.connections`, and no scope grants it. So the parameter form's connection dropdowns
   never load, and connection parameters fall back to a text slug input
-  ([OH-5](BACKLOG.md#oh-5)). The app keeps `USER_READ` (R9) and the dropdown code, so they work as
+  ([OH-5](BACKLOG.md#oh-5)). The app keeps `USER_READ` (W8) and the dropdown code, so they work as
   soon as the proxy allows the fields.
 
 - `PIPELINES_READ` unlocks `pipelineVersion`, but **not** `PipelineVersion.files` or `zipfile`,

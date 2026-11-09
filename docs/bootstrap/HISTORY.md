@@ -7,7 +7,7 @@
 > human or agent — does not rediscover them, re-litigate a settled decision, or mistake an old
 > artefact for a live one.
 >
-> The current state lives in the files [`CLAUDE.md`](CLAUDE.md) routes to. Until 2026-10-01 these
+> The current state lives in the files [`pipelines/CLAUDE.md`](../../pipelines/CLAUDE.md#bootstrap-pipelines) routes to. Until 2026-10-01 these
 > were `PRODUCT_SPEC.md`, `release_strategy.md` and `pipeline_deployment_mechanism.md` (§3.3).
 >
 > Rule of thumb when editing any of those: if a paragraph explains what something *used to be*,

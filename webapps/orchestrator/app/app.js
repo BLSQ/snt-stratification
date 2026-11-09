@@ -87,7 +87,7 @@ var OUTPUTS_QUERY =
 
 // The run's dataset versions, queried separately: the proxy checks scopes per
 // field and refuses the whole query if one field is denied, and DatasetVersion /
-// Dataset fields need DATASETS_READ, which this app does not have (R9). So this
+// Dataset fields need DATASETS_READ, which this app does not have (W8). So this
 // query is best-effort and must never take the file outputs down with it.
 // Dataset.workspace is never granted to webapps, so it is not asked for.
 var DATASET_OUTPUTS_QUERY =

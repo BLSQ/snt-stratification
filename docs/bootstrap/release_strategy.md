@@ -1,7 +1,7 @@
 # SNT Release Strategy
 
 > The **why** of the whole product: the problem, the design, tag immutability and the three
-> operations. Each component's spec and state is in its own file; [`CLAUDE.md`](CLAUDE.md) says
+> operations. Each component's spec and state is in its own file; [`pipelines/CLAUDE.md`](../../pipelines/CLAUDE.md#bootstrap-pipelines) says
 > which to read when. Section numbers like §1.3 are those of the former `PRODUCT_SPEC.md`, kept so
 > existing references still resolve.
 

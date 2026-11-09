@@ -23,7 +23,7 @@ their content, to find the function name in `pipeline.py`.
   `readmes/` first, so the folder only holds the current catalog's READMEs.
 - The app shows the README in a collapsible **Documentation** section, which starts collapsed. The
   file is fetched with `FILES_READ` the first time the section is opened, then cached for the
-  session. A small dependency-free Markdown renderer in `app.js` renders it (R6, R8).
+  session. A small dependency-free Markdown renderer in `app.js` renders it (W5, W7).
 - No link to GitHub anymore, not even as a fallback. Without a README in the bucket, the section
   says to re-run *Create pipeline_cards*.
 - The README is shown as written, in whatever language it has; it is not translated.

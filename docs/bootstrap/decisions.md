@@ -6,7 +6,7 @@
 > there, and `D<n>` citations stay valid. New bootstrap decisions that shape more than one unit are
 > written as ADRs; implementation detail of the bootstrap pipelines still goes here.
 > Section references (§) are those of the former `PRODUCT_SPEC.md`; the index in
-> [`CLAUDE.md`](CLAUDE.md) says which file holds each. D18 names the schema's old path under
+> [`pipelines/CLAUDE.md`](../../pipelines/CLAUDE.md#bootstrap-pipelines) says which file holds each. D18 names the schema's old path under
 > `docs/wip/docs/`; it is now in [`contracts/`](../../contracts/).
 
 ## 8. Decisions taken
