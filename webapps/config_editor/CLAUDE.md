@@ -17,8 +17,10 @@ copies drift.
 
 ## Current state
 
-Docs and spec only. No app code yet. `prototype/index.html` is a standalone throwaway prototype for
-reviewing the UX — not the codebase.
+Docs and spec only. No app code yet. [`design/index.html`](design/index.html) is a standalone
+throwaway prototype for reviewing the UX — not the codebase.
+[`design/index_FR.html`](design/index_FR.html) is its French copy (only user-facing text differs);
+change both files together, by hand, until the real app replaces them.
 
 ## Decisions already made — do not relitigate
 
