@@ -245,6 +245,29 @@ the pipeline readmes. Prerequisite for the filename and column checks in [META-1
 
 **Source:** `contracts/README.md` ("Planned"); docs restructure plan.
 
+### <a id="cfg-6"></a>CFG-6 · `SNT_config.json` is not tied to a DHIS2 instance
+
+Every UID in `SNT_config.json` (population, routine indicators, reporting rates, product UIDs) is
+only meaningful in the DHIS2 instance it was copied from. The file does not say which instance that
+is. The DHIS2 connection reaches `snt_dhis2_extract` separately, as its required run parameter
+`dhis2_connection`, so nothing checks that the two match.
+
+If a workspace's connection is changed or pointed at another instance (a new server, an HMIS
+instead of a malaria registry, a country re-hosting the workspace), the extract runs against UIDs
+from a different instance. Depending on the UID, it may fail or quietly return empty or wrong
+columns. The config editor records the connection identifier only as provenance (in
+`_EDITOR_METADATA` and the `.log.json` sidecar), never in the config, so it does not prevent this.
+
+To discuss with the team before changing anything. Options so far:
+- Add a key for the expected connection slug or DHIS2 base URL to `SNT_CONFIG`, and have the
+  extract warn or fail on a mismatch. This is a contract change: skeleton,
+  [CFG-3](#cfg-3) schema, `validate_config()` in `snt_lib`, and the config editor.
+- Keep the config as it is, and have the extract log the connection and the instance URL beside
+  `{CC}_parameters.json`, so a mismatch can at least be traced.
+- Document the risk in the operator handover only.
+
+**Owner:** Giulia. **Source:** config editor handover for a country-hosted workspace (2026-11-09).
+
 ---
 
 ## SNT Explorer metadata

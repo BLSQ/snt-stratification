@@ -19,6 +19,8 @@ copies drift.
 
 Docs and spec only. No app code yet: `app/` is empty. [`design/index.html`](design/index.html) is a
 standalone throwaway prototype for reviewing the UX — not the codebase.
+[`design/index_FR.html`](design/index_FR.html) is its French copy (only user-facing text differs);
+change both files together, by hand, until the real app replaces them.
 
 ## Decisions already made — do not relitigate
 
@@ -34,10 +36,12 @@ standalone throwaway prototype for reviewing the UX — not the codebase.
 - **Metadata placement:** `_EDITOR_METADATA` inline in drafts, stripped on promotion and written to a
   `.log.json` sidecar for valid files. Spec §6.3.
 - **Indicator keys:** the skeleton's 18, plus a free-text "other key" escape hatch that warns.
-- **DHIS2 instance:** the app asks which instance the UIDs came from (dropdown of the workspace's
-  DHIS2-typed connections, step 2 only) and records it in `_EDITOR_METADATA` + the sidecar —
-  **never in the config payload.** The pipeline takes its connection as a run parameter; the
-  skeleton has no field for one. Provenance, not configuration. Spec §4.1.
+- **DHIS2 instance:** the app asks which DHIS2 connection the UIDs came from and records its slug
+  in `_EDITOR_METADATA` + the sidecar (`source: "manual"`) — **never in the config payload.** The
+  pipeline takes its connection as a run parameter; the skeleton has no field for one. Provenance,
+  not configuration. Spec §4.1. OpenHEXA webapps can no longer read a workspace's connections, so
+  the slug is typed by hand, not picked from a dropdown. The risk this leaves open (config and
+  connection can drift apart) is [CFG-6](../../docs/BACKLOG.md#cfg-6).
 - **Checksums:** SHA-256. `config_sha256` (payload without `_EDITOR_METADATA`) in both the metadata
   and the sidecar; `file_sha256` (exact file bytes) in the sidecar only. Spec §6.6.
 
