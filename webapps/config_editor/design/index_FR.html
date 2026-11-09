@@ -570,21 +570,10 @@
   </head>
   <body>
     <div class="proto">
-      <span>Prototype — pour revue de l'ergonomie uniquement. Ce n'est pas l'application finale.</span>
-      <label
-        >Environnement simulé :
-        <select id="runtime" onchange="setRuntime(this.value)">
-          <option value="step1">
-            v1 étape 1 — LocalStore (téléchargement seul, sans workspace)
-          </option>
-          <option value="ws">
-            v1 étape 2 — workspace avec 2 connexions DHIS2
-          </option>
-          <option value="ws_empty">
-            v1 étape 2 — workspace sans connexion DHIS2
-          </option>
-        </select>
-      </label>
+      <span
+        >Version temporaire — les fichiers sont téléchargés sur votre
+        ordinateur ; rien n'est enregistré dans le workspace.</span
+      >
     </div>
 
     <header>
@@ -629,18 +618,29 @@
           </p>
 
           <div class="field">
-            <label>Instance DHIS2 d'où proviennent les UID</label>
+            <label>Identifiant (slug) de la connexion DHIS2 d'où proviennent les UID</label>
             <div class="hint">
-              Les UID sont propres à l'instance dont ils proviennent. Les
+              Les UID sont propres à l'instance DHIS2 dont ils proviennent. Les
               éléments de données d'un SNIS national et d'un registre paludisme
               ont des UID différents, même s'ils contiennent les mêmes données.
-              Il s'agit <b>uniquement de la provenance</b> : elle est consignée
+              Saisissez l'identifiant de la connexion DHIS2 du workspace, tel
+              qu'affiché dans l'onglet <b>Connections</b> du workspace (URL se
+              terminant par
+              <code>/workspaces/&lt;workspace&gt;/connections/</code>). Il
+              s'agit <b>uniquement de la provenance</b> : elle est consignée
               dans le journal d'enregistrement et n'est jamais écrite dans
-              <code>SNT_config.json</code>. L'application lit la <i>liste</i>
-              des connexions du workspace ; elle n'ouvre aucune connexion et ne
-              contacte jamais DHIS2.
+              <code>SNT_config.json</code>. Les informations d'accès de la
+              connexion (utilisateur, mot de passe) sont définies dans le
+              workspace ; cette application ne les voit jamais et ne contacte
+              jamais DHIS2.
             </div>
-            <select id="connSel" onchange="pickConnection(this.value)"></select>
+            <input
+              type="text"
+              id="connSel"
+              placeholder="ex. dhis2-niger"
+              oninput="this.value = this.value.toLowerCase().replace(/\s+/g, '')"
+              onchange="setConnectionSlug(this.value)"
+            />
             <div id="connNote"></div>
             <div id="w11" class="hidden"></div>
           </div>
@@ -1056,6 +1056,13 @@
       const UID_RE = /^[A-Za-z0-9]{11}$/;
       const UID_COC_RE = /^[A-Za-z0-9]{11}\.[A-Za-z0-9]{11}$/;
       const okUid = (u) => UID_RE.test(u) || UID_COC_RE.test(u);
+      /* Escape free text (the typed connection identifier) before innerHTML. */
+      const escHtml = (s) =>
+        String(s)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
 
       /* ============================ SHA-256 (spec §6.6) ============================
    crypto.subtle where available, pure-JS fallback for file:// origins where
@@ -1271,7 +1278,7 @@
             indicators: { ACTUAL_REPORTS: "", EXPECTED_REPORTS: "" },
           },
           conn: null, // {slug,name} — provenance only, never in the payload
-          connSource: "unavailable", // "openhexa" | "unavailable"
+          connSource: "unavailable", // "manual" | "unavailable" ("openhexa" only in old drafts)
           meta: { author: { name: "", email: "", source: "manual" }, note: "" },
           ack: "",
           loadNote: "",
@@ -1414,7 +1421,7 @@
               slug: m.dhis2_connection.slug,
               name: m.dhis2_connection.name || m.dhis2_connection.slug,
             };
-            s.connSource = m.dhis2_connection.source || "openhexa";
+            s.connSource = m.dhis2_connection.source || "manual";
           }
         }
         return s;
@@ -1430,11 +1437,7 @@
           author: { ...state.meta.author },
           country_code: state.cfg.COUNTRY_CODE.trim() || null,
           dhis2_connection: state.conn
-            ? {
-                slug: state.conn.slug,
-                name: state.conn.name,
-                source: state.connSource,
-              }
+            ? { slug: state.conn.slug, source: state.connSource }
             : { source: "unavailable" },
           note: state.meta.note,
           config_sha256: sha || lastHash || null,
@@ -1885,38 +1888,20 @@
       }
 
       function renderConnection() {
+        /* OpenHEXA webapps can no longer read the workspace's connections, so
+           the identifier is typed by hand (source "manual"). It cannot be
+           checked against the workspace. */
         const sel = document.getElementById("connSel"),
           note = document.getElementById("connNote");
-        const conns = ctx.listDhis2Connections();
-        if (conns === null) {
-          sel.disabled = true;
-          sel.innerHTML = `<option>Disponible lors de l'exécution dans OpenHEXA</option>`;
-          note.innerHTML = `<div class="callout c-info">Cette version ne voit pas de workspace : il n'y a donc
-      pas de liste de connexions. Le journal d'enregistrement consignera
-      <code>{"source":"unavailable"}</code>. Un brouillon commencé ici puis rouvert dans la version
-      OpenHEXA demandera de quelle instance viennent ces UID — vous seul(e) le savez.
-      <b>Aucun avertissement n'est émis</b> : « impossible à savoir » n'est pas « aucune connexion ».</div>`;
-        } else {
-          sel.disabled = false;
-          sel.innerHTML =
-            `<option value="">— choisir l'instance —</option>` +
-            conns
-              .map(
-                (c) =>
-                  `<option value="${c.slug}">${c.name} · ${c.slug}</option>`,
-              )
-              .join("");
-          sel.value = state.conn ? state.conn.slug : "";
-          note.innerHTML = conns.length
-            ? state.conn
-              ? `<div class="callout c-ok">Consigné comme provenance : <b>${state.conn.name}</b>
-             (<code>${state.conn.slug}</code>). Ce choix ne modifie ni le <code>SNT_config.json</code>
-             exporté ni son <code>config_sha256</code>.</div>`
-              : `<div class="callout c-info">Choisissez l'instance avant de saisir des UID — elle détermine
-             tous les UID qui suivent. Seules les connexions de type DHIS2 sont listées ; les connexions
-             PostgreSQL, S3 et IASO du workspace sont écartées.</div>`
-            : "";
-        }
+        const slug = state.conn ? state.conn.slug : "";
+        if (document.activeElement !== sel && sel.value !== slug)
+          sel.value = slug;
+        note.innerHTML = state.conn
+          ? `<div class="callout c-ok">Consigné comme provenance : <code>${escHtml(state.conn.slug)}</code>.
+             Cette valeur ne modifie ni le <code>SNT_config.json</code> exporté ni son
+             <code>config_sha256</code>. Vérifiez l'orthographe : l'application ne peut pas la contrôler.</div>`
+          : `<div class="callout c-info">Saisissez l'identifiant de la connexion avant de saisir des UID —
+             il détermine tous les UID qui suivent.</div>`;
         /* W11 keep / clear */
         const w = document.getElementById("w11");
         if (pendingW11) {
@@ -1936,7 +1921,7 @@
         const echo = document.getElementById("connEcho");
         echo.className = state.conn ? "callout c-info" : "hidden";
         echo.innerHTML = state.conn
-          ? `Saisie des UID provenant de <b>${state.conn.name}</b>.`
+          ? `Saisie des UID provenant de <b>${escHtml(state.conn.slug)}</b>.`
           : "";
       }
 
@@ -2232,13 +2217,19 @@
         }
         render();
       }
-      function pickConnection(slug) {
-        const conns = ctx.listDhis2Connections() || [];
-        const c = conns.find((x) => x.slug === slug) || null;
+      /* Fires on change (blur / Enter), not per keystroke, so W11 compares
+         two finished identifiers. */
+      function setConnectionSlug(raw) {
+        const slug = String(raw || "")
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, "");
+        const c = slug ? { slug, name: slug } : null;
         if (state.conn && c && c.slug !== state.conn.slug && countUids())
-          pendingW11 = { from: state.conn.name, to: c.name };
+          /* escaped once here: both values reach innerHTML (callout, panel) */
+          pendingW11 = { from: escHtml(state.conn.slug), to: escHtml(c.slug) };
         state.conn = c;
-        state.connSource = c ? "openhexa" : "unavailable";
+        state.connSource = c ? "manual" : "unavailable";
         if (c) state.loadNote = "";
         render();
       }
@@ -2415,7 +2406,6 @@
 
       /* ============================ boot ============================ */
       buildStatic();
-      document.getElementById("runtime").value = runtime;
       const boot = store.loadDraft();
       if (boot && boot.doc) {
         reopenDraft(false);
