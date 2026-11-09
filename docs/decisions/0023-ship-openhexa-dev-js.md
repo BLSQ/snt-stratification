@@ -1,7 +1,8 @@
-# 0014. Ship OpenHEXA's `dev.js` in the bundle for local development
+# 0023. Ship OpenHEXA's `dev.js` in the bundle for local development
 
 Date: 2026-10-20
-Status: Accepted (amends the "no CDN scripts" rule of [0007](0007-multi-file-bundle-no-build.md))
+Status: Accepted (amends the "no CDN scripts" rule of [0016](0016-multi-file-bundle-no-build.md))
+Originally: `snt_webapp_orchestrator` ADR 0014
 
 ## Context
 
@@ -10,7 +11,7 @@ publishes `https://api.openhexa.org/webapps/dev.js`. With it, a page served on `
 `file://`) calls a real workspace's `/graphql/` proxy through a deployed private webapp, under that
 webapp's own scopes. OpenHEXA's default webapp template already includes the tag.
 
-[ADR 0007](0007-multi-file-bundle-no-build.md) forbids CDN scripts and makes any new script tag a
+[ADR 0016](0016-multi-file-bundle-no-build.md) forbids CDN scripts and makes any new script tag a
 reviewed change (backlog item DEV-1, closed by this ADR).
 
 ## Decision
@@ -19,14 +20,14 @@ reviewed change (backlog item DEV-1, closed by this ADR).
   `defer`): it must set `window.OPENHEXA` and the `/graphql/` reroute before the app boots.
 - The tag carries **no `data-workspace-slug` / `data-webapp-slug`**: the bundle stays
   workspace-independent (R6), and the developer picks the webapp in the Connect picker.
-- `dev.js` is the **only** third-party script allowed. ADR 0007's rule stands for everything else.
+- `dev.js` is the **only** third-party script allowed. ADR 0016's rule stands for everything else.
 - `app.js` detects the same local hosts (`isLocalDev()`) only to word the "not connected yet" boot
   error. It changes no other behaviour.
 
 ## Consequences
 
 - Bundle edits can be tried locally against live data with no deploy
-  ([`DEPLOYMENT.md`](../DEPLOYMENT.md#developing-locally)).
+  ([`webapps/orchestrator/docs/DEPLOYMENT.md`](../../webapps/orchestrator/docs/DEPLOYMENT.md#developing-locally)).
 - The deployed app downloads ~10 KB of OpenHEXA code on every load. It returns at once on a
   non-local host, so it does nothing there. If `api.openhexa.org` is unreachable, the tag fails
   and `app.js` still runs.

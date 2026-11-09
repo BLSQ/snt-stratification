@@ -1,8 +1,9 @@
-# 0007. A flat multi-file bundle: no build step, no CDN, no layout library
+# 0016. A flat multi-file bundle: no build step, no CDN, no layout library
 
 Date: not recorded
 Status: Accepted — the "no CDN scripts" rule has one exception, OpenHEXA's `dev.js`
-([0014](0014-ship-openhexa-dev-js.md))
+Originally: `snt_webapp_orchestrator` ADR 0007
+([0023](0023-ship-openhexa-dev-js.md))
 
 ## Context
 
@@ -27,8 +28,8 @@ map has a fixed, hand-authored order, so automatic graph layout adds nothing.
   changed files, and drag-and-drop in the OpenHEXA UI works.
 - Data (map, descriptions) can be edited without touching code.
 - No third-party code runs in the app. Adding any script tag is a reviewed change (OpenHEXA's own
-  `dev.js` was reviewed and added: [0014](0014-ship-openhexa-dev-js.md)).
+  `dev.js` was reviewed and added: [0023](0023-ship-openhexa-dev-js.md)).
 - No type checking, minification or module system: `app.js` is one large plain-JS file, and
-  structure is by convention ([`webapps/orchestrator/CLAUDE.md`](../../CLAUDE.md)).
+  structure is by convention ([`webapps/orchestrator/CLAUDE.md`](../../webapps/orchestrator/CLAUDE.md)).
 
 Sources: former `CLAUDE.md` *Multi-file app architecture* and *Map format*.

@@ -3,7 +3,7 @@
 How the orchestrator webapp and its catalog generator fit together. The portable OpenHEXA know-how
 (proxy, scopes, queries) is in [`OPENHEXA_WEBAPP_RUNTIME.md`](../../../docs/OPENHEXA_WEBAPP_RUNTIME.md); app-code
 rules are in [`webapps/orchestrator/CLAUDE.md`](../CLAUDE.md); the *why* behind
-each choice is in [`decisions/`](decisions/README.md). SNT terms: see `snt_development`'s
+each choice is in [`decisions/`](../../../docs/decisions/README.md). SNT terms: see `snt_development`'s
 [`docs/GLOSSARY.md`](https://github.com/BLSQ/snt_development/blob/main/docs/GLOSSARY.md).
 
 ## Overview
@@ -30,7 +30,7 @@ IN EACH WORKSPACE — generated, never in the repo                              
 ## Data architecture
 
 The stable join key everywhere is the node `id` == the pipeline's Python function name (e.g.
-`snt_dhis2_extract`) — [ADR 0006](decisions/0006-node-id-is-python-function-name.md). Pipeline
+`snt_dhis2_extract`) — [ADR 0015](../../../docs/decisions/0015-node-id-is-python-function-name.md). Pipeline
 UUIDs and codes differ per workspace and are only ever read at runtime from that workspace's own
 catalog.
 
@@ -48,19 +48,19 @@ The map and descriptions are **hand-authored**, not generated from the API.
 ### The bundle is workspace-independent
 
 The deployed bundle is the five files in `webapps/orchestrator/app/`, flat, with nothing
-workspace-specific ([ADR 0007](decisions/0007-multi-file-bundle-no-build.md)). The app adapts at
+workspace-specific ([ADR 0016](../../../docs/decisions/0016-multi-file-bundle-no-build.md)). The app adapts at
 runtime: `window.OPENHEXA.workspaceSlug` drives every query and the catalog read, and the catalog
 drives which nodes are greyed. The only platform assumptions baked into `app.js` are the SaaS
-front-end base `https://app.openhexa.org` ([ADR 0010](decisions/0010-hardcoded-saas-front-end-base.md))
+front-end base `https://app.openhexa.org` ([ADR 0019](../../../docs/decisions/0019-hardcoded-saas-front-end-base.md))
 and the generator template's display name (`GENERATOR_TEMPLATE_NAME`). `app.js` fetches the two
 bundled JSON files as same-origin siblings.
 
 ## The pipeline catalog
 
-Why it lives where it does: [ADR 0002](decisions/0002-catalog-in-workspace-bucket.md),
-[0003](decisions/0003-catalog-parameters-from-deployed-version.md),
-[0004](decisions/0004-generator-curates-against-deployed-map.md),
-[0005](decisions/0005-catalog-not-in-workspace-configuration.md). How the generator works:
+Why it lives where it does: [ADR 0011](../../../docs/decisions/0011-catalog-in-workspace-bucket.md),
+[0012](../../../docs/decisions/0012-catalog-parameters-from-deployed-version.md),
+[0013](../../../docs/decisions/0013-generator-curates-against-deployed-map.md),
+[0014](../../../docs/decisions/0014-catalog-not-in-workspace-configuration.md). How the generator works:
 [`pipelines/create_pipeline_cards/README.md`](../../../pipelines/create_pipeline_cards/README.md).
 
 **Location.** Each workspace's catalog is at the fixed **bucket key**
@@ -76,7 +76,7 @@ timestamp on every run.
 
 The same run writes each curated pipeline's root-level `readme.md`, taken from its deployed
 version's code, to `readmes/<id>.md` next to the catalog, after emptying that folder
-([ADR 0016](decisions/0016-readmes-from-deployed-version.md)). The step panel's **Documentation**
+([ADR 0025](../../../docs/decisions/0025-readmes-from-deployed-version.md)). The step panel's **Documentation**
 section (collapsed by default) fetches it the same way as the catalog the first time it is opened
 (`loadReadme()`, key `README_DIR_KEY` + `/<id>.md`), caches it for the session and renders it with
 `renderMarkdown()`. A missing file shows "Documentation not available, re-run Create
@@ -145,7 +145,7 @@ Three independent axes per node:
 - **available vs greyed** — static: available iff the node's `id` is in the workspace's catalog
   with a `uuid`. Otherwise greyed and unclickable, with a "how to install" panel linking to the
   templates page and a button that re-runs the generator
-  ([ADR 0015](decisions/0015-webapp-may-run-the-generator.md)).
+  ([ADR 0024](../../../docs/decisions/0024-webapp-may-run-the-generator.md)).
 - **completed** — the pipeline's **most recent run in the workspace** succeeded, read from the
   cross-session status board (`cockpitState(node) === "ok"`). Not limited to runs started in this
   session.
@@ -177,7 +177,7 @@ reporting-rate groups. Only a *succeeding* run moves the "in use" mark.
 ## Map format
 
 Order and dependencies are explicit; there is no graph-layout library
-([ADR 0007](decisions/0007-multi-file-bundle-no-build.md)). Field-level docs:
+([ADR 0016](../../../docs/decisions/0016-multi-file-bundle-no-build.md)). Field-level docs:
 [`contracts/pipeline_map.schema.json`](../../../contracts/orchestrator/pipeline_map.schema.json).
 
 - The **array order of `nodes` is the walkthrough order**; an alternative group becomes one
@@ -193,7 +193,7 @@ Order and dependencies are explicit; there is no graph-layout library
 
 ## Bilingual UI (EN / FR)
 
-One app with a language toggle ([ADR 0008](decisions/0008-one-bilingual-app.md)). French is the main
+One app with a language toggle ([ADR 0017](../../../docs/decisions/0017-one-bilingual-app.md)). French is the main
 interface language for v1.
 
 | Text | Source | Mechanism |

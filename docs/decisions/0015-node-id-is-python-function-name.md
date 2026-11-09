@@ -1,7 +1,8 @@
-# 0006. The node `id` (Python function name) is the only cross-workspace key
+# 0015. The node `id` (Python function name) is the only cross-workspace key
 
 Date: not recorded
 Status: Accepted
+Originally: `snt_webapp_orchestrator` ADR 0006
 
 ## Context
 

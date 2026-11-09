@@ -1,7 +1,8 @@
-# 0004. The generator curates against the deployed orchestrator map
+# 0013. The generator curates against the deployed orchestrator map
 
 Date: not recorded (in place by 2026-08-04)
 Status: Accepted
+Originally: `snt_webapp_orchestrator` ADR 0004
 
 ## Context
 
@@ -31,5 +32,5 @@ The generator once took a `webapp_name` parameter; the date it was removed is re
 - Map nodes with no matching pipeline are logged and render greyed in the app; pipelines with no
   resolvable id are excluded.
 
-Sources: [`pipelines/create_pipeline_cards/README.md`](../../../../pipelines/create_pipeline_cards/README.md)
+Sources: [`pipelines/create_pipeline_cards/README.md`](../../pipelines/create_pipeline_cards/README.md)
 *Parameters*; former `CLAUDE.md` *The pipeline catalog*.

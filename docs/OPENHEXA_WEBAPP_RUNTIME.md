@@ -88,7 +88,7 @@ check before relying on them. `__typename`, `__schema` and `__type` are always a
 - `PIPELINES_READ` unlocks `pipelineVersion`, but **not** `PipelineVersion.files` or `zipfile`,
   and no scope grants them, so a webapp cannot read a pipeline's code (or its README). The
   generator copies the READMEs to the bucket instead
-  ([ADR 0016](../webapps/orchestrator/docs/decisions/0016-readmes-from-deployed-version.md), [OH-3](../webapps/orchestrator/docs/BACKLOG.md#oh-3)).
+  ([ADR 0025](decisions/0025-readmes-from-deployed-version.md), [OH-3](../webapps/orchestrator/docs/BACKLOG.md#oh-3)).
 
 - `PIPELINES_READ` grants `PipelineRun.datasetVersions` but **not** the `DatasetVersion` /
   `Dataset` fields under it; those need `DATASETS_READ`, and `Dataset.workspace` is granted to no
@@ -224,7 +224,7 @@ URLs are **CORS-open**, so `fetch` works cross-origin, not only `<iframe>`.
 ⚠️ **Never derive the app host from the webapp's hostname.** Webapps are served under
 `*.openhexa.io`; the main UI is at **`app.openhexa.org`**. String-munging gives `app.openhexa.io`,
 which returns a "Web app not found" 404. Hardcode the SaaS base
-([ADR 0010](../webapps/orchestrator/docs/decisions/0010-hardcoded-saas-front-end-base.md)).
+([ADR 0019](decisions/0019-hardcoded-saas-front-end-base.md)).
 
 ```js
 var appBase = "https://app.openhexa.org";
@@ -247,7 +247,7 @@ OpenHEXA serves **`https://api.openhexa.org/webapps/dev.js`** (the `api.` host;
 `app.openhexa.org/webapps/dev.js` 404s). With one script tag in `index.html`, a page served
 locally can call the **real** `/graphql/` proxy of a real workspace, under a deployed private
 webapp's actual scopes. The orchestrator ships the tag in its bundle
-([ADR 0014](../webapps/orchestrator/docs/decisions/0014-ship-openhexa-dev-js.md)); how to use it for this repo:
+([ADR 0023](decisions/0023-ship-openhexa-dev-js.md)); how to use it for this repo:
 [`DEPLOYMENT.md`](../webapps/orchestrator/docs/DEPLOYMENT.md#developing-locally).
 
 ```html

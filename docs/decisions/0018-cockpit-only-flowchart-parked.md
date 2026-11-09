@@ -1,7 +1,8 @@
-# 0009. Cockpit is the only maintained UI; Flowchart is parked
+# 0018. Cockpit is the only maintained UI; Flowchart is parked
 
 Date: 2026-10-19 (Cockpit became the v1 lead on 2026-07-15, PM steer)
 Status: Accepted
+Originally: `snt_webapp_orchestrator` ADR 0009
 
 ## Context
 
@@ -21,13 +22,13 @@ per-variant line references) and the deploy paths.
   to `deprecated/flowchart/SPEC.md` and revival steps in `deprecated/flowchart/README.md`. Since the
   cut-over these live only in the archived predecessor repo
   ([`deprecated/flowchart/`](https://github.com/BLSQ/OpenHEXA-WebApp-Diary/tree/bbd02388f0104d809e55a81f5b84b29ce6b569bd/deprecated/flowchart);
-  [ADR 0013](0013-fresh-repo-without-history.md)).
+  [ADR 0022](0022-fresh-repo-without-history.md)).
 
 ## Consequences
 
 - Docs, contracts and the product spec describe one UI; there is no "variant" wording left.
 - Flowchart webapps may still be deployed in some workspaces; the repo does not track them
-  ([OPS-1](../BACKLOG.md#ops-1)).
+  ([OPS-1](../../webapps/orchestrator/docs/BACKLOG.md#ops-1)).
 - Whether a 2D map ever becomes user-facing is an open product question, recorded in
   `deprecated/flowchart/README.md`. Reviving it means porting everything Cockpit gained since.
 - The node ids of any future second webapp must match `webapps/orchestrator/pipeline_map.json`,

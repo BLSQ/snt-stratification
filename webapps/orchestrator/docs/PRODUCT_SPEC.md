@@ -21,7 +21,7 @@
 > **How to review:** the PM owns Parts A and C and the UI direction in Part B. The developers own
 > the technical-basis column of §6.
 >
-> **Related:** how it is built — [`ARCHITECTURE.md`](ARCHITECTURE.md); why — [`decisions/`](decisions/README.md);
+> **Related:** how it is built — [`ARCHITECTURE.md`](ARCHITECTURE.md); why — [`decisions/`](../../../docs/decisions/README.md);
 > repo-level open items — [`BACKLOG.md`](BACKLOG.md); SNT vocabulary — `snt_development`'s
 > [`docs/GLOSSARY.md`](https://github.com/BLSQ/snt_development/blob/main/docs/GLOSSARY.md); user
 > research — `research/personas/persona_questionnaire_answered-20260713.md` (not public);
@@ -95,7 +95,7 @@ The persona below is the agreed design target. **Design for the floor, not the c
   "where did I get to" — which makes **persistent, real status** (not session-only) essential (§6).
 - **Language:** **French is the main interface language for v1** — nearly all users are
   French-speaking. **✅ Built:** one app with an **EN/FR toggle** in the header, remembered per user,
-  with `?lang=fr` deep-linking ([ADR 0008](decisions/0008-one-bilingual-app.md)). ⚠️ The **French
+  with `?lang=fr` deep-linking ([ADR 0017](../../../docs/decisions/0017-one-bilingual-app.md)). ⚠️ The **French
   copy is a draft, pending review** — the mechanism is done, the wording is not signed off.
 
 ### 3.1 Autonomy & support (largely still open — see §10)
@@ -190,7 +190,7 @@ roadmap builds on. Technical detail: [`OPENHEXA_WEBAPP_RUNTIME.md`](../../../doc
 | --- | --- | --- | --- | --- |
 | F1  | **Live, persistent status board** | On every load, each pipeline shows its real last-run status; true for the whole team, across reloads and days. | `pipelines(workspaceSlug:)` → `runs(orderBy: EXECUTION_DATE_DESC, perPage:1)`, under `PIPELINES_READ`. | ✅ |
 | F2  | **Missing-pipeline detection** | Pipelines not installed here are greyed; a panel explains they're standard and deep-links to the templates page. Once installed, the step goes live as soon as the catalog is regenerated — no redeploy. | A step is available iff its `id` is in the workspace's catalog (with a `uuid`); otherwise greyed. | ✅ |
-| F3  | **Pipeline detail panel** | Name/code/type, a description of what the pipeline does, and its README for the installed version in a collapsible **Documentation** box. | Static content from the map, descriptions and catalog; the README is copied from the deployed version by the generator and read from the bucket when the box is opened ([ADR 0016](decisions/0016-readmes-from-deployed-version.md)). | ✅ |
+| F3  | **Pipeline detail panel** | Name/code/type, a description of what the pipeline does, and its README for the installed version in a collapsible **Documentation** box. | Static content from the map, descriptions and catalog; the README is copied from the deployed version by the generator and read from the bucket when the box is opened ([ADR 0025](../../../docs/decisions/0025-readmes-from-deployed-version.md)). | ✅ |
 | F4  | **Parameter form + config preview** | A typed input per parameter (checkbox, number, dropdown, multi-select, **connection dropdown**), help text, sensible defaults; a "preview config" toggle shows the exact package to be sent. | Form generated from the catalog; connection dropdown from `workspace { connections }` (`USER_READ`, else a text fallback; the proxy currently refuses it, so the text fallback shows — [OH-2](BACKLOG.md#oh-2)). | ✅ |
 | F5  | **Run + poll** | A Run button launches the pipeline and polls it to completion, live-updating the step. | `runPipeline` mutation, params as a `config` object (connections passed by **slug**). Needs `PIPELINES_RUN`. | ✅ |
 | F6  | **Outputs & report links** | After a run, links to its output **datasets** and **files**; the **HTML report** opens via a signed URL. | `pipelineRun.outputs` (union) + `prepareObjectDownload` signed URL. Needs `FILES_READ`. | ✅ |
@@ -201,16 +201,16 @@ roadmap builds on. Technical detail: [`OPENHEXA_WEBAPP_RUNTIME.md`](../../../doc
 
 **The per-workspace catalog.** The list of installed pipelines and their parameters (which drives
 F2 and F4) is generated in each workspace by a companion pipeline, `create_pipeline_cards`, and
-read by the app at page load ([ADR 0002](decisions/0002-catalog-in-workspace-bucket.md)). At product
+read by the app at page load ([ADR 0011](../../../docs/decisions/0011-catalog-in-workspace-bucket.md)). At product
 level this means:
 
 - **Configuration changes need no deploy.** Installing a pipeline, or a parameter changing in a
   newer version, is picked up by re-running the generator and refreshing the page. A
   not-installed step's panel can run the generator itself (**Refresh the catalogue**, then
-  **Reload page**; [ADR 0015](decisions/0015-webapp-may-run-the-generator.md)).
+  **Reload page**; [ADR 0024](../../../docs/decisions/0024-webapp-may-run-the-generator.md)).
 - **The parameter form matches the version actually installed** in the workspace
-  ([ADR 0003](decisions/0003-catalog-parameters-from-deployed-version.md)), and so does the README
-  ([ADR 0016](decisions/0016-readmes-from-deployed-version.md)).
+  ([ADR 0012](../../../docs/decisions/0012-catalog-parameters-from-deployed-version.md)), and so does the README
+  ([ADR 0025](../../../docs/decisions/0025-readmes-from-deployed-version.md)).
 - **A workspace must have the generator run once before the app works** — otherwise the app
   explains what is missing and links to the fix.
 
@@ -222,7 +222,7 @@ level this means:
 
 The app is a **guided, one-step-at-a-time walkthrough** (the "Cockpit" UX, the PM's preferred
 design). Its structure is what teaches the process. A 2D map variant ("Flowchart") was built as a
-side product and is parked ([ADR 0009](decisions/0009-cockpit-only-flowchart-parked.md)).
+side product and is parked ([ADR 0018](../../../docs/decisions/0018-cockpit-only-flowchart-parked.md)).
 
 - **One-step-at-a-time focus.** Instead of a whole-canvas map, the app foregrounds the **current /
   next relevant step** and walks the user forward through the process, using the dependency model
@@ -309,7 +309,7 @@ Each open point is tagged with the version where it is **recommended** to land, 
 confirm or move it. Item numbers are stable references; resolved items keep their number.
 
 1. **French localization — _v1 (decided; ✅ built)._** French is the main interface language for
-   v1; one app with a language toggle ([ADR 0008](decisions/0008-one-bilingual-app.md)).
+   v1; one app with a language toggle ([ADR 0017](../../../docs/decisions/0017-one-bilingual-app.md)).
    **Remaining for v1:** (a) **review/sign off the French copy** — currently draft
    ([UI-5](BACKLOG.md#ui-5)); (b) decide whether **parameter labels/help** (which come from the
    pipeline source, not the app) should also be translated — today they stay English
@@ -342,13 +342,13 @@ confirm or move it. Item numbers are stable references; resolved items keep thei
    install" legitimately pulls a non-technical user into setup. Depends on platform support.
    _(Q27/Q28/Q51/Q57/Q60.)_
 7. **Which UI ships — _resolved._** The guided walkthrough (Cockpit) is the one UI; the 2D map
-   (Flowchart) is parked ([ADR 0009](decisions/0009-cockpit-only-flowchart-parked.md)). Whether a 2D
+   (Flowchart) is parked ([ADR 0018](../../../docs/decisions/0018-cockpit-only-flowchart-parked.md)). Whether a 2D
    map ever becomes user-facing is recorded with the parked code in
    [`deprecated/flowchart/README.md`](https://github.com/BLSQ/OpenHEXA-WebApp-Diary/blob/bbd02388f0104d809e55a81f5b84b29ce6b569bd/deprecated/flowchart/README.md)
    in the archived predecessor repo.
 8. **Documentation source — _v1 (✅ built; resolved)._** The step shows the README of the version
    **installed** in the workspace, in-app, instead of linking to GitHub `main` (§8,
-   [ADR 0016](decisions/0016-readmes-from-deployed-version.md)).
+   [ADR 0025](../../../docs/decisions/0025-readmes-from-deployed-version.md)).
 9. **Condense the Dependencies section — _v1 (✅ built; one sub-question left)._** Every panel
    section is a collapsible box and Dependencies **starts collapsed** (§8). **Still open:** are the
    **per-type counts** in the collapsed header (_"Requires (2 pipelines)"_ / _"Unlocks (11

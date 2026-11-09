@@ -2678,7 +2678,7 @@ function missingBodyHtml(node) {
 }
 
 /* --- "Refresh the catalogue" (not-installed panel, step 2) ----------- *
- * The panel runs create_pipeline_cards itself (ADR 0015): it takes no
+ * The panel runs create_pipeline_cards itself (ADR 0024): it takes no
  * parameters and only rewrites the catalogue. What step 2 offers depends on
  * the generator's state, which changes, so it is looked up again on every
  * render of the panel and never cached. What is kept is the refresh run this

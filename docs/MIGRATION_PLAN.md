@@ -117,7 +117,7 @@ snt-stratification/
 │   │   └── push_bootstrap.yaml         ← bootstrap pipelines → templates on every merge to main (OD-4 leaning)
 │   └── pull_request_template.md
 │
-├── pipelines/                ← flat: one folder per pipeline, folder name = @pipeline id (ADR 0006 join key)
+├── pipelines/                ← flat: one folder per pipeline, folder name = @pipeline id (ADR 0015 join key)
 │   ├── CLAUDE.md             ← pipeline + notebook rules (lazy-loaded), R11/R12, country variants
 │   ├── registry.json         ← name → kind (snt | support | bootstrap) + deploy route. CI fails on an
 │   │                           unregistered folder or a registered folder that is missing
@@ -181,7 +181,7 @@ snt-stratification/
 units live in `docs/`.*
 - **Webapp:** `webapps/<name>/docs/` and `design/`, beside its `app/` bundle. Only `app/` is deployed,
   so docs can never leak into the bundle.
-- **Pipeline:** its own doc is `readme.md` (the operator contract, deployed with the zip, ADR 0016).
+- **Pipeline:** its own doc is `readme.md` (the operator contract, deployed with the zip, ADR 0025).
   Pipelines get **no `docs/` subfolder**: the pipeline zip includes every `.md`, so longer design
   notes go in `docs/<area>/` when they cover several pipelines (as `docs/bootstrap/` does).
 - **Contract:** the prose sits next to its schema in `contracts/<name>/`.
@@ -189,7 +189,7 @@ units live in `docs/`.*
 - No top-level `design/`. The design material of each webapp lives with that webapp.
 
 **Not carried over:** `deprecated/` from every repo (links to it are pinned to the source commit,
-like ADR 0013), empty `__pycache__`-only folders (`snt_workspace_check/`, `snt_workspace_manager/`),
+like ADR 0022), empty `__pycache__`-only folders (`snt_workspace_check/`, `snt_workspace_manager/`),
 and `snt_assemble_results`.
 
 ### 4.2 Repo path = workspace path (D-9)
@@ -201,7 +201,7 @@ path = repo path". We **keep that model** and choose the repo layout so it holds
 |---|---|---|
 | `pipelines/<name>/{code,reporting,utils}/…` | `pipelines/<name>/{code,reporting,utils}/…` | none |
 | `shared/r/*.r` | `shared/r/*.r` | **renamed** from `code/` — every notebook's `source(…/code/…)` changes once |
-| `pipelines/<name>/` (zip) | pipeline code `<name>` with `_`→`-` | none (ADR 0006 join key kept) |
+| `pipelines/<name>/` (zip) | pipeline code `<name>` with `_`→`-` | none (ADR 0015 join key kept) |
 | `webapps/<name>/*` | not on the filesystem: webapp files (manifest `webapps` section, Phase 7) | — |
 
 That is why `pipelines/` is **flat**: kind folders (`pipelines/snt/<name>/`) would push the kind into
@@ -769,9 +769,9 @@ proceed in parallel against the new schema.
 |---|---|
 | A webapp fix has to wait for or ship with pipeline changes (one train) | Patch releases are cheap: the deployer skips unchanged pipelines (D22). Release from `main` only when `main` is green on an rc |
 | CI blast radius: one merge triggers unrelated deploys | Path-scoped jobs. Templates publish on release, not on every merge |
-| Mixed toolchains (Python, R notebooks, plain JS, pytest) | One conda env, one `pyproject.toml`. JS stays no-build (ADR 0007), so it needs no toolchain |
+| Mixed toolchains (Python, R notebooks, plain JS, pytest) | One conda env, one `pyproject.toml`. JS stays no-build (ADR 0016), so it needs no toolchain |
 | Agent context bloat in a bigger repo | Root CLAUDE.md is a router only. Nested CLAUDE.md per area (`pipelines/`, `webapps/`, `webapps/<app>/`) loads lazily |
-| Public exposure grows (more docs, research, workspace names) | Phase 0 audit. R1 stays enforced. Public webapps already must not hold secrets (ADR 0013) |
+| Public exposure grows (more docs, research, workspace names) | Phase 0 audit. R1 stays enforced. Public webapps already must not hold secrets (ADR 0022) |
 | Deployer downloads the whole repo tarball | Slim release tarball asset (Phase 3) |
 | Everyone with write access can change everything | Branch protection. CODEOWNERS per area declined for now (D-15); to be discussed with the team |
 | `.gitignore` `*.json` trap silently drops webapp/contract JSON | Allowlist + `git check-ignore` check in Phase 1 |

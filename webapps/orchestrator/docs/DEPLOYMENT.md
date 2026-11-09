@@ -2,7 +2,7 @@
 
 How changes in this repo reach an OpenHEXA workspace. The repo is the source of truth for the app;
 each workspace's bucket is the source of truth for its catalog; **nothing about deployments is
-recorded in the repo** ([ADR 0011](decisions/0011-repo-is-not-a-deployment-record.md)) — webapp
+recorded in the repo** ([ADR 0020](../../../docs/decisions/0020-repo-is-not-a-deployment-record.md)) — webapp
 `id`, `slug`, URL, scopes and `isPublic` are always resolved live.
 
 ## What gets deployed
@@ -24,7 +24,7 @@ recorded in the repo** ([ADR 0011](decisions/0011-repo-is-not-a-deployment-recor
 ## Developing locally
 
 Try bundle edits against a real workspace **before** deploying them. OpenHEXA's `dev.js` (already
-in `index.html`, [ADR 0014](decisions/0014-ship-openhexa-dev-js.md)) routes the local page's
+in `index.html`, [ADR 0023](../../../docs/decisions/0023-ship-openhexa-dev-js.md)) routes the local page's
 GraphQL calls through a deployed webapp. How it works:
 [`OPENHEXA_WEBAPP_RUNTIME.md`](../../../docs/OPENHEXA_WEBAPP_RUNTIME.md#local-development-devjs).
 

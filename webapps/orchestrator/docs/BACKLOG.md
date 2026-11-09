@@ -10,7 +10,7 @@ file holds the repo-level items behind it.
 - Each item has a stable ID. Link to it as `docs/BACKLOG.md#ui-1`. **Do not renumber, and do not
   reuse an ID** — other documents point at these IDs.
 - **When an item is resolved, delete it.** There is no "done" section. If a decision settled it,
-  write an ADR in [`decisions/`](decisions/README.md); if a fix settled it, the PR is the record.
+  write an ADR in [`decisions/`](../../../docs/decisions/README.md); if a fix settled it, the PR is the record.
 - Product decisions owned by the PM stay in [`PRODUCT_SPEC.md` §10](PRODUCT_SPEC.md#10-open-decisions-for-the-pm-with-recommended-version-placement);
   the `PM-*` items here only point at them.
 
@@ -32,7 +32,7 @@ file holds the repo-level items behind it.
 
 Merge this repo into `snt_development`, or move both into a new "SNT stratification" repo (all
 OpenHEXA pipelines + webapps)? Decide, then write an ADR. The layout is already neutral for either
-direction ([ADR 0012](decisions/0012-one-folder-per-deployable-unit.md)).
+direction ([ADR 0021](../../../docs/decisions/0021-one-folder-per-deployable-unit.md)).
 
 ### <a id="repo-2"></a>REPO-2 · Fix `snt_development`'s split pipeline layout
 
@@ -48,7 +48,7 @@ both, re-run the generator everywhere).
 
 ### <a id="doc-2"></a>DOC-2 · Fill "not recorded" ADR dates from git history
 
-ADRs 0004–0007 and 0010 say "Date: not recorded". `git log` on the old `CLAUDE.md` / `README.md`
+ADRs 0013–0016 and 0019 (originally orchestrator 0004–0007 and 0010) say "Date: not recorded". `git log` on the old `CLAUDE.md` / `README.md`
 in the archived predecessor repo `BLSQ/OpenHEXA-WebApp-Diary` may date them. Needs Giulia's OK to run `git log`; update only the
 date line, never the decision.
 
@@ -88,7 +88,7 @@ dropdown and the "no connection of this type" note activate on their own once th
 ### <a id="oh-3"></a>OH-3 · Ask OpenHEXA to allow `PipelineVersion.files` through the webapp proxy
 
 The app shows each pipeline's README for the version deployed in the workspace
-([ADR 0016](decisions/0016-readmes-from-deployed-version.md)). It would rather read it straight
+([ADR 0025](../../../docs/decisions/0025-readmes-from-deployed-version.md)). It would rather read it straight
 from the version's code:
 
 ```graphql
@@ -111,7 +111,7 @@ and a README would match the deployed version even before the generator re-runs.
 ### <a id="ops-1"></a>OPS-1 · Unpublish the live Flowchart webapps?
 
 Flowchart webapps may still be deployed (`snt-app-dev`, `snt-testing`, `xxx-snt-process` as of the
-2026-10 cleanup). Decide whether to remove them ([ADR 0009](decisions/0009-cockpit-only-flowchart-parked.md)).
+2026-10 cleanup). Decide whether to remove them ([ADR 0018](../../../docs/decisions/0018-cockpit-only-flowchart-parked.md)).
 
 ### <a id="ops-2"></a>OPS-2 · Delete leftover `pipeline_cards.json` inside deployed webapps
 
@@ -201,7 +201,7 @@ UI-9? Reloading the page resumes polling with a fresh 40-min budget.
 
 ### <a id="app-6"></a>APP-6 · "Refresh the catalogue" button in the run-error drift hint
 
-The not-installed panel runs the generator itself ([ADR 0015](decisions/0015-webapp-may-run-the-generator.md)).
+The not-installed panel runs the generator itself ([ADR 0024](../../../docs/decisions/0024-webapp-may-run-the-generator.md)).
 The drift hint under a rejected run (`catalogueRefreshHintHtml`) still only links to it. Reuse the
 same control there? The status line is a flex row (`.rs-hint` for a second line).
 
@@ -256,7 +256,7 @@ come back with no code change, or drop the query.
 ### <a id="plat-1"></a>PLAT-1 · Self-hosted OpenHEXA
 
 The front-end base `https://app.openhexa.org` is hardcoded
-([ADR 0010](decisions/0010-hardcoded-saas-front-end-base.md)). A self-hosted install needs it from
+([ADR 0019](../../../docs/decisions/0019-hardcoded-saas-front-end-base.md)). A self-hosted install needs it from
 config, or from `window.OPENHEXA` if the platform ever exposes it.
 
 ## Product (PM)

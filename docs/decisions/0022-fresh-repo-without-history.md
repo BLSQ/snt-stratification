@@ -1,7 +1,8 @@
-# 0013. A fresh public repo from one snapshot; history and `deprecated/` stay in the archived repo
+# 0022. A fresh public repo from one snapshot; history and `deprecated/` stay in the archived repo
 
 Date: 2026-10-20
 Status: Accepted
+Originally: `snt_webapp_orchestrator` ADR 0013
 
 ## Context
 
@@ -24,10 +25,10 @@ and the `deprecated/` folder still carried the old material. The repo was also t
 ## Consequences
 
 - No git history before the snapshot here. `git log` / `git blame` for older work runs against the
-  archived repo ([DOC-2](../BACKLOG.md#doc-2)).
+  archived repo ([DOC-2](../../webapps/orchestrator/docs/BACKLOG.md#doc-2)).
 - Nothing still in use is lost: the decisions are in ADRs (e.g. 0002, 0009), and what the spikes
   proved (report iframe on a signed URL, last-run status through the proxy) is in
-  [`OPENHEXA_WEBAPP_RUNTIME.md`](../../../../docs/OPENHEXA_WEBAPP_RUNTIME.md). Only the parked code, the
+  [`docs/OPENHEXA_WEBAPP_RUNTIME.md`](../OPENHEXA_WEBAPP_RUNTIME.md). Only the parked code, the
   Flowchart spec and the spike write-ups live in the archived repo.
 - Mentions of `deprecated/` in earlier ADRs (0009, 0012) refer to that archived copy.
 - Links into the archived repo are pinned to commit `bbd0238`, so they do not break if its `main`
