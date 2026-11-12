@@ -77,6 +77,7 @@ and documented separately:
 | D-14 | **One ADR sequence** (was OD-5), in `docs/decisions/`. `snt_development` ADRs keep 0001–0009 (the most cited). The orchestrator's 0001–0016 follow as 0010–0025, then the bootstrap D-entries that record an architectural decision; the new ADRs come after them. Every imported ADR gets an "Originally: `<repo>` ADR NNNN / D<n>" line, and `docs/decisions/README.md` holds the mapping table. Bootstrap D-entries that are only implementation detail stay in `docs/bootstrap/decisions.md` | 2026-11-06 |
 | D-15 | **No CODEOWNERS for now** (was OD-8): ADR 0005 stands. Giulia discusses per-area review with the team later; tracked in the BACKLOG | 2026-11-06 |
 | D-16 | **Merged Register IDs.** R1–R22 keep their IDs (cited in code and notebooks). Rules the three repos share (git guardrail, `[ERROR]`/`[WARNING]`, Python style) appear once, as R17–R19. Webapp-only rules get `W<n>` in `webapps/CLAUDE.md`. The doc-hygiene rules (bootstrap DOC1–5, orchestrator R12) merge into root rules from R23 on. Rules for the bootstrap pipelines go in `pipelines/CLAUDE.md`: no `CLAUDE.md` inside a pipeline folder, because every `.md` there ships in the pipeline zip. Every renumbered rule keeps its old ID in an "old ID" column | 2026-11-06 |
+| D-17 | **Bootstrap pipelines reach a workspace as OpenHEXA templates published on each full release, and the deployer also updates them, never downgrading** (was OD-4). Users never manage a workspace with the `openhexa` CLI (too technical), so templates and the bootstrap pipelines themselves are the only realistic routes (Giulia, 2026-11-12). (1) On a **full** release only (never a pre-release), `release.yaml` pushes `snt_workspace_deployer`, `snt_pipeline_deployer` and `snt_workspace_checker` from the new templates publishing workspace (ADR 0041), which publishes their template versions; a workspace installs them once from the template. So a workspace's deployer is the latest full release, never older than the release it deploys. (2) They are in the release manifest as `kind: bootstrap`. The deployer deploys them **only when the target tag is the latest full release or newer** (an rc); for an older target it skips them with an `[INFO]`, so it never replaces itself with an older, possibly buggy copy. (3) The deployer must read every manifest `schema_version` from 2 on, or refuse an unknown one with a clear `[ERROR]`. (4) ADR 0040's rule ("never the same pipeline from a template and the deployer") is narrowed to `snt` and `support` pipelines, whose R half the deployer installs with them; for bootstrap pipelines both routes deliver the same code from the same tag. Proven by spike S6 ([Phase 3 findings](#phase-3-findings)). Supersedes ADR 0029; ADR 0037 (one release train) stands. Recorded as ADR 0042 (Phase 3, commit 2). Until the publishing workspace exists, maintainers push by hand: there are no users yet, so that is not a gap | 2026-11-12 |
 
 ## 3. Open decisions (owner: Giulia unless stated)
 
@@ -86,7 +87,6 @@ blocks, and move it to the Decision log.
 
 | ID | Question | Recommendation / current leaning | Blocks |
 |---|---|---|---|
-| OD-4 | How do the bootstrap pipelines (deployer, checker, single-pipeline deployer) reach a workspace? | **Leaning (Giulia):** as regular OH **template pipelines**, kept in this repo as `kind: bootstrap` folders in `pipelines/`, with their **own CI** that pushes every merge to `main` into the new templates workspace (not tied to the release train). Implications to keep in mind: (a) a deployer on `main` must stay able to read every manifest schema version it may be asked to deploy, or refuse old ones with a clear `[ERROR]`; (b) they are then **outside** the release manifest's `pipelines` (or listed with `kind: bootstrap` for provenance only, never deployed by the deployer); (c) this supersedes bootstrap D19 ("no deploy workflow") and solves roadmap §3 (chicken-and-egg). Not decided | Phase 3 (CI) / Phase 4 |
 | OD-6 | Testing releases: keep a sandbox repo, or use pre-releases? | Pre-release tags (`v0.x.y`, marked pre-release) on the new repo + a test workspace. Drop `snt_development_sandbox`. The deployer already ignores pre-releases unless asked (D27) | Phase 4 |
 | OD-9 | Retiring Pull scripts | **S2b passed (2026-11-03):** self-sync works, so Pull scripts can go for both routes. Still open: the S2b sub-questions (§4.3), in particular the per-run escape hatch | Phase 6 |
 | OD-10 | **How to version country-specific notebooks, and analyst-edited ones** (raised 2026-11-03). Today nothing versions `_<CC>` variants, and no route delivers them to their country. Analysts also edit notebooks in their workspace, and updates (templates, deployer, self-sync) must not silently overwrite those edits. We need one system that keeps good practice (versioned, reviewable, no country data in the public repo) and still lets users run what they edited | No leaning yet. Constraints so far: country variants are not in the public repo (D-13); self-sync skips `_<CC>` files and archives what it replaces (S2b). Inputs: OD-9's escape hatch, and possibly a private per-country repo or dataset | None (not scheduled). Must be settled before Pull scripts is retired (OD-9) |
@@ -112,9 +112,9 @@ snt-stratification/
 ├── .github/
 │   ├── workflows/
 │   │   ├── ci.yaml                     ← PR: ruff, pytest, schema validation, link check (TOOL-2/3/5)
-│   │   ├── release.yaml                ← on release: build manifest v2, slim release tarball, stamped webapp zips
-│   │   ├── push_templates.yaml         ← SNT + support pipelines → NEW templates workspace; ONE matrix job (replaces 20 copies)
-│   │   └── push_bootstrap.yaml         ← bootstrap pipelines → templates on every merge to main (OD-4 leaning)
+│   │   ├── release.yaml                ← on release: build manifest v2, slim release tarball, stamped webapp zips;
+│   │   │                                 on a FULL release only: bootstrap pipelines → templates (D-17)
+│   │   └── push_templates.yaml         ← SNT + support pipelines → NEW templates workspace; ONE matrix job (replaces 20 copies)
 │   └── pull_request_template.md
 │
 ├── pipelines/                ← flat: one folder per pipeline, folder name = @pipeline id (ADR 0015 join key)
@@ -753,19 +753,98 @@ Verification (2026-11-09): 1,007 relative links in all `.md` files, 0 broken; `r
 run on OpenHEXA.
 
 ### Phase 3 — Tooling and CI
+
+**Branch:** `phase-3/tooling-and-ci`, one PR, merged with a merge commit. OD-4 is settled first
+(D-17) and lands as its first two commits. **Agents:** run no `git`/`gh` command yourself (R19).
+Give Giulia the exact commands, one commit at a time.
+
+| # | Content | Commit message |
+|---|---|---|
+| 1 | This file: D-17 (was OD-4), [Phase 3 findings](#phase-3-findings) (spike S6), Phase 3/4/6 items and §4.1 updated, Session log | `plan: settle OD-4 (D-17) with spike S6` |
+| 2 | See the hand-off below | `docs(decisions): ADR 0042, bootstrap pipelines as templates published on release` |
+| 3… | The tooling items below, one commit each; their order is chosen when commit 3 starts | — |
+
+**Hand-off for commit 2 (2026-11-12).** Write it from D-17 and the S6 findings; nothing else is
+needed from the session that settled OD-4.
+- New **`docs/decisions/0042-bootstrap-pipelines-as-templates-on-release.md`**, status Accepted,
+  "Supersedes 0029", "Amends 0040". Context: the CLI is not a user route (D-17); the three options
+  weighed on 2026-11-12: (A) templates from every merge to `main`, rejected because untested `main`
+  code would reach every auto-updating workspace within minutes and it breaks ADR 0037;
+  (B) templates on each full release, **chosen**; (C) no templates, the release carries the
+  bootstrap and the first deployer is pushed with the CLI, rejected because users don't use the CLI
+  and an old deployer cannot read a newer manifest schema. Decision: D-17's points (1)–(4).
+  Consequences: S6 evidence (auto-update is **opt-in**, so the guarded self-update is what keeps a
+  workspace that never ticked it current); one extra pipeline version per release when both routes
+  deliver the same code (accepted); the checker must read `v<N>` version names as no claim; until
+  the publishing workspace exists, maintainers push by hand.
+- Status lines, following the 0004/0041 pattern: **0029** → `Superseded by [0042](…)`; **0040** →
+  `Accepted (amended by [0042](…): the one-route rule covers snt and support pipelines)`. Update
+  both rows and add 0042 to `docs/decisions/README.md`.
+- R23 current-truth fixes in files that still call OD-4 open or cite D19 / ADR 0029 as current:
+  - `docs/ARCHITECTURE.md` §1.3: a row for the bootstrap pipelines (templates on full release, plus
+    deployer self-update with the guard), and the closing sentence narrowed to `snt` and `support`
+    pipelines.
+  - `docs/bootstrap/roadmap.md` §2 ("open decision OD-4") and §3 (the starting problem, solved by
+    D-17; the `oh` connection stays a manual step).
+  - `docs/bootstrap/openhexa_deployment.md` "Open items" item 4 (closed by D19) and
+    `docs/bootstrap/release_strategy.md` (checker row: "No deployment workflow, by decision (D19)").
+  - `docs/bootstrap/decisions.md` D19 row: promoted to 0029, superseded by 0042.
+  - `docs/decisions/0029-…` Consequences: leave the text, only the status line changes (R24).
+  - `pipelines/registry.json` `description`: drop "(OD-4 for bootstrap)"; bootstrap route = D-17.
+  - Leave `docs/bootstrap/HISTORY.md` as written (history).
+- Check with `grep -rn "OD-4\|D19\|0029" --include=*.md --include=*.json .` (outside `ignore/`)
+  that only history and the ADR mapping table are left.
+
+#### Phase 3 findings
+
+**Spike S6 (2026-11-12): can the deployer push onto a template-created pipeline? Passed.** Toy
+pure-Python pipeline `spike_s6_bootstrap` (code `spike-s6-bootstrap`), published as template
+`SNT Spike S6` from `snt-development-sandbox`, installed from it in `snt-testing`. The direct push
+used the deployer's own mutation and input (`uploadPipeline`, workspace token). Throwaway code and
+runbook: `ignore/spikes/s6/` (git-ignored, local only); the results below are the record.
+
+| Q | Observed |
+|---|---|
+| Direct push onto a template-created pipeline | **Accepted** (`success: True`); version 2 `s6-B-direct [v2]` |
+| Template link after the push | **Kept**: `sourceTemplate` still set, `autoUpdateFromTemplate` still `True` |
+| Template publish, same content as the current version | A new version arrives anyway (v3): OpenHEXA does not compare contents |
+| Template publish, different content | Arrives within seconds and becomes current (v4), replacing the direct push: **last writer wins** |
+| Defaults and names | **`autoUpdateFromTemplate` defaults to `False`** on a template-created pipeline (switched on by hand in the pipeline's settings). Template-delivered versions are named `v<pipeline version number>` (`v1`, `v3`, `v4`), not after the source version or the template version; they have no `user`, and `PipelineVersion.templateVersion` is `null` even on them |
+
+Consequences:
+- Auto-update is opt-in, so a workspace that never ticks it keeps its install-time bootstrap
+  pipelines; D-17's guarded self-update brings them current whenever the deployer runs at the latest
+  release.
+- "Last writer wins" is the concrete reason for ADR 0040's rule for `snt`/`support` pipelines: a
+  template update would move `pipeline.py` and leave the deployer-installed R half behind.
+- The API does not say which template version delivered a pipeline version; content hashing stays
+  the only evidence (already the checker's model).
+- The checker must read a `v<N>` version name as "no release claimed" (Phase 4).
+- `openhexa pipelines push` on a template's source pipeline also publishes a template version: it
+  asks interactively, and `--yes` publishes without asking. CI can publish with a plain
+  `push --yes`. It also means any push from a publishing workspace publishes, so R5 binds the new
+  set as much as the old.
+
+**Checklist**
+- [x] Settle OD-4 → D-17, spike S6 (2026-11-12). Commit 1.
+- [ ] ADR 0042 and the current-truth fixes. Commit 2, see the hand-off above.
 - [ ] `tools/build_manifest.py` (from the `generate_manifest.yaml` heredoc) emitting **manifest v2**,
-      plus pytest coverage and fixtures.
+      plus pytest coverage and fixtures. Lists `kind: bootstrap` pipelines like any other (D-17).
 - [ ] `contracts/release_manifest.schema.json` v2 (R22 becomes an in-repo rule: schema + builder +
       consumers in one PR).
 - [ ] `ci.yaml`: ruff, pytest, contract validation, metadata validator (`validate_metadata.py`), link check.
 - [ ] `release.yaml`: on `release: published`, build and attach `release_manifest.json`, a **slim
       release tarball** (only manifest-listed files, so the deployer doesn't download design PNGs and
-      docs), and `webapp-<name>-<tag>.zip` with a stamped `version.json`.
+      docs), and `webapp-<name>-<tag>.zip` with a stamped `version.json`. Plus a job that runs on
+      **full releases only** (`release: released`, which skips pre-releases, unlike `published`):
+      `openhexa pipelines push --yes` of each registry `kind: bootstrap` pipeline to the new
+      templates publishing workspace, which publishes their template versions (D-17). Keep that job
+      **disabled** until the publishing workspace exists.
 - [ ] `push_templates.yaml`: one matrix job **generated from `pipelines/registry.json`** (kinds `snt` + `support`),
       so typo'd per-pipeline path filters (`readme.txt`, `worlpopclient.py`) can't come back.
       Target = the new templates workspace. Keep it **disabled** until Phase 6.
-- [ ] `push_bootstrap.yaml` (per OD-4 once settled): registry `kind: bootstrap` pipelines → templates on every
-      merge to `main`.
+- [-] `push_bootstrap.yaml`: dropped by D-17. Bootstrap templates publish from `release.yaml` on
+      full releases, not on every merge to `main`.
 - [ ] Config conformance fixtures (`contracts/snt_config/fixtures/`) + a Python runner against the
       **pinned** `snt_lib` `validate_config()` in `ci.yaml`. The JS side runs the same folder when the
       editor's validator exists.
@@ -777,6 +856,14 @@ run on OpenHEXA.
 - [ ] `.snt_release` marker records `repo` + tag (closes roadmap §7.4 for this case).
 - [ ] Checker: name pipelines with legacy template codes (`b-2-map-extracts`, …) through a mapping
       table, instead of reporting them as plain `not_in_any_release`.
+- [ ] **Bootstrap guard (D-17).** `snt_workspace_deployer` deploys `kind: bootstrap` pipelines only
+      when the target tag is the latest full release or newer; for an older target it skips them with
+      an `[INFO]`. `snt_pipeline_deployer` refuses, with an `[ERROR]`, to deploy a bootstrap pipeline
+      from an older release. Both read every manifest `schema_version` from 2 on and refuse an unknown
+      one with an `[ERROR]`. Keep the two copies identical (`tests/test_pipeline_deployer.py`).
+- [ ] Checker: bootstrap pipelines are attributed through the manifest like any other (it stops
+      reporting itself as `in_any_release: false`); `claimed_release_tag` reads a template-delivered
+      version name `v<N>` as no claim (S6), and still strips `[vN]` and `+redeploy-…`.
 - [ ] **Release `v0.1.0` (pre-release) = pure move, no behaviour change.** Bootstrap a fresh test workspace,
       run the SNT chain for one country (copy a config), compare outputs with an old-repo workspace,
       and confirm the checker reports `match`. This isolates "did the move break anything" from the
@@ -824,8 +911,10 @@ proceed in parallel against the new schema.
       (today `snt_lib` hardcodes the shared `code/` path and the `snt_development` repo name; see the
       2026-11-09 correction under Phase 1 "Facts checked")
       accepting repo + ref + path mapping (pinned `snt_lib` release).
-- [ ] Bootstrap pipelines as templates (OD-4): enable `push_bootstrap.yaml`. That solves the
-      chicken-and-egg problem (bootstrap roadmap §3; supersedes D19).
+- [ ] Bootstrap pipelines as templates (D-17): enable the bootstrap job of `release.yaml` once the
+      publishing workspace exists. That solves the chicken-and-egg problem (bootstrap roadmap §3). The
+      new-workspace guide must say to switch **auto-update on** for each bootstrap pipeline: it is
+      off by default (S6).
 - [ ] Verify: a fresh workspace built from the new templates, then the checker run against the
       matching tag, gives `match`. Then switch it to the deployer and check it adopts the pipelines
       without duplicates.
@@ -922,6 +1011,7 @@ proceed in parallel against the new schema.
 | 2026-11-05 | **Phase 1 closed.** P1-9 passed (results in the import PR description). Import PR merged with a merge commit. Repo made **public** under MIT; DOC-5 stays open as a later review (P1-10). `snt_development` pointer PR done (P1-11): its plan is now a pointer to this file, and it is maintenance-only (D-4) | Phase 2 — docs and agent setup |
 | 2026-11-06 → 09 | Phase 2 started on `phase-2/docs-and-agents`. Settled D-14 (one ADR sequence), D-15 (no CODEOWNERS for now), D-16 (Register IDs); `release` skill moved to Phase 4. Commits 1–4: plan, ADR import (0010–0035), new ADRs 0036–0041, one BACKLOG. Local memory moved to Giulia's global CLAUDE.md; `ignore/` sweep done. R6 answered and a Phase 1 fact corrected (`snt_lib` hardcodes `code/` for `Pull scripts`) | Commit 5 in a new session: see the Phase 2 hand-off |
 | 2026-11-09 | Phase 2 commits 5–8: root `CLAUDE.md` router with the merged Register R1–R26, `webapps/CLAUDE.md` W1–W9, bootstrap rules into `pipelines/CLAUDE.md` (interim `docs/bootstrap/CLAUDE.md` retired); `docs/ARCHITECTURE.md`; skills updated; deviations in [Phase 2 results](#phase-2-results) | Push, open the Phase 2 PR, merge it with a merge commit. Then Phase 3: settle OD-4 first |
+| 2026-11-12 | Phase 3 opened on `phase-3/tooling-and-ci`. **OD-4 settled as D-17**: bootstrap pipelines as templates published on each full release, plus a guarded deployer self-update (never downgrades), bootstrap in the manifest as `kind: bootstrap`. Options A (templates from `main`) and C (no templates, CLI first push) rejected, reasons in the commit 2 hand-off. Spike S6 passed in `snt-development-sandbox` → `snt-testing`; auto-update is off by default ([Phase 3 findings](#phase-3-findings)). Commit 1 written | Commit 1, then commit 2 (ADR 0042 + current-truth fixes) in a new session: see the Phase 3 hand-off |
 
 ---
 
