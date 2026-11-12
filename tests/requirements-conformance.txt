@@ -1,0 +1,5 @@
+# snt_lib, pinned for the config conformance test (tests/test_config_conformance.py), installed by CI.
+# v1.0.2 is the commit the pipelines' @release-v1 branch pointed to on 2026-11-12 (23b8340).
+# Bump it, in its own PR, when snt_utils changes validate_config(): see contracts/snt_config/README.md.
+# The pipelines' own requirements.txt still use @release-v1 (BACKLOG DEP-1).
+snt_lib @ git+https://github.com/BLSQ/snt_utils.git@v1.0.2

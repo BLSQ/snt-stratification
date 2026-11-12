@@ -49,8 +49,11 @@ change both files together, by hand, until the real app replaces them.
 
 This app shares **no code** with the SNT pipelines; it reimplements their rules. Spec §12 lists
 every upstream component relied on and what breaks here if it changes. The critical one:
-`validate_config()` now exists twice — Python upstream (unpinned) and JavaScript here — with nothing
-keeping them in agreement. Spec §12.2 has the options; **no mitigation is chosen yet.**
+`validate_config()` now exists twice — Python upstream (`snt_lib`) and JavaScript here. Spec §12.2
+option 2 keeps them in agreement: the conformance fixtures in
+[`contracts/snt_config/fixtures/`](../../contracts/snt_config/README.md#conformance-fixtures--fixtures)
+run through the real `validate_config()` in CI, and the JS validator must run the same folder when
+it is built.
 
 Do not edit [`SNT_config.skeleton.json`](../../contracts/snt_config/SNT_config.skeleton.json) to suit the app.
 It is the pipelines' contract; a change there is a pipeline change too. Spec §12.3.

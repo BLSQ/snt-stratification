@@ -148,9 +148,11 @@ commit SHA. Upgrades then become a reviewable, revertible one-line PR. The cost 
 to bump the refs. Tags are the usual compromise.
 
 **Current repo state (checked 2026-10-16), which the reference docs do not yet reflect:** all 20
-files reference `snt_utils.git@release-v1`. Whether `release-v1` is a tag or a branch was **not
-verified**. If it is a branch, the problem above is unchanged. `openhexa.toolbox @main` remains in 13
-files. See [DOC-3](#doc-3).
+files reference `snt_utils.git@release-v1`. **`release-v1` is a branch** (checked 2026-11-12 in a
+local clone), so the problem above is unchanged. A real tag exists for its head that day:
+annotated tag `v1.0.2` → `23b8340`, which the config conformance test already pins
+(`tests/requirements-conformance.txt`); `v1.0.0` and `v1.0.1` are older. `openhexa.toolbox @main`
+remains in 13 files. See [DOC-3](#doc-3).
 
 Related: the workspace image pins `openhexa.toolbox=2.11.3`, which `@main` overrides at pipeline
 run time, so a notebook run interactively and the same notebook run by the pipeline can see

@@ -854,9 +854,12 @@ Consequences:
       Target = the new templates workspace. Keep it **disabled** until Phase 6.
 - [-] `push_bootstrap.yaml`: dropped by D-17. Bootstrap templates publish from `release.yaml` on
       full releases, not on every merge to `main`.
-- [ ] Config conformance fixtures (`contracts/snt_config/fixtures/`) + a Python runner against the
+- [x] Config conformance fixtures (`contracts/snt_config/fixtures/`) + a Python runner against the
       **pinned** `snt_lib` `validate_config()` in `ci.yaml`. The JS side runs the same folder when the
-      editor's validator exists.
+      editor's validator exists. Commit 6: 16 cases (3 valid, 13 invalid), runner
+      `tests/test_config_conformance.py`, pin `v1.0.2` in `tests/requirements-conformance.txt`
+      (`release-v1` is a branch; `v1.0.2` was its head on 2026-11-12). `ci.yaml` must install the pin
+      and set `SNT_LIB_REQUIRED=1`.
 
 ### Phase 4 — Bootstrap adapted to the monorepo
 - [ ] Deployer and checker read manifest v2 (pipelines under `pipelines/<name>/`, `kind`, ignore

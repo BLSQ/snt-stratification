@@ -74,6 +74,49 @@ webapp repo**, not here. Until that happens:
 
 ---
 
+## Conformance fixtures — `fixtures/`
+
+**What "valid" means is decided by `snt_lib.validate_config()`**, the gate every pipeline runs right
+after loading the config ([`config_analysis_notes.md`](config_analysis_notes.md) §1.3). The config
+editor reimplements it in JavaScript, so the two can drift silently (editor spec §12.2). The
+fixtures are the shared yardstick (§12.2 option 2): each file is one case, and both validators must
+return the verdict it states.
+
+```json
+{
+  "description": "Why this case exists, and which rule it exercises",
+  "expected": { "valid": false, "fails": ["SNT_CONFIG.COUNTRY_CODE"] },
+  "config": { "SNT_CONFIG": { "…": "…" }, "SNT_DATASET_IDENTIFIERS": { "…": "…" }, "DHIS2_DATA_DEFINITIONS": { "…": "…" } }
+}
+```
+
+- `fails` lists **exactly** the dotted config paths the validator must report: no fewer, no more.
+  A valid case has `"fails": []`. The file name starts with `valid_` or `invalid_`.
+- The valid cases have exactly the skeleton's keys, so a change to `SNT_config.skeleton.json` makes
+  the test fail until the fixtures follow it.
+- The cases cover the rules the pipelines and the editor share (editor spec §5.1 rules 1–7), plus
+  the documented edge cases. The editor's own stricter rules (8–11) are not here: `validate_config()`
+  accepts what they reject, for example a bare string where a list belongs. They get cases, with an
+  editor-only verdict, when the editor's validator exists.
+- UIDs and the country code (`XYZ`) are made up.
+
+**Python side:** [`tests/test_config_conformance.py`](../../tests/test_config_conformance.py), run in
+CI against `snt_lib` pinned in
+[`tests/requirements-conformance.txt`](../../tests/requirements-conformance.txt) (`v1.0.2`, the
+commit `@release-v1` pointed to on 2026-11-12). Locally the `validate_config()` checks skip unless
+`snt_lib` is installed:
+
+```bash
+pip install -r tests/requirements-conformance.txt   # heavy: geopandas, polars, papermill
+pytest tests/test_config_conformance.py
+```
+
+**When `snt_utils` changes `validate_config()`:** bump the pin in its own PR, run the test, and fix
+the fixtures, the editor's rules and §1.3 of the notes together. **JS side:** not built; the
+editor's validator runs this folder when it exists.
+
+---
+
 ## Open questions
 
 - The shape of `REPORTING_DATASETS[].METRICS`, whose value is always `"float"`:
