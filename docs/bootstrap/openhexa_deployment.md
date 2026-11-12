@@ -206,8 +206,9 @@ into `snt-development-sandbox`, with correct pipeline codes, parameters round-tr
    there is a working checker and deployer to demonstrate. §7.3b.
 3. ~~**Establish whether *reading* a pipeline version needs the `oh` token too.**~~ **Closed
    2026-09-22: it does not.** See Authentication above and [`HISTORY.md`](HISTORY.md) §2.4.
-4. ~~**Add a `push_snt_workspace_deployer.yaml` workflow.**~~ **Closed 2026-09-30 (D19): no deployment
-   workflow for the deployer or the checker.**
+4. ~~**Add a `push_snt_workspace_deployer.yaml` workflow.**~~ **Closed: no workflow per merge.** The
+   bootstrap pipelines are published as templates by `release.yaml` on each full release
+   ([ADR 0042](../decisions/0042-bootstrap-pipelines-as-templates-on-release.md), 2026-11-12).
 
 ### R5 and the Template mechanism
 

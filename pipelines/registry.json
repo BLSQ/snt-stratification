@@ -1,5 +1,5 @@
 {
-  "description": "One entry per pipelines/<name>/ folder (folder name = @pipeline id). CI (Phase 3) will fail on an unregistered folder or a registered folder that is missing. Deploy routes are added when Phase 3 builds the workflows from this file (OD-4 for bootstrap).",
+  "description": "One entry per pipelines/<name>/ folder (folder name = @pipeline id). CI (Phase 3) will fail on an unregistered folder or a registered folder that is missing. Deploy routes are added when Phase 3 builds the workflows from this file; bootstrap pipelines are published as templates on each full release, plus a guarded deployer self-update (D-17, ADR 0042).",
   "kinds": {
     "snt": "SNT data pipeline, shipped with each release",
     "support": "utility pipeline for the SNT workspaces (orchestrator cards, metadata trim)",

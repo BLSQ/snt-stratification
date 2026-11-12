@@ -827,7 +827,7 @@ Consequences:
 
 **Checklist**
 - [x] Settle OD-4 → D-17, spike S6 (2026-11-12). Commit 1.
-- [ ] ADR 0042 and the current-truth fixes. Commit 2, see the hand-off above.
+- [x] ADR 0042 and the current-truth fixes. Commit 2, see the hand-off above.
 - [ ] `tools/build_manifest.py` (from the `generate_manifest.yaml` heredoc) emitting **manifest v2**,
       plus pytest coverage and fixtures. Lists `kind: bootstrap` pipelines like any other (D-17).
 - [ ] `contracts/release_manifest.schema.json` v2 (R22 becomes an in-repo rule: schema + builder +

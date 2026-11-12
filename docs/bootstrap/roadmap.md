@@ -1,8 +1,9 @@
 # Roadmap — toward the SNT workspace bootstrap
 
-> What comes after the move: the bootstrap's starting problem, and web apps. Nothing here is built
-> or decided; each heading says which parts are proposals. §1 and §2 (several release sources) were
-> superseded in 2026-11 by the monorepo. A choice made from this file becomes an ADR in
+> What comes after the move: the bootstrap's starting problem, and web apps. Nothing here is built;
+> each heading says which parts are proposals. §1 and §2 (several release sources) were
+> superseded in 2026-11 by the monorepo, and §3 is mostly solved by
+> [ADR 0042](../decisions/0042-bootstrap-pipelines-as-templates-on-release.md). A choice made from this file becomes an ADR in
 > [`../decisions/`](../decisions/README.md) (or, for implementation detail, a `D<n>` in
 > [`decisions.md`](decisions.md)), and its text moves to the component's spec. Written 2026-10-02
 > (Session 5 of the move plan).
@@ -23,12 +24,14 @@ multi-source proposal is not needed. Its text: [`HISTORY.md` §3.5](HISTORY.md#3
 ## 2. This repository as a release source — superseded
 
 The bootstrap pipelines now live in the monorepo, in the same release as everything else (same
-history entry). How they reach a workspace is open decision OD-4 in
-[`MIGRATION_PLAN.md`](../MIGRATION_PLAN.md) §3; the evaluation below is an input to it.
+history entry). How they reach a workspace is decided by
+[ADR 0042](../decisions/0042-bootstrap-pipelines-as-templates-on-release.md): as OpenHEXA templates
+published on each full release, plus a deployer self-update that never downgrades. The evaluation
+below was an input to it.
 
-### To evaluate: deliver these two as OpenHEXA template pipelines instead
+### Evaluated: deliver them as OpenHEXA template pipelines
 
-**To be evaluated after checking with colleagues. Not to decide now** (Giulia, 2026-10-02).
+**Settled 2026-11-12 by ADR 0042.** The points below were raised on 2026-10-02 (Giulia).
 
 `snt_workspace_checker` and `snt_workspace_deployer` are pure Python. Unlike the `snt_development`
 pipelines, they bring no R analytics to the filesystem, so a release of them may not need the
@@ -47,23 +50,20 @@ release source of their own. Points to evaluate:
 * **D20.** The template mechanism is being retired for the `snt_development` pipelines. Weigh whether
   that applies to these two as well, or only to pipelines that ship R alongside their Python.
 
-The proposal above (a manifest workflow here) holds until this is evaluated.
+## 3. The starting problem — solved by ADR 0042, except the `oh` connection
 
-## 3. The starting problem (D19)
+**The bootstrap cannot deploy itself into an empty workspace**: nothing exists there to run it.
+[ADR 0042](../decisions/0042-bootstrap-pipelines-as-templates-on-release.md) solves this without the
+`openhexa` CLI. A new workspace installs the bootstrap pipelines once from their templates, which
+are published on each full release, so it starts on the latest full release rather than on a
+working tree. The deployer then deploys everything else, including newer versions of itself
+(guarded: never an older release than the latest full one). Not built yet: Phases 3–4 of
+[`MIGRATION_PLAN.md`](../MIGRATION_PLAN.md); until then maintainers push them by hand.
 
-**The bootstrap cannot deploy itself into an empty workspace.** Nothing exists there to run it, and
-by D19 there is no deployment workflow for this repository's pipelines. So every new workspace
-starts with one hand-deployed pipeline, by `openhexa pipelines push`. The bootstrap then deploys
-everything else, including newer versions of itself: the deployer can already deploy a new version
-of itself, as noted in [`release_manifest.md`](../../contracts/release_manifest.md).
-
-Two more manual steps come with that first one:
+One manual step stays:
 
 * **The `oh` connection.** Deploying needs the workspace access token in a CUSTOM connection named
   `oh` ([`openhexa_deployment.md`](openhexa_deployment.md) §7.3b). Today that is a copy-paste.
-* **Which version is hand-deployed.** The hand-pushed copy should come from a release tag, not from
-  a working tree. Otherwise the workspace starts on code no manifest describes, and the checker reads
-  it as `unknown_content`.
 
 ## 4. Web apps (D8)
 

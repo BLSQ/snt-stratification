@@ -1,7 +1,7 @@
 # 0029. No deployment workflow for the bootstrap pipelines
 
 Date: 2026-09-30
-Status: Accepted
+Status: Superseded by [0042](0042-bootstrap-pipelines-as-templates-on-release.md)
 Originally: `snt_workspace_bootstrap` D19
 
 ## Context

@@ -102,10 +102,11 @@ What has to be settled first:
    then become ambiguous, which is the problem the ruleset exists to prevent. **Open.**
 3. **Which pairing a PR tests.** In the monorepo there is one pairing: a PR's pre-release carries
    the pipelines and the bootstrap pipelines together
-   ([ADR 0037](../decisions/0037-one-release-train.md)). The deployer under test is still pushed by
-   hand from the branch ([ADR 0029](../decisions/0029-no-deployment-workflow-for-bootstrap-pipelines.md))
-   until OD-4 in [`MIGRATION_PLAN.md`](../MIGRATION_PLAN.md) §3 settles how the bootstrap pipelines
-   reach a workspace.
+   ([ADR 0037](../decisions/0037-one-release-train.md)). The deployer under test is pushed by hand
+   from the branch: templates are published only on full releases
+   ([ADR 0042](../decisions/0042-bootstrap-pipelines-as-templates-on-release.md)), and a pre-release
+   target is newer than the latest full release, so once the guard is built (Phase 4) the deployer
+   also updates itself from it.
 4. **What "clean workspace" means.** The deployer cannot delete pipelines or files
    ([`deployer.md`](deployer.md) §7.5), so a reused staging workspace keeps strays from the last PR.
    Either a new workspace per test, which needs the `oh` connection set up each time
@@ -168,7 +169,7 @@ the pipelines. The web app is out of scope beyond the report contract it will co
 | Component | Role | State |
 |---|---|---|
 | `snt_workspace_deployer` | **Fix / install.** Deploys one pinned release, always whole, into the workspace: R analytics to the filesystem, `pipeline.py` via the API. Cannot delete anything ([`deployer.md`](deployer.md) §7.5). | **BUILT**, prototype — changed 2026-09-30 (D21, D22), **not yet tested in a workspace** ([`deployer.md`](deployer.md) §6.7) |
-| `snt_workspace_checker` | **Check.** Read-only. Hashes what is actually in the workspace, attributes each file to a release, and writes a status report. | **BUILT**, phase 4 — both modes verified in the sandbox ([`checker.md`](checker.md) §6.3, [`checker.md`](checker.md) §6.5); report schema frozen at `schema_version: 1` ([`checker.md`](checker.md) §5.5, D18). No deployment workflow, by decision (D19) |
+| `snt_workspace_checker` | **Check.** Read-only. Hashes what is actually in the workspace, attributes each file to a release, and writes a status report. | **BUILT**, phase 4 — both modes verified in the sandbox ([`checker.md`](checker.md) §6.3, [`checker.md`](checker.md) §6.5); report schema frozen at `schema_version: 1` ([`checker.md`](checker.md) §5.5, D18). Reaches a workspace as a template published on each full release ([ADR 0042](../decisions/0042-bootstrap-pipelines-as-templates-on-release.md); not built yet) |
 | Release manifest generation | GitHub Action producing `release_manifest.json` per release | **BUILT** — covers everything the deploy zip ships |
 | Status web app | Reads the checker's report; offers "fix" or "leave as is" | Deferred |
 
