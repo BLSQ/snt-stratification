@@ -9,6 +9,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 import pytest
+from build_manifest import invariant_errors as manifest_v2_invariant_errors
 from jsonschema import Draft202012Validator, FormatChecker
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -69,39 +70,6 @@ def test_release_manifest_v1_fixture_conforms(name: str) -> None:
         assert "pipeline.py" in spec["zip_files"], directory
         unknown = [m for m in spec["zip_files"] if f"{directory}/{m}" not in manifest["files"]]
         assert not unknown, (directory, unknown)
-
-
-def manifest_v2_invariant_errors(manifest: dict) -> list[str]:
-    """Check the manifest v2 invariants that its schema states but JSON Schema cannot express.
-
-    Returns
-    -------
-    list[str]
-        One message per broken invariant; empty when the manifest is consistent.
-    """
-    errors = []
-    files = manifest["files"]
-    in_a_zip = set()
-    for name, spec in manifest["pipelines"].items():
-        if spec["path"] != f"pipelines/{name}":
-            errors.append(f"pipeline {name}: path {spec['path']!r} is not 'pipelines/{name}'")
-        if "pipeline.py" not in spec["zip_files"]:
-            errors.append(f"pipeline {name}: zip_files lacks pipeline.py")
-        for member in spec["zip_files"]:
-            path = f"{spec['path']}/{member}"
-            in_a_zip.add(path)
-            if path not in files:
-                errors.append(f"pipeline {name}: zip member {member!r} has no entry {path!r} in files")
-    filesystem = set(manifest["filesystem_files"])
-    errors += [f"filesystem_files entry {p!r} is not a key of files" for p in sorted(filesystem - set(files))]
-    errors += [
-        f"files entry {p!r} is in neither filesystem_files nor any zip_files"
-        for p in sorted(set(files) - filesystem - in_a_zip)
-    ]
-    for name, spec in manifest.get("webapps", {}).items():
-        if spec["path"] != f"webapps/{name}/app":
-            errors.append(f"webapp {name}: path {spec['path']!r} is not 'webapps/{name}/app'")
-    return errors
 
 
 @pytest.mark.parametrize("name", V2_MANIFESTS)

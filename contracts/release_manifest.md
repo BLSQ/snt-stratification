@@ -9,9 +9,26 @@
 
 ## Manifest v2 — this repo
 
-**Schema written; producer and consumers not built.** The producer is `tools/build_manifest.py`,
-run by `release.yaml` (Phase 3). The deployer, the single-pipeline deployer and the checker switch
-to v2 in Phase 4.
+**Schema and producer written; nothing runs the producer yet, and no consumer reads v2.** The
+producer is [`tools/build_manifest.py`](../tools/build_manifest.py), to be run by `release.yaml`
+(Phase 3). The deployer, the single-pipeline deployer and the checker switch to v2 in Phase 4.
+
+How the builder routes each file:
+
+| Route | Rule | Listed in |
+|---|---|---|
+| Zip | Every file under `pipelines/<name>/` whose suffix (case-insensitive) is `.py .ipynb .txt .md .r .sql`, minus `pipelines/<name>/workspace/`: a mirror of the SDK's `generate_zip_file()`, R half and `country_specific/` included. `<name>` must be in [`registry.json`](../pipelines/registry.json) and hold a `pipeline.py`, or the build stops | `files` + `pipelines.<name>.zip_files` |
+| Filesystem | `pipelines/*/code/*.ipynb`, `pipelines/*/reporting/*.ipynb`, `pipelines/*/utils/*.r`, `shared/r/**/*.r` | `files` + `filesystem_files` |
+| Fetched at run time | `catalogs/*.json` | `repository_files` |
+| Webapp bundle | Every non-hidden file under `webapps/<name>/app/`; an `app/` with none (only `.gitkeep`) gets no entry | `webapps.<name>.files` |
+
+Anything else (docs, `tools/`, `tests/`, design files) is not in the manifest. The builder checks its
+output against the schema and the invariants before it writes anything, so a release never carries
+an invalid manifest:
+
+```bash
+python tools/build_manifest.py --version v0.1.0 --repo BLSQ/snt-stratification   # in a workflow, both come from the env
+```
 
 ```json
 {
@@ -52,7 +69,7 @@ What changed from v1, and why:
   `version.json` (not listed). No consumer reads the block until Phase 7.
 
 Invariants JSON Schema cannot express are listed in the schema's `description` and checked by
-`manifest_v2_invariant_errors()` in [`tests/test_contracts.py`](../tests/test_contracts.py).
+`invariant_errors()` in [`tools/build_manifest.py`](../tools/build_manifest.py).
 `repository_files` is unchanged from v1.
 
 ## v1: manifest generation in `snt_development` — done

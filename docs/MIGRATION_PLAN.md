@@ -832,8 +832,10 @@ Consequences:
 **Checklist**
 - [x] Settle OD-4 → D-17, spike S6 (2026-11-12). Commit 1.
 - [x] ADR 0042 and the current-truth fixes. Commit 2, see the hand-off above.
-- [ ] `tools/build_manifest.py` (from the `generate_manifest.yaml` heredoc) emitting **manifest v2**,
+- [x] `tools/build_manifest.py` (from the `generate_manifest.yaml` heredoc) emitting **manifest v2**,
       plus pytest coverage and fixtures. Lists `kind: bootstrap` pipelines like any other (D-17).
+      Commit 5: validates its own output before writing; stops on a registry ↔ folder mismatch;
+      `pytest` imports `tools/` scripts by name (`pythonpath`).
 - [x] `contracts/release_manifest.schema.json` v2 (R22 becomes an in-repo rule: schema + builder +
       consumers in one PR). Commit 4: `filesystem_files` added, `webapps` built now (decided
       2026-11-12). v1 moves to `release_manifest.v1.schema.json`, which Phase 4 deletes. The

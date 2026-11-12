@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "release_manifest.schema.json",
   "title": "SNT release manifest, v2",
-  "description": "release_manifest.json, attached as an asset to each GitHub release of snt-stratification: every file the release delivers to a workspace, with its sha256, and by which route each one travels. Produced by tools/build_manifest.py, run by .github/workflows/release.yaml (both Phase 3 of docs/MIGRATION_PLAN.md). Consumed, from Phase 4, by snt_workspace_deployer, snt_pipeline_deployer and snt_workspace_checker; until then they read v1 (release_manifest.v1.schema.json). Prose: release_manifest.md. Repo path = workspace path (ADR 0038): a path in files or filesystem_files is the same in the repository and in the workspace filesystem. A consumer reads every schema_version from 2 on that it knows, and refuses an unknown one with an [ERROR] (ADR 0042). Compatibility rules, as for status_report.schema.json: adding a key is NOT a breaking change; renaming or removing a key, changing a type, or changing what a value means is breaking and bumps schema_version. This schema is deliberately strict (additionalProperties: false) so a producer cannot drift silently; a CONSUMER must instead ignore unknown keys. Invariants that hold but cannot be expressed in JSON Schema, so a validator must check them separately (tests/test_contracts.py): (1) every pipelines entry's path is 'pipelines/' + its key; (2) every zip_files list contains 'pipeline.py'; (3) for every pipeline P and every entry M of its zip_files, the path P.path + '/' + M is a key of files; (4) every filesystem_files entry is a key of files; (5) every key of files is in filesystem_files, in some zip_files, or both; (6) every webapps entry's path is 'webapps/' + its key + '/app'.",
+  "description": "release_manifest.json, attached as an asset to each GitHub release of snt-stratification: every file the release delivers to a workspace, with its sha256, and by which route each one travels. Produced by tools/build_manifest.py, run by .github/workflows/release.yaml (both Phase 3 of docs/MIGRATION_PLAN.md). Consumed, from Phase 4, by snt_workspace_deployer, snt_pipeline_deployer and snt_workspace_checker; until then they read v1 (release_manifest.v1.schema.json). Prose: release_manifest.md. Repo path = workspace path (ADR 0038): a path in files or filesystem_files is the same in the repository and in the workspace filesystem. A consumer reads every schema_version from 2 on that it knows, and refuses an unknown one with an [ERROR] (ADR 0042). Compatibility rules, as for status_report.schema.json: adding a key is NOT a breaking change; renaming or removing a key, changing a type, or changing what a value means is breaking and bumps schema_version. This schema is deliberately strict (additionalProperties: false) so a producer cannot drift silently; a CONSUMER must instead ignore unknown keys. Invariants that hold but cannot be expressed in JSON Schema, so a validator must check them separately (invariant_errors() in tools/build_manifest.py): (1) every pipelines entry's path is 'pipelines/' + its key; (2) every zip_files list contains 'pipeline.py'; (3) for every pipeline P and every entry M of its zip_files, the path P.path + '/' + M is a key of files; (4) every filesystem_files entry is a key of files; (5) every key of files is in filesystem_files, in some zip_files, or both; (6) every webapps entry's path is 'webapps/' + its key + '/app'.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "version", "repo", "files", "filesystem_files", "pipelines"],
@@ -48,7 +48,7 @@
     },
     "webapps": {
       "type": "object",
-      "description": "{webapp name: webapp spec}, one entry per webapps/<name>/ whose app/ bundle holds at least one file. The release also attaches each bundle as webapp-<name>-<tag>.zip, with a version.json stamped at release time. Read by no consumer until Phase 7 (the deployer and the checker ignore it). Optional; may be empty.",
+      "description": "{webapp name: webapp spec}, one entry per webapps/<name>/ whose app/ bundle holds at least one file that is not hidden (.gitkeep and other dotfiles are not part of a bundle). The release also attaches each bundle as webapp-<name>-<tag>.zip, with a version.json stamped at release time. Read by no consumer until Phase 7 (the deployer and the checker ignore it). Optional; may be empty.",
       "propertyNames": { "$ref": "#/$defs/directory_name" },
       "additionalProperties": { "$ref": "#/$defs/webapp" }
     }
@@ -114,7 +114,7 @@
         },
         "files": {
           "type": "object",
-          "description": "Every file of the bundle as committed: {path relative to path: sha256}. The stamped version.json is generated at release time and not listed.",
+          "description": "Every file of the bundle as committed, hidden files excepted: {path relative to path: sha256}. The stamped version.json is generated at release time and not listed.",
           "propertyNames": { "$ref": "#/$defs/relative_path" },
           "additionalProperties": { "$ref": "#/$defs/sha256" },
           "minProperties": 1
