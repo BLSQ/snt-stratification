@@ -763,41 +763,49 @@ Give Giulia the exact commands, one commit at a time.
 | # | Content | Commit message |
 |---|---|---|
 | 1 | This file: D-17 (was OD-4), [Phase 3 findings](#phase-3-findings) (spike S6), Phase 3/4/6 items and §4.1 updated, Session log | `plan: settle OD-4 (D-17) with spike S6` |
-| 2 | See the hand-off below | `docs(decisions): ADR 0042, bootstrap pipelines as templates published on release` |
+| 2 | ADR 0042 + current-truth fixes (D-17) | `docs(decisions): ADR 0042, bootstrap pipelines as templates published on release` |
 | 3 | `openhexa_deployment.md`: templates stay a deploy route (R23 fix found in commit 2) | `docs(bootstrap): templates stay a deploy route in openhexa_deployment.md` |
-| 4 | Manifest v2 schema (v1 kept as `release_manifest.v1.schema.json` until Phase 4) | `contracts: release manifest v2 schema` |
-| 5–9 | Order chosen 2026-11-12: `tools/build_manifest.py` → config conformance → `ci.yaml` → `release.yaml` → `push_templates.yaml` | — |
+| 4 | Manifest v2 schema (v1 kept as `release_manifest.v1.schema.json` until Phase 4); `context/snt_development.md` R23 fix | `contracts: release manifest v2 schema` |
+| 5 | `tools/build_manifest.py` + `tests/test_build_manifest.py`; `pythonpath = ["tools"]` in `pyproject.toml` | `tools: build_manifest.py, the release manifest v2 builder` |
+| 6 | Config conformance fixtures + `tests/test_config_conformance.py`; `snt_lib` pin for the test; editor §12.2 settled (option 2); DEP-1 facts | `contracts: config conformance fixtures, run through snt_lib validate_config()` |
+| 6a | This file: commit 7 hand-off, Session log | `plan: Phase 3 commits 2–6, hand-off for ci.yaml` |
+| 7 | `ci.yaml` + the scripts it runs — see the hand-off below | — |
+| 8 | `release.yaml` | — |
+| 9 | `push_templates.yaml` (disabled) | — |
 
-**Hand-off for commit 2 (2026-11-12).** Write it from D-17 and the S6 findings; nothing else is
-needed from the session that settled OD-4.
-- New **`docs/decisions/0042-bootstrap-pipelines-as-templates-on-release.md`**, status Accepted,
-  "Supersedes 0029", "Amends 0040". Context: the CLI is not a user route (D-17); the three options
-  weighed on 2026-11-12: (A) templates from every merge to `main`, rejected because untested `main`
-  code would reach every auto-updating workspace within minutes and it breaks ADR 0037;
-  (B) templates on each full release, **chosen**; (C) no templates, the release carries the
-  bootstrap and the first deployer is pushed with the CLI, rejected because users don't use the CLI
-  and an old deployer cannot read a newer manifest schema. Decision: D-17's points (1)–(4).
-  Consequences: S6 evidence (auto-update is **opt-in**, so the guarded self-update is what keeps a
-  workspace that never ticked it current); one extra pipeline version per release when both routes
-  deliver the same code (accepted); the checker must read `v<N>` version names as no claim; until
-  the publishing workspace exists, maintainers push by hand.
-- Status lines, following the 0004/0041 pattern: **0029** → `Superseded by [0042](…)`; **0040** →
-  `Accepted (amended by [0042](…): the one-route rule covers snt and support pipelines)`. Update
-  both rows and add 0042 to `docs/decisions/README.md`.
-- R23 current-truth fixes in files that still call OD-4 open or cite D19 / ADR 0029 as current:
-  - `docs/ARCHITECTURE.md` §1.3: a row for the bootstrap pipelines (templates on full release, plus
-    deployer self-update with the guard), and the closing sentence narrowed to `snt` and `support`
-    pipelines.
-  - `docs/bootstrap/roadmap.md` §2 ("open decision OD-4") and §3 (the starting problem, solved by
-    D-17; the `oh` connection stays a manual step).
-  - `docs/bootstrap/openhexa_deployment.md` "Open items" item 4 (closed by D19) and
-    `docs/bootstrap/release_strategy.md` (checker row: "No deployment workflow, by decision (D19)").
-  - `docs/bootstrap/decisions.md` D19 row: promoted to 0029, superseded by 0042.
-  - `docs/decisions/0029-…` Consequences: leave the text, only the status line changes (R24).
-  - `pipelines/registry.json` `description`: drop "(OD-4 for bootstrap)"; bootstrap route = D-17.
-  - Leave `docs/bootstrap/HISTORY.md` as written (history).
-- Check with `grep -rn "OD-4\|D19\|0029" --include=*.md --include=*.json .` (outside `ignore/`)
-  that only history and the ADR mapping table are left.
+**Hand-off for commit 7, `ci.yaml` (2026-11-12).** Commits 1–6 are on the branch; start here.
+Scope, from this checklist and [BACKLOG](BACKLOG.md) TOOL-2, TOOL-5, TOOL-6 (JSON part), TOOL-7:
+- **Triggers:** `pull_request` and `push` to `main`. Python **3.13** (the workspace image; `snt_lib`
+  needs ≥ 3.12). `.gitignore` already allows `.github/workflows/*.yaml` (not `*.yml`: use `.yaml`).
+- **ruff:** `ruff check .` and `ruff format --check .`. Pin ruff to an exact version in the workflow:
+  `pyproject.toml` sets `preview = true`, so rules move between versions. Local is `ruff 0.17.3`;
+  `dev/environment.yml` has the floor `>=0.16`.
+- **pytest:** install `pytest jsonschema openhexa.sdk` (the deployer tests load pipelines that import
+  `openhexa.sdk`) and `-r tests/requirements-conformance.txt` (heavy: geopandas, polars, papermill),
+  then run with **`SNT_LIB_REQUIRED=1`** so the conformance test fails instead of skipping. The
+  pinned install has never been run: the 78-test run so far used `validate_config()`'s source
+  lifted from `~/Bluesquare/snt_utils` (on `release-v1` = `v1.0.2`), so this workflow is the first
+  real `pip install` of it. Expect `78 passed` with it, `62 passed, 16 skipped` without.
+- **Registry ↔ folders** (`pipelines/registry.json` description promises it): run
+  `python tools/build_manifest.py --version ci --repo "$GITHUB_REPOSITORY" --output <tmp>`; it exits
+  1 on a mismatch or an invalid manifest.
+- **Metadata validator:** `python .claude/skills/add-explorer-layer/validate_metadata.py` (default
+  target `catalogs/SNT_metadata_master.json`; exit 1 on failure; needs `jsonschema`).
+- **Link check (TOOL-5):** `tools/check_links.py` does not exist yet. Port it from the git-ignored
+  local copy `~/Bluesquare/snt_development/ignore/docs-restructure/check_links.py` (stdlib-only;
+  relative links and `#anchor`s in Markdown), with a test, and run it. Expect findings on first run:
+  fix them or record exclusions deliberately.
+- **TOOL-7:** fail on a tracked `.csv/.xlsx/.parquet/.rds/.geojson` (R1) and on any committed
+  notebook with outputs, read from the `.ipynb` JSON `outputs` (not `nbstripout --verify`).
+- **TOOL-6, JSON part:** the contract fixtures are covered by `pytest`; orchestrator map node ids ==
+  description keys is not yet checked: add it only if cheap, otherwise leave TOOL-6 open.
+- Close the BACKLOG items the commit delivers (delete them, R25) and update the root `CLAUDE.md`
+  "CI: debt" row and `docs/CONVENTIONS.md`/Register statuses that say "run by hand" if CI now
+  enforces them (R18 ruff; R1/R2 if TOOL-7 lands).
+- **Ask Giulia first:** `contracts/snt_config/README.md` still has outdated text (title
+  `snt_config_json/`, the "known drift between the two skeletons" section about a separate editor
+  repo, the `""` vs `null` difference settled by D-11). Left alone in commit 6; fix it in its own
+  commit or later?
 
 #### Phase 3 findings
 
@@ -1025,7 +1033,8 @@ proceed in parallel against the new schema.
 | 2026-11-05 | **Phase 1 closed.** P1-9 passed (results in the import PR description). Import PR merged with a merge commit. Repo made **public** under MIT; DOC-5 stays open as a later review (P1-10). `snt_development` pointer PR done (P1-11): its plan is now a pointer to this file, and it is maintenance-only (D-4) | Phase 2 — docs and agent setup |
 | 2026-11-06 → 09 | Phase 2 started on `phase-2/docs-and-agents`. Settled D-14 (one ADR sequence), D-15 (no CODEOWNERS for now), D-16 (Register IDs); `release` skill moved to Phase 4. Commits 1–4: plan, ADR import (0010–0035), new ADRs 0036–0041, one BACKLOG. Local memory moved to Giulia's global CLAUDE.md; `ignore/` sweep done. R6 answered and a Phase 1 fact corrected (`snt_lib` hardcodes `code/` for `Pull scripts`) | Commit 5 in a new session: see the Phase 2 hand-off |
 | 2026-11-09 | Phase 2 commits 5–8: root `CLAUDE.md` router with the merged Register R1–R26, `webapps/CLAUDE.md` W1–W9, bootstrap rules into `pipelines/CLAUDE.md` (interim `docs/bootstrap/CLAUDE.md` retired); `docs/ARCHITECTURE.md`; skills updated; deviations in [Phase 2 results](#phase-2-results) | Push, open the Phase 2 PR, merge it with a merge commit. Then Phase 3: settle OD-4 first |
-| 2026-11-12 | Phase 3 opened on `phase-3/tooling-and-ci`. **OD-4 settled as D-17**: bootstrap pipelines as templates published on each full release, plus a guarded deployer self-update (never downgrades), bootstrap in the manifest as `kind: bootstrap`. Options A (templates from `main`) and C (no templates, CLI first push) rejected, reasons in the commit 2 hand-off. Spike S6 passed in `snt-development-sandbox` → `snt-testing`; auto-update is off by default ([Phase 3 findings](#phase-3-findings)). Commit 1 written | Commit 1, then commit 2 (ADR 0042 + current-truth fixes) in a new session: see the Phase 3 hand-off |
+| 2026-11-12 | Phase 3 opened on `phase-3/tooling-and-ci`. **OD-4 settled as D-17**: bootstrap pipelines as templates published on each full release, plus a guarded deployer self-update (never downgrades), bootstrap in the manifest as `kind: bootstrap`. Options A (templates from `main`) and C (no templates, CLI first push) rejected, reasons in the commit 2 hand-off. Spike S6 passed in `snt-development-sandbox` → `snt-testing`; auto-update is off by default ([Phase 3 findings](#phase-3-findings)). Commit 1 written | Commit 1, then commit 2 (ADR 0042 + current-truth fixes) in a new session |
+| 2026-11-12 | Phase 3 commits 2–6: ADR 0042; two R23 fixes (templates are not being retired); manifest v2 schema (`filesystem_files`, `webapps` now, v1 file kept until Phase 4); `tools/build_manifest.py`; config conformance fixtures, `snt_lib` pinned to `v1.0.2` for the test. Order 5–9 chosen. Found: `release-v1` is a branch (DEP-1). `BLSQ/snt_utils` cloned at `~/Bluesquare/snt_utils` for reading `snt_lib` | Commit 6a (this log + hand-off), then commit 7 `ci.yaml` in a new session: see the [Phase 3 hand-off](#phase-3--tooling-and-ci) |
 
 ---
 
