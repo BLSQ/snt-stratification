@@ -1,11 +1,61 @@
 # Release manifest — the producer ↔ consumer contract
 
-> The authority is [`release_manifest.schema.json`](release_manifest.schema.json) (D26). This file
-> holds the prose: how the manifest is generated in `snt_development`, why it has a `pipelines`
-> block, and why legacy manifests are refused. What `snt_development` ships is in
-> [`../context/snt_development.md`](../docs/bootstrap/context/snt_development.md).
+> The authority is the JSON Schema (D26): [`release_manifest.schema.json`](release_manifest.schema.json)
+> for **v2**, this repo's releases; [`release_manifest.v1.schema.json`](release_manifest.v1.schema.json)
+> for **v1**, the old `snt_development` releases, which the bootstrap pipelines still read until
+> Phase 4 of [`MIGRATION_PLAN.md`](../docs/MIGRATION_PLAN.md) (that phase deletes the v1 file). This
+> file holds the prose. What `snt_development` ships is in
+> [`context/snt_development.md`](../docs/bootstrap/context/snt_development.md).
 
-## Manifest generation — done
+## Manifest v2 — this repo
+
+**Schema written; producer and consumers not built.** The producer is `tools/build_manifest.py`,
+run by `release.yaml` (Phase 3). The deployer, the single-pipeline deployer and the checker switch
+to v2 in Phase 4.
+
+```json
+{
+  "schema_version": 2,
+  "version": "v0.1.0",
+  "repo": "BLSQ/snt-stratification",
+  "files": {"pipelines/snt_map_extracts/pipeline.py": "<sha256>", "shared/r/snt_utils.r": "<sha256>", "…": "…"},
+  "filesystem_files": ["pipelines/snt_map_extracts/code/snt_map_extracts.ipynb", "shared/r/snt_utils.r", "…"],
+  "pipelines": {
+    "snt_map_extracts": {"path": "pipelines/snt_map_extracts", "kind": "snt", "code": "snt-map-extracts",
+                         "zip_files": ["code/snt_map_extracts.ipynb", "pipeline.py", "…"]}
+  },
+  "repository_files": {"catalogs/SNT_metadata_master.json": "<sha256>"},
+  "webapps": {"orchestrator": {"path": "webapps/orchestrator/app", "version": "v0.1.0", "files": {"index.html": "<sha256>"}}}
+}
+```
+
+What changed from v1, and why:
+
+- **`filesystem_files`, because a file can now take both routes.** In v1 a pipeline's Python
+  (`<name>/pipeline.py`) and its R half (`pipelines/<name>/code/…`) lived in different trees, so the
+  first path segment told a consumer the route. In this repo both live under `pipelines/<name>/`
+  ([ADR 0038](../docs/decisions/0038-repo-path-is-workspace-path.md)), and the SDK zips the R half
+  with the Python: a notebook ships inside the zip **and** is copied to the workspace filesystem.
+  The manifest therefore lists the filesystem files explicitly, and a consumer derives no route
+  from a path (the reasoning of §2.1). `files` keeps its `{path: sha256}` shape and is the union of
+  both routes; every key is in `filesystem_files`, in some `zip_files`, or both.
+- **`pipelines.<name>.path` and `kind`.** The key is the pipeline name (folder name = `@pipeline`
+  id), no longer a top-level folder; `path` is `pipelines/<name>`. `kind` comes from
+  [`pipelines/registry.json`](../pipelines/registry.json). Bootstrap pipelines are listed like any
+  other, and the deployer deploys them only when the target tag is the latest full release or newer
+  ([ADR 0042](../docs/decisions/0042-bootstrap-pipelines-as-templates-on-release.md)).
+- **`schema_version` and `repo`.** A consumer reads every `schema_version` from 2 on that it knows
+  and refuses an unknown one with an `[ERROR]` (ADR 0042), so a newer manifest never half-deploys.
+  `repo` says which repository the tag belongs to.
+- **`webapps`.** One entry per `webapps/<name>/app/` bundle that holds a file, with its files hashed
+  relative to `app/`. The release attaches each bundle as `webapp-<name>-<tag>.zip` with a stamped
+  `version.json` (not listed). No consumer reads the block until Phase 7.
+
+Invariants JSON Schema cannot express are listed in the schema's `description` and checked by
+`manifest_v2_invariant_errors()` in [`tests/test_contracts.py`](../tests/test_contracts.py).
+`repository_files` is unchanged from v1.
+
+## v1: manifest generation in `snt_development` — done
 
 [`.github/workflows/generate_manifest.yaml`](https://github.com/BLSQ/snt_development/blob/main/.github/workflows/generate_manifest.yaml) runs on
 `release: published` (and `workflow_dispatch` for manual testing). It hashes every file a release
@@ -66,7 +116,7 @@ so older manifests still validate.
 Country-specific notebook variants appear in the manifest undistinguished from generic files. That
 is intended — telling them apart is the verification pipeline's job, not the generator's.
 
-## 2.1 The manifest's `pipelines` block
+## 2.1 The manifest's `pipelines` block (v1)
 
 `files` alone does not say *where* an entry lives in a workspace, and
 the two answers are not interchangeable: `code/snt_utils.r` is a file on the filesystem, while
@@ -101,7 +151,7 @@ consumer refuses one. Both consumers name the phase-0 cutover in the error:
 
 **Decided 2026-10-01 (D26): no fallback.** Legacy manifests only ever existed during development
 and no live release lacks the block. The contract is
-[`release_manifest.schema.json`](release_manifest.schema.json), which requires the
+[`release_manifest.v1.schema.json`](release_manifest.v1.schema.json), which requires the
 block (it may be empty). The deployer's former fallback, which derived pipeline directories from
 `<name>/pipeline.py` entries, is in [`HISTORY.md`](../docs/bootstrap/HISTORY.md) §3.4.
 

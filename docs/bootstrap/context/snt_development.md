@@ -30,7 +30,7 @@ So a workspace can run today's `pipeline.py` against months-old R analytics, and
 mismatch. A notebook-only PR triggers no CI at all. The deployer exists to replace both routes with one
 release tag ([`../release_strategy.md`](../release_strategy.md)).
 
-## The Template mechanism and R5 — still live, being retired
+## The Template mechanism and R5 — still live
 
 All 20 deployment workflows push to the one workspace `snt-development`. Pushing there publishes a new
 version of the existing SNT **template pipeline**; pushing the same pipeline from any other workspace
@@ -41,9 +41,12 @@ Each workflow runs `openhexa pipelines push <dir> --code "<slug>" --description 
 --link "<commit URL>"`, where the slug is the directory name with `_` → `-`. That is the same pipeline
 code the manifest's `pipelines` block carries.
 
-This work aims to retire templates altogether (D20). Until then the mechanism stays in place, R5
-stays as written, and the deployer's direct push into the workspace that runs a pipeline is a different
-operation that creates no template ([`../openhexa_deployment.md`](../openhexa_deployment.md) §7.7).
+Templates are not being retired. These old templates stay live for existing country workspaces
+until they move, and a new template set is published from this repo's own publishing workspace
+([ADR 0040](../../decisions/0040-templates-kept-alongside-the-deployer.md),
+[ADR 0041](../../decisions/0041-new-templates-publishing-workspace.md)). The deployer's direct push
+into the workspace that runs a pipeline is a different operation that creates no template
+([`../openhexa_deployment.md`](../openhexa_deployment.md) §7.7).
 
 ## Country-specific notebook variants
 
@@ -62,7 +65,7 @@ scope for v1 (D5), and until it is done a workspace with one looks alarming.
 
 `.github/workflows/generate_manifest.yaml` lives in `snt_development` and stays there (M3): it runs on
 `release: published` (and `workflow_dispatch`) and attaches `release_manifest.json` to the release.
-Its shape is the contract in [`../contracts/release_manifest.schema.json`](../../../contracts/release_manifest.schema.json);
+Its shape is manifest v1, the contract in [`release_manifest.v1.schema.json`](../../../contracts/release_manifest.v1.schema.json);
 how it is generated is in [`../contracts/release_manifest.md`](../../../contracts/release_manifest.md).
 What `snt_development` ships, which the schema deliberately does not fix:
 

@@ -1,0 +1,65 @@
+{
+  "schema_version": 2,
+  "version": "v0.1.0",
+  "repo": "BLSQ/snt-stratification",
+  "files": {
+    "pipelines/snt_map_extracts/code/snt_map_extracts.ipynb": "6b64cfaa803723809ce28dd4b10c91195322bc465b24d8d408dec7ee63f3b296",
+    "pipelines/snt_map_extracts/pipeline.py": "f4488a2fc99a37e5a4d397d0b26e623093da1cf1dbe18671ed94e52c2ecd8136",
+    "pipelines/snt_map_extracts/readme.md": "26aac12475cbdce9d130016be8f1b2399a6525ccb0635f14c33d1ecbf8c3c3be",
+    "pipelines/snt_map_extracts/reporting/snt_map_extracts_report.ipynb": "8537735ca9a6b333b2bbec64bec3869401a1d88407750c6e102cb67a2e4e13e5",
+    "pipelines/snt_map_extracts/requirements.txt": "8571e741a1c321bcd76a131653981e11c624705027c6ccd61aec73bb3c1f3311",
+    "pipelines/snt_map_extracts/utils.py": "0ecbd07fea568648e38a8aa98dc97f7f57e3126cc9bfeefe1168c1cbda6c9494",
+    "pipelines/snt_map_extracts/utils/snt_map_extracts.r": "130cb65e8e626f0ef5400ecde35a22bf00e9cdf71ca84f4773330337a96b8b76",
+    "pipelines/snt_workspace_checker/pipeline.py": "0508d442839d0f9e70f9196b58806a4464fffb39683a2fb485467e95ec147753",
+    "pipelines/snt_workspace_checker/readme.md": "e5378b5b350a6b8bc85a0c16d92fdc5c722987a9c3d25f6bf596e6bcc1d4a4b0",
+    "pipelines/snt_workspace_checker/requirements.txt": "ed0010fc5eec7997dc69ce422c37be7be333137c6b5121bf597d0ab549395f90",
+    "shared/r/snt_utils.r": "9a97a2fbd4e11145469449c03e12295056a826381055c670eb16c9f05684ceb7"
+  },
+  "filesystem_files": [
+    "pipelines/snt_map_extracts/code/snt_map_extracts.ipynb",
+    "pipelines/snt_map_extracts/reporting/snt_map_extracts_report.ipynb",
+    "pipelines/snt_map_extracts/utils/snt_map_extracts.r",
+    "shared/r/snt_utils.r"
+  ],
+  "pipelines": {
+    "snt_map_extracts": {
+      "path": "pipelines/snt_map_extracts",
+      "kind": "snt",
+      "code": "snt-map-extracts",
+      "zip_files": [
+        "code/snt_map_extracts.ipynb",
+        "pipeline.py",
+        "readme.md",
+        "reporting/snt_map_extracts_report.ipynb",
+        "requirements.txt",
+        "utils.py",
+        "utils/snt_map_extracts.r"
+      ]
+    },
+    "snt_workspace_checker": {
+      "path": "pipelines/snt_workspace_checker",
+      "kind": "bootstrap",
+      "code": "snt-workspace-checker",
+      "zip_files": [
+        "pipeline.py",
+        "readme.md",
+        "requirements.txt"
+      ]
+    }
+  },
+  "repository_files": {
+    "catalogs/SNT_metadata_master.json": "ff9fec03772f6527b905e94baab87ac1ab5e35002700a506876a41a995998243"
+  },
+  "webapps": {
+    "orchestrator": {
+      "path": "webapps/orchestrator/app",
+      "version": "v0.1.0",
+      "files": {
+        "app.js": "7ec8e09484d77f9e885ef1d0c13b725deaed98650a582453295c5b81ec949e23",
+        "index.html": "28aac89a8c8427dd8f5799bed4a7663529e11ea068d7b25f8934b52941f7835a",
+        "pipeline_map.json": "d84481eac766d1c7d634e5b2dc124c8badb91d711dabbcbfc7198c306751120b",
+        "styles.css": "064f2bff5acb80501b576772d41592f56b19953fa0004c4c608ae88fd8cf1b39"
+      }
+    }
+  }
+}

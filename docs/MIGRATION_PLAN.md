@@ -210,8 +210,10 @@ and in the manifest instead.
 
 **Manifest v2** stays close to v1: `schema_version: 2`, `version`, `repo`,
 `pipelines: {<name>: {path: "pipelines/<name>", kind, code, zip_files[]}}`, `files: {<path>: sha256}`
-(unchanged meaning: path = repo path = workspace path), `webapps: {<name>: {path, files{}, version}}`,
-`repository_files`. The deployer's `split_manifest()` and the checker's `parts[0]` checks move to
+(unchanged meaning: path = repo path = workspace path), `filesystem_files: [<path>]` (added
+2026-11-12: a notebook now ships in its zip *and* to the filesystem, so the route can't be read from
+the path), `webapps: {<name>: {path, files{}, version}}`, `repository_files`. The authority is
+[`contracts/release_manifest.schema.json`](../contracts/release_manifest.schema.json). The deployer's `split_manifest()` and the checker's `parts[0]` checks move to
 "under `pipelines/<name>/`". The schema, the builder (`tools/build_manifest.py`), the deployer and the
 checker change **in the same PR**, which is the monorepo's main benefit.
 
@@ -762,7 +764,9 @@ Give Giulia the exact commands, one commit at a time.
 |---|---|---|
 | 1 | This file: D-17 (was OD-4), [Phase 3 findings](#phase-3-findings) (spike S6), Phase 3/4/6 items and §4.1 updated, Session log | `plan: settle OD-4 (D-17) with spike S6` |
 | 2 | See the hand-off below | `docs(decisions): ADR 0042, bootstrap pipelines as templates published on release` |
-| 3… | The tooling items below, one commit each; their order is chosen when commit 3 starts | — |
+| 3 | `openhexa_deployment.md`: templates stay a deploy route (R23 fix found in commit 2) | `docs(bootstrap): templates stay a deploy route in openhexa_deployment.md` |
+| 4 | Manifest v2 schema (v1 kept as `release_manifest.v1.schema.json` until Phase 4) | `contracts: release manifest v2 schema` |
+| 5–9 | Order chosen 2026-11-12: `tools/build_manifest.py` → config conformance → `ci.yaml` → `release.yaml` → `push_templates.yaml` | — |
 
 **Hand-off for commit 2 (2026-11-12).** Write it from D-17 and the S6 findings; nothing else is
 needed from the session that settled OD-4.
@@ -830,8 +834,11 @@ Consequences:
 - [x] ADR 0042 and the current-truth fixes. Commit 2, see the hand-off above.
 - [ ] `tools/build_manifest.py` (from the `generate_manifest.yaml` heredoc) emitting **manifest v2**,
       plus pytest coverage and fixtures. Lists `kind: bootstrap` pipelines like any other (D-17).
-- [ ] `contracts/release_manifest.schema.json` v2 (R22 becomes an in-repo rule: schema + builder +
-      consumers in one PR).
+- [x] `contracts/release_manifest.schema.json` v2 (R22 becomes an in-repo rule: schema + builder +
+      consumers in one PR). Commit 4: `filesystem_files` added, `webapps` built now (decided
+      2026-11-12). v1 moves to `release_manifest.v1.schema.json`, which Phase 4 deletes. The
+      consumers switch in Phase 4, a PR later than the schema: harmless, because nothing produces a
+      v2 manifest before the first release (`v0.1.0`, Phase 4).
 - [ ] `ci.yaml`: ruff, pytest, contract validation, metadata validator (`validate_metadata.py`), link check.
 - [ ] `release.yaml`: on `release: published`, build and attach `release_manifest.json`, a **slim
       release tarball** (only manifest-listed files, so the deployer doesn't download design PNGs and
@@ -851,7 +858,9 @@ Consequences:
 
 ### Phase 4 — Bootstrap adapted to the monorepo
 - [ ] Deployer and checker read manifest v2 (pipelines under `pipelines/<name>/`, `kind`, ignore
-      `webapps` for now; the checker's root exclusions are updated for `shared/r/`).
+      `webapps` for now; the checker's root exclusions are updated for `shared/r/`). The deployer
+      copies exactly `filesystem_files`. Then delete `contracts/release_manifest.v1.schema.json`, its
+      two v1 test fixtures, and the v1 prose in `release_manifest.md`.
 - [ ] `github_repo` default = the new repo (no longer `snt_development_sandbox`).
 - [ ] `.snt_release` marker records `repo` + tag (closes roadmap §7.4 for this case).
 - [ ] Checker: name pipelines with legacy template codes (`b-2-map-extracts`, …) through a mapping

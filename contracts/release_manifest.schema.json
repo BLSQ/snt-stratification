@@ -1,35 +1,56 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "release_manifest.schema.json",
-  "title": "SNT release manifest",
-  "description": "release_manifest.json, attached as an asset to a GitHub release: every file the release ships, with its sha256, and which of those files ship inside which OpenHEXA pipeline version zip. Produced by the 'Generate Release Manifest' workflow (.github/workflows/generate_manifest.yaml) of the source repository; consumed by snt_workspace_deployer (split_manifest, download_manifest) and snt_workspace_checker (load_manifests, build_index). Derived from that code, not from prose (PRODUCT_SPEC.md section 2.1, decision D26). Repository-agnostic: it fixes the shape, not which paths a given repository ships - for snt_development those are its R notebooks and helpers plus every top-level directory holding a pipeline.py. The manifest carries no schema_version key; adding one is a change to the producer. Compatibility rules, as for status_report.schema.json: adding a key is NOT a breaking change; renaming or removing a key, changing a type, or changing what a value means is breaking. This schema is deliberately strict (additionalProperties: false) so a producer cannot drift silently; a CONSUMER must instead ignore unknown keys. Two invariants hold but cannot be expressed in JSON Schema, so a validator must check them separately: (1) for every pipeline directory D and every entry M of its zip_files, the path 'D/M' is a key of files; (2) every zip_files list contains 'pipeline.py'. Pre-phase-0 manifests (development-only releases before 2026-09-21: version and files only, no pipelines block) do NOT validate and are not supported (D26): snt_workspace_checker and snt_workspace_deployer both refuse them.",
+  "title": "SNT release manifest, v2",
+  "description": "release_manifest.json, attached as an asset to each GitHub release of snt-stratification: every file the release delivers to a workspace, with its sha256, and by which route each one travels. Produced by tools/build_manifest.py, run by .github/workflows/release.yaml (both Phase 3 of docs/MIGRATION_PLAN.md). Consumed, from Phase 4, by snt_workspace_deployer, snt_pipeline_deployer and snt_workspace_checker; until then they read v1 (release_manifest.v1.schema.json). Prose: release_manifest.md. Repo path = workspace path (ADR 0038): a path in files or filesystem_files is the same in the repository and in the workspace filesystem. A consumer reads every schema_version from 2 on that it knows, and refuses an unknown one with an [ERROR] (ADR 0042). Compatibility rules, as for status_report.schema.json: adding a key is NOT a breaking change; renaming or removing a key, changing a type, or changing what a value means is breaking and bumps schema_version. This schema is deliberately strict (additionalProperties: false) so a producer cannot drift silently; a CONSUMER must instead ignore unknown keys. Invariants that hold but cannot be expressed in JSON Schema, so a validator must check them separately (tests/test_contracts.py): (1) every pipelines entry's path is 'pipelines/' + its key; (2) every zip_files list contains 'pipeline.py'; (3) for every pipeline P and every entry M of its zip_files, the path P.path + '/' + M is a key of files; (4) every filesystem_files entry is a key of files; (5) every key of files is in filesystem_files, in some zip_files, or both; (6) every webapps entry's path is 'webapps/' + its key + '/app'.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["version", "files", "pipelines"],
+  "required": ["schema_version", "version", "repo", "files", "filesystem_files", "pipelines"],
   "properties": {
+    "schema_version": {
+      "const": 2,
+      "description": "The manifest shape. v1 manifests carry no such key."
+    },
     "version": {
       "type": "string",
       "minLength": 1,
-      "description": "The release tag this manifest describes (the workflow's GITHUB_REF_NAME), e.g. v0.2.1-test. On a manual workflow_dispatch run it is the branch name instead, or 'unknown' if unset. No consumer reads it today: both pipelines identify a release by its GitHub tag_name, never by this field."
+      "description": "The release tag this manifest describes (GITHUB_REF_NAME), e.g. v0.1.0. On a manual run it is the branch name instead. Consumers identify a release by its GitHub tag_name; this field is for a reader of the file on its own."
+    },
+    "repo": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$",
+      "description": "The GitHub repository the release belongs to, as owner/name (GITHUB_REPOSITORY), e.g. BLSQ/snt-stratification."
     },
     "files": {
       "type": "object",
-      "description": "Every tracked file, flat across both delivery routes: {repository path: sha256}. A path is a filesystem file (synced into the workspace by snt_workspace_deployer) unless its first segment is a key of pipelines, in which case it ships only inside that pipeline's version zip.",
+      "description": "Every file the release delivers to a workspace, by either route: {repository path: sha256}. Which route a file takes is said by filesystem_files and by pipelines.*.zip_files, never derived from the path. A file can take both routes: a notebook under pipelines/<name>/code/ is copied to the workspace filesystem and also ships inside its pipeline's zip.",
       "propertyNames": { "$ref": "#/$defs/relative_path" },
       "additionalProperties": { "$ref": "#/$defs/sha256" },
       "minProperties": 1
     },
+    "filesystem_files": {
+      "type": "array",
+      "description": "The keys of files that the deployer copies into the workspace filesystem, each at its own path: the R half of each pipeline (code/ and reporting/ notebooks, utils/ R files) and the shared R library under shared/r/. A key of files that is not listed here ships only inside a pipeline zip (pipeline.py, requirements.txt, readme.md, ...). Sorted by the producer; may be empty.",
+      "items": { "$ref": "#/$defs/relative_path" },
+      "uniqueItems": true
+    },
     "pipelines": {
       "type": "object",
-      "description": "{repository directory: pipeline spec}, one entry per deployable OpenHEXA pipeline. The key is a single top-level directory, not a nested path: snt_workspace_deployer excludes a file from the filesystem sync by its first path segment alone. May be empty for a release that ships no pipeline, but must be present.",
+      "description": "{pipeline name: pipeline spec}, one entry per folder pipelines/<name>/, the name being the folder name and the @pipeline id. Covers every kind in pipelines/registry.json, bootstrap pipelines included (ADR 0042). May be empty, but must be present.",
       "propertyNames": { "$ref": "#/$defs/directory_name" },
       "additionalProperties": { "$ref": "#/$defs/pipeline" }
     },
     "repository_files": {
       "type": "object",
-      "description": "Files a pipeline fetches from the source repository at run time, at the release tag, rather than receiving them by deployment: {repository path: sha256}. For snt_development these are the files matching catalogs/*.json (metadata/*.json in releases before the folder was renamed), today SNT_metadata_master.json, read by snt_metadata_json_trim. Hashed for provenance only: these files are never synced into the workspace filesystem and ship in no pipeline zip, which is why they are kept out of files. snt_workspace_deployer and snt_workspace_checker ignore this block. Optional, so manifests produced before it was added still validate; may be empty.",
+      "description": "Files a pipeline fetches from the repository at run time, at the release tag, rather than receiving them by deployment: {repository path: sha256}. Today the files matching catalogs/*.json (SNT_metadata_master.json, read by snt_metadata_json_trim). Provenance only: never synced to the workspace filesystem and in no pipeline zip, which is why they are kept out of files. The deployer and the checker ignore this block. Optional; may be empty.",
       "propertyNames": { "$ref": "#/$defs/relative_path" },
       "additionalProperties": { "$ref": "#/$defs/sha256" }
+    },
+    "webapps": {
+      "type": "object",
+      "description": "{webapp name: webapp spec}, one entry per webapps/<name>/ whose app/ bundle holds at least one file. The release also attaches each bundle as webapp-<name>-<tag>.zip, with a version.json stamped at release time. Read by no consumer until Phase 7 (the deployer and the checker ignore it). Optional; may be empty.",
+      "propertyNames": { "$ref": "#/$defs/directory_name" },
+      "additionalProperties": { "$ref": "#/$defs/webapp" }
     }
   },
   "$defs": {
@@ -41,29 +62,62 @@
     "relative_path": {
       "type": "string",
       "pattern": "^(?!/)(?!.*(^|/)\\.\\.?(/|$))(?!.*//)[^\\\\]+$",
-      "description": "A POSIX path relative to the repository root (or, in zip_files, to the pipeline directory): no leading slash, no '.' or '..' segment, no empty segment, no backslash."
+      "description": "A POSIX path relative to the repository root (in zip_files, to the pipeline folder; in a webapp's files, to its app/ folder): no leading slash, no '.' or '..' segment, no empty segment, no backslash."
     },
     "directory_name": {
       "type": "string",
       "pattern": "^(?!\\.\\.?$)[^/\\\\]+$",
-      "description": "One path segment: a top-level directory of the repository."
+      "description": "One path segment: a folder name."
     },
     "pipeline": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["code", "zip_files"],
+      "required": ["path", "kind", "code", "zip_files"],
       "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^pipelines/[^/\\\\]+$",
+          "description": "The pipeline's folder, 'pipelines/' + its key. Prefix it and '/' to a zip_files entry to get the key into files."
+        },
+        "kind": {
+          "enum": ["snt", "support", "bootstrap"],
+          "description": "The pipeline's kind, from pipelines/registry.json. The deployer deploys a bootstrap pipeline only when the target tag is the latest full release or newer (ADR 0042)."
+        },
         "code": {
           "type": "string",
           "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
-          "description": "The OpenHEXA pipeline code: the directory name with underscores replaced by hyphens (snt_map_extracts -> snt-map-extracts). The only place a consumer can get it from."
+          "description": "The OpenHEXA pipeline code: the key with underscores replaced by hyphens (snt_map_extracts -> snt-map-extracts). A pipeline installed from a template may carry it with a '-<6 hex>' suffix (spike S3)."
         },
         "zip_files": {
           "type": "array",
-          "description": "Paths as they appear inside the pipeline's version zip, i.e. relative to the pipeline directory, so they compare directly against the zip's namelist(). Prefix one with the directory key and '/' to get the key into files, and so the expected hash.",
+          "description": "Paths as they appear inside the pipeline's version zip, i.e. relative to path, so they compare directly against the zip's namelist(). The producer mirrors the openhexa SDK's generate_zip_file(), so the R half under code/, reporting/ and utils/ is listed here too.",
           "items": { "$ref": "#/$defs/relative_path" },
           "uniqueItems": true,
           "minItems": 1
+        }
+      }
+    },
+    "webapp": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "version", "files"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^webapps/[^/\\\\]+/app$",
+          "description": "The deployable bundle folder, 'webapps/' + the key + '/app'. Only this folder is deployed (W-rules in webapps/CLAUDE.md)."
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The version stamped into the bundle's version.json at release time: the release tag, under one release train (ADR 0037)."
+        },
+        "files": {
+          "type": "object",
+          "description": "Every file of the bundle as committed: {path relative to path: sha256}. The stamped version.json is generated at release time and not listed.",
+          "propertyNames": { "$ref": "#/$defs/relative_path" },
+          "additionalProperties": { "$ref": "#/$defs/sha256" },
+          "minProperties": 1
         }
       }
     }
