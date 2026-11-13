@@ -1,4 +1,4 @@
-"""Offline tests of snt_pipeline_deployer: its own helpers, and drift from snt_workspace_deployer (D28)."""
+"""Offline tests of the two deployers: shared helpers, the bootstrap guard, and drift between them (D28)."""
 
 import ast
 import base64
@@ -23,7 +23,15 @@ VARIANT = ROOT / "pipelines" / "snt_pipeline_deployer" / "pipeline.py"
 ALLOWED_DIFFERENCES = {"build_version_input", "get_release"}
 # Deployer functions the variant replaces or drops. deploy_all's per-pipeline loop and its
 # "Pipelines: n/m deployed" line make no sense for one pipeline; deploy_one is called directly.
-NOT_IN_VARIANT = {"snt_workspace_deployer", "deploy_release", "deploy_all", "write_release_marker"}
+# without_older_bootstrap skips bootstrap pipelines; the variant refuses one instead
+# (refuse_older_bootstrap), since it deploys nothing else.
+NOT_IN_VARIANT = {
+    "snt_workspace_deployer",
+    "deploy_release",
+    "deploy_all",
+    "write_release_marker",
+    "without_older_bootstrap",
+}
 
 
 class Log:
@@ -36,22 +44,23 @@ class Log:
         return lambda msg: self.lines.append((name, msg))
 
 
-def load_variant() -> ModuleType:
-    """Import the variant's pipeline.py under its own name, since every pipeline file is `pipeline`.
+def load(path: Path, module_name: str) -> ModuleType:
+    """Import a pipeline.py under its own name, since every pipeline file is `pipeline`.
 
     Returns
     -------
     ModuleType
         The imported module, its `current_run` replaced by a `Log`.
     """
-    spec = importlib.util.spec_from_file_location("snt_pipeline_deployer_pipeline", VARIANT)
+    spec = importlib.util.spec_from_file_location(module_name, path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     module.current_run = Log()
     return module
 
 
-dep = load_variant()
+dep = load(VARIANT, "snt_pipeline_deployer_pipeline")
+deployer = load(DEPLOYER, "snt_workspace_deployer_pipeline")
 
 
 def functions(path: Path) -> dict:
@@ -258,6 +267,115 @@ def test_pipeline_zip_holds_exactly_its_manifest_zip_files() -> None:
     archive = zipfile.ZipFile(io.BytesIO(base64.b64decode(version_input["zipfile"])))
     assert sorted(archive.namelist()) == sorted(spec["zip_files"])
     assert version_input["name"] == "v0.1.0"
+
+
+# Bootstrap guard (ADR 0042): bootstrap pipelines only from the latest full release or newer.
+
+LATEST = {"tag_name": "v1.1.0", "published_at": "2026-12-10T09:00:00Z"}
+
+
+def release(tag: str, published_at: str | None) -> dict:
+    """Build a GitHub release object for the guard.
+
+    Returns
+    -------
+    dict
+        The release's tag and publication time.
+    """
+    return {"tag_name": tag, "published_at": published_at}
+
+
+@pytest.mark.parametrize(
+    ("target", "latest"),
+    [
+        (release("v0.1.0", "2026-11-20T10:00:00Z"), None),  # no full release yet: every release is newest
+        (release("v1.1.0", "2026-12-10T09:00:00Z"), LATEST),  # the latest full release itself
+        (release("v1.2.0-rc.1", "2026-12-15T09:00:00Z"), LATEST),  # a release candidate after it
+        (release("v1.1.0", None), LATEST),  # same tag: allowed without reading any date
+    ],
+)
+def test_bootstrap_guard_allows_latest_or_newer(target: dict, latest: dict | None) -> None:
+    """The latest full release, a release published after it, or any release when none is full."""
+    assert dep.bootstrap_guard(target, latest) is None
+
+
+def test_bootstrap_guard_blocks_an_older_release() -> None:
+    """A release published before the latest full one is blocked, and the reason names both."""
+    reason = dep.bootstrap_guard(release("v1.0.0", "2026-12-01T09:00:00Z"), LATEST)
+    assert reason == (
+        "release v1.0.0 (published 2026-12-01T09:00:00Z) is older than the latest full release v1.1.0 "
+        "(published 2026-12-10T09:00:00Z)"
+    )
+
+
+def test_bootstrap_guard_blocks_when_a_date_is_missing() -> None:
+    """Without both publication dates the release cannot be shown to be newer, so it is blocked."""
+    reason = dep.bootstrap_guard(release("v1.2.0", None), LATEST)
+    assert reason is not None
+    assert "publication date" in reason
+
+
+MIXED = {
+    "snt_map_extracts": {"kind": "snt"},
+    "snt_workspace_checker": {"kind": "bootstrap"},
+    "snt_workspace_deployer": {"kind": "bootstrap"},
+}
+
+
+def test_older_release_skips_bootstrap_pipelines_with_info(monkeypatch: pytest.MonkeyPatch) -> None:
+    """An older release still deploys its snt pipelines; its bootstrap ones are left out with an [INFO]."""
+    monkeypatch.setattr(deployer, "latest_full_release", lambda repo: LATEST)
+    deployer.current_run = log = Log()
+    kept = deployer.without_older_bootstrap("BLSQ/x", release("v1.0.0", "2026-12-01T09:00:00Z"), MIXED)
+    assert kept == {"snt_map_extracts": {"kind": "snt"}}
+    [(level, message)] = log.lines
+    assert level == "log_info"
+    assert message.startswith(
+        "[INFO] Bootstrap pipelines skipped (snt_workspace_checker, snt_workspace_deployer)"
+    )
+
+
+def test_latest_release_keeps_bootstrap_pipelines(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The latest full release deploys every pipeline, bootstrap included, and logs nothing."""
+    monkeypatch.setattr(deployer, "latest_full_release", lambda repo: LATEST)
+    deployer.current_run = log = Log()
+    assert deployer.without_older_bootstrap("BLSQ/x", release("v1.1.0", None), MIXED) == MIXED
+    assert log.lines == []
+
+
+def test_no_bootstrap_pipeline_asks_github_nothing(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A release without bootstrap pipelines needs no latest-release lookup."""
+
+    def fail(repo: str) -> None:
+        raise AssertionError("latest_full_release called")
+
+    monkeypatch.setattr(deployer, "latest_full_release", fail)
+    snt_only = {"snt_map_extracts": {"kind": "snt"}}
+    assert deployer.without_older_bootstrap("BLSQ/x", release("v1.0.0", None), snt_only) == snt_only
+
+
+def test_single_deployer_refuses_an_older_bootstrap_pipeline(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Asked for a bootstrap pipeline from an older release, the variant stops with an [ERROR]."""
+    monkeypatch.setattr(dep, "latest_full_release", lambda repo: LATEST)
+    dep.current_run = Log()
+    with pytest.raises(dep.DeploymentAbortedError) as raised:
+        dep.refuse_older_bootstrap(
+            "BLSQ/x", release("v1.0.0", "2026-12-01T09:00:00Z"), "snt_workspace_deployer"
+        )
+    assert str(raised.value).startswith(
+        "[ERROR] Cannot deploy: snt_workspace_deployer is a bootstrap pipeline"
+    )
+    assert "older than the latest full release v1.1.0" in str(raised.value)
+
+
+def test_single_deployer_accepts_a_newer_bootstrap_pipeline(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A release candidate published after the latest full release may deploy a bootstrap pipeline."""
+    monkeypatch.setattr(dep, "latest_full_release", lambda repo: LATEST)
+    dep.current_run = log = Log()
+    dep.refuse_older_bootstrap(
+        "BLSQ/x", release("v1.2.0-rc.1", "2026-12-15T09:00:00Z"), "snt_workspace_deployer"
+    )
+    assert log.lines == []
 
 
 @pytest.mark.parametrize(

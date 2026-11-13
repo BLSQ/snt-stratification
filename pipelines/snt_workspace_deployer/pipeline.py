@@ -165,6 +165,7 @@ def deploy_release(
         f"Release {github_repo}@{release_tag} tracks {len(manifest['files'])} files: "
         f"{len(analytics_files)} analytics file(s) and {len(pipelines)} pipeline(s)."
     )
+    pipelines = without_older_bootstrap(github_repo, release, pipelines)
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         tarball_root = download_and_extract_tarball(release, manifest, Path(tmp_dir))
@@ -317,6 +318,56 @@ def explain_missing_release(github_repo: str, release_tag: str) -> str:
     )
 
 
+def latest_full_release(github_repo: str) -> dict | None:
+    """Fetch the repository's latest full release, the one GitHub calls "latest".
+
+    GitHub never counts a draft or a pre-release as latest, so a repository that has published
+    only pre-releases has none.
+
+    Returns
+    -------
+    dict | None
+        The GitHub API release object, or None when the repository has no full release.
+    """
+    url = f"https://api.github.com/repos/{github_repo}/releases/latest"
+    response = github_get(url)
+    if response.status_code == 404:
+        return None
+    if not response.ok:
+        abort_run(f"GitHub answered {response.status_code} on {url}: {response.text[:200]}")
+    return response.json()
+
+
+def bootstrap_guard(release: dict, latest: dict | None) -> str | None:
+    """Say why a release's bootstrap pipelines must not be deployed, if they must not (ADR 0042).
+
+    A deployer must never replace itself, or the other bootstrap pipelines, with an older and
+    possibly buggy copy. They are deployed only from the latest full release or a release
+    published after it (a release candidate). Releases are ordered by GitHub's `published_at`,
+    as the checker orders them. With no full release yet, every release counts as the newest.
+
+    Returns
+    -------
+    str | None
+        The reason, as a clause naming both releases, or None when the release may deploy them.
+    """
+    if latest is None or latest["tag_name"] == release["tag_name"]:
+        return None
+    tag, latest_tag = release["tag_name"], latest["tag_name"]
+    published, latest_published = release.get("published_at"), latest.get("published_at")
+    if not published or not latest_published:
+        return (
+            f"the publication date of release {tag} or of the latest full release {latest_tag} is "
+            "unknown, so the release cannot be shown to be the latest or newer"
+        )
+    if datetime.fromisoformat(published) >= datetime.fromisoformat(latest_published):
+        return None
+    return (
+        f"release {tag} (published {published}) is older than the latest full release {latest_tag} "
+        f"(published {latest_published})"
+    )
+
+
 def abort_run(reason: str) -> NoReturn:
     """Log a failure to the run's Messages and stop the run.
 
@@ -409,6 +460,32 @@ def split_manifest(manifest: dict) -> tuple[dict, dict]:
     """
     analytics = {rel_path: manifest["files"][rel_path] for rel_path in manifest["filesystem_files"]}
     return analytics, manifest["pipelines"]
+
+
+def without_older_bootstrap(github_repo: str, release: dict, pipelines: dict) -> dict:
+    """Leave out the release's bootstrap pipelines when it is older than the latest full release.
+
+    The other pipelines are deployed as usual: an older release is a legitimate rollback for them,
+    but not for the deployer itself (ADR 0042). The skip is an [INFO], not a warning, because it
+    is the intended behaviour, and the run still succeeds.
+
+    Returns
+    -------
+    dict
+        The pipelines to deploy, {pipeline name: spec}.
+    """
+    bootstrap = sorted(name for name, spec in pipelines.items() if spec["kind"] == "bootstrap")
+    if not bootstrap:
+        return pipelines
+    reason = bootstrap_guard(release, latest_full_release(github_repo))
+    if reason is None:
+        return pipelines
+    current_run.log_info(
+        f"[INFO] Bootstrap pipelines skipped ({', '.join(bootstrap)}): {reason}, and a deployer "
+        "never replaces itself with an older copy. Deploy the latest full release, or a newer one, "
+        "to update them."
+    )
+    return {name: spec for name, spec in pipelines.items() if name not in bootstrap}
 
 
 def slim_tarball_asset(release: dict, manifest: dict) -> dict:

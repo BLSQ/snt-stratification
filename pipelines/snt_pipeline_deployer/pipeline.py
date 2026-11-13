@@ -197,6 +197,8 @@ def deploy_single_pipeline(
     analytics_files, pipelines = split_manifest(manifest)
     dir_name = resolve_pipeline_dir(pipeline_name, sorted(pipelines), release_tag)
     spec = pipelines[dir_name]
+    if spec["kind"] == "bootstrap":
+        refuse_older_bootstrap(github_repo, release, dir_name)
     own_files = pipeline_analytics(analytics_files, spec["path"]) if pull_r_scripts else {}
     current_run.log_info(
         f"Deploying {dir_name} from {github_repo}@{release_tag}"
@@ -280,6 +282,23 @@ def resolve_pipeline_dir(pipeline_name: str, pipeline_dirs: list[str], release_t
             f"parameter; the release's pipelines are: {', '.join(pipeline_dirs)}."
         )
     return match
+
+
+def refuse_older_bootstrap(github_repo: str, release: dict, dir_name: str) -> None:
+    """Stop the run if a bootstrap pipeline is asked for from a release older than the latest full one.
+
+    A deployer must never replace itself, or the other bootstrap pipelines, with an older and
+    possibly buggy copy (ADR 0042). snt_workspace_deployer skips them with an [INFO] and deploys
+    the rest; here the one pipeline asked for is the bootstrap pipeline, so the run stops before
+    anything is written.
+    """
+    reason = bootstrap_guard(release, latest_full_release(github_repo))
+    if reason is not None:
+        abort_run(
+            f"{dir_name} is a bootstrap pipeline, and {reason}. A deployer never replaces itself, or "
+            "another bootstrap pipeline, with an older copy: deploy it from the latest full release, or "
+            "a newer one."
+        )
 
 
 def pipeline_analytics(analytics_files: dict, pipeline_path: str) -> dict:
@@ -467,6 +486,56 @@ def explain_missing_release(github_repo: str, release_tag: str) -> str:
         f"are published, and GitHub never treats a pre-release as latest. Type the tag to deploy in "
         f"the 'Release tag' parameter, or mark a release as a full release on GitHub. Most recent "
         f"releases: {available}."
+    )
+
+
+def latest_full_release(github_repo: str) -> dict | None:
+    """Fetch the repository's latest full release, the one GitHub calls "latest".
+
+    GitHub never counts a draft or a pre-release as latest, so a repository that has published
+    only pre-releases has none.
+
+    Returns
+    -------
+    dict | None
+        The GitHub API release object, or None when the repository has no full release.
+    """
+    url = f"https://api.github.com/repos/{github_repo}/releases/latest"
+    response = github_get(url)
+    if response.status_code == 404:
+        return None
+    if not response.ok:
+        abort_run(f"GitHub answered {response.status_code} on {url}: {response.text[:200]}")
+    return response.json()
+
+
+def bootstrap_guard(release: dict, latest: dict | None) -> str | None:
+    """Say why a release's bootstrap pipelines must not be deployed, if they must not (ADR 0042).
+
+    A deployer must never replace itself, or the other bootstrap pipelines, with an older and
+    possibly buggy copy. They are deployed only from the latest full release or a release
+    published after it (a release candidate). Releases are ordered by GitHub's `published_at`,
+    as the checker orders them. With no full release yet, every release counts as the newest.
+
+    Returns
+    -------
+    str | None
+        The reason, as a clause naming both releases, or None when the release may deploy them.
+    """
+    if latest is None or latest["tag_name"] == release["tag_name"]:
+        return None
+    tag, latest_tag = release["tag_name"], latest["tag_name"]
+    published, latest_published = release.get("published_at"), latest.get("published_at")
+    if not published or not latest_published:
+        return (
+            f"the publication date of release {tag} or of the latest full release {latest_tag} is "
+            "unknown, so the release cannot be shown to be the latest or newer"
+        )
+    if datetime.fromisoformat(published) >= datetime.fromisoformat(latest_published):
+        return None
+    return (
+        f"release {tag} (published {published}) is older than the latest full release {latest_tag} "
+        f"(published {latest_published})"
     )
 
 
