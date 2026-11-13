@@ -95,9 +95,53 @@ SCAN_EXCLUDES_DOT_DIRECTORIES = True
 # number, so a version deployed as "v0.1.0-test" reads back as "v0.1.0-test [v1]". Observed
 # in the first real run, 2026-09-22, where an exact comparison silently disabled the whole
 # name-versus-content check (HISTORY.md section 1). The tag is recovered by stripping the
-# suffix; a version whose name never carried a tag (a plain CLI push reads back as "v3")
-# simply fails to match any tag, which is the right answer.
+# suffix.
 VERSION_NUMBER_SUFFIX = re.compile(r"\s*\[v\d+\]\s*$")
+# A version name that is only "v<number>" claims no release: a plain CLI push reads back as
+# "v3", and a version delivered by a template update is named "v<pipeline version number>"
+# (spike S6, 2026-11-12). Release tags are "v<major>.<minor>.<patch>[-...]", never this shape.
+NO_CLAIM_VERSION_NAME = re.compile(r"^v\d+$")
+# The deployers' fallback name for a redeploy under a tag a version already holds:
+# "<tag>+redeploy-<YYYYMMDD>", or "...T<HHMMSS>Z" for a second one the same day
+# (docs/bootstrap/deployer.md). It still claims <tag>.
+REDEPLOY_SUFFIX = re.compile(r"\+redeploy-\d{8}(?:T\d{6}Z)?$")
+
+# OpenHEXA gives a pipeline created from a template the code of its display name made into a
+# slug, plus "-<6 hex>" when that code is already taken. Observed 2026-11-13: "B.2 MAP Extracts"
+# installed as `b-2-map-extracts`, "A.1 DHIS2 Extract" as `a-1-dhis2-extract-ec1130`.
+COLLISION_SUFFIX = re.compile(r"-[0-9a-f]{6}$")
+# The old templates, published from the `snt-development` workspace (old repository), carry
+# display names "<letter>.<number> <title>". The step number has been renumbered over time
+# ("A.5 DHIS2 Population Transformation" became "A.6 ..."), so a code is matched on its title
+# alone: `<letter>-<number>-<title slug>`, optionally with the collision suffix. Titles as listed
+# in `snt-development` on 2026-11-13; only the slugs of A.1, B.2, B.3 and C.1 were observed in an
+# installed workspace, the others assume the same slug rule (lower case, every run of other
+# characters becomes one "-").
+LEGACY_TEMPLATE_CODE = re.compile(r"^[a-z]-\d+-(?P<title>[a-z0-9-]+)$")
+LEGACY_TEMPLATE_TITLES = {
+    "DHIS2 Extract": "snt_dhis2_extract",
+    "DHIS2 Formatting": "snt_dhis2_formatting",
+    "DHIS2 Outlier Detection and Imputation (IQR)": "snt_dhis2_outliers_imputation_iqr",
+    "DHIS2 Outlier Detection and Imputation (MAGIC GLASSES)": "snt_dhis2_outliers_imputation_magic_glasses",
+    "DHIS2 Outlier Detection and Imputation (MEAN)": "snt_dhis2_outliers_imputation_mean",
+    "DHIS2 Outlier Detection and Imputation (MEDIAN)": "snt_dhis2_outliers_imputation_median",
+    "DHIS2 Outlier Detection and Imputation (PATH)": "snt_dhis2_outliers_imputation_path",
+    "DHIS2 Reporting Rate (Data element)": "snt_dhis2_reporting_rate_dataelement",
+    "DHIS2 Reporting Rate (Dataset)": "snt_dhis2_reporting_rate_dataset",
+    "User population": "snt_user_population",
+    "DHIS2 Population Transformation": "snt_dhis2_population_transformation",
+    "DHIS2 Incidence": "snt_dhis2_incidence",
+    "DHIS2 Seasonality - Cases": "snt_seasonality_cases",
+    "DHIS2 Quality Of Care": "snt_dhis2_quality_of_care",
+    "WorldPop Extract": "snt_worldpop_extract",
+    "MAP Extracts": "snt_map_extracts",
+    "Access to health care": "snt_healthcare_access",
+    "DHS Indicators": "snt_dhs_indicators",
+    "ERA5 Climate Data": "snt_era5_climate_data",
+    "ERA5 Seasonality - Rainfall": "snt_seasonality_rainfall",
+    # Retired and not in this repository (ADR 0006), but still installed in older workspaces.
+    "Assemble Results": "snt_assemble_results",
+}
 
 # Human-readable display text, never parsed by a consumer (docs/checker.md section 5.5).
 REMEDIATION = {
@@ -172,6 +216,16 @@ PIPELINE_REMEDIATION = {
     ),
     "not_in_any_release": (
         "No release describes this pipeline. Reported for completeness only; its contents are not read."
+    ),
+    "old_template": (
+        "Created from an old template of the snt-development workspace (the old repository), so no "
+        "release of this repository describes it; `stands_for` names the pipeline it corresponds to. "
+        "Reported for completeness only; its contents are not read."
+    ),
+    "template_copy": (
+        "Created from a template while the pipeline's own code was already taken, so OpenHEXA added a "
+        "6-character suffix; `stands_for` names the pipeline it copies. Only the pipeline with the "
+        "plain code is checked; this one's contents are not read."
     ),
 }
 
@@ -1160,7 +1214,8 @@ def check_pipeline_versions(index: ReleaseIndex, token: str) -> tuple[list[dict]
             )
         )
 
-    unknown, listing_error = list_unknown_pipelines(token, set(index.pipeline_codes.values()), has_target)
+    known_codes = {code: dir_name for dir_name, code in index.pipeline_codes.items()}
+    unknown, listing_error = list_unknown_pipelines(token, known_codes, has_target)
     if listing_error:
         errors.append(listing_error)
     pipeline_reports.extend(unknown)
@@ -1223,13 +1278,15 @@ def fetch_current_version(token: str, code: str) -> dict | None:
 
 
 def list_unknown_pipelines(
-    token: str, known_codes: set[str], has_target: bool
+    token: str, known_codes: dict[str, str], has_target: bool
 ) -> tuple[list[dict], dict | None]:
     """Name the pipelines deployed in this workspace that no release describes.
 
-    Their contents are not read: they are not the release's business. The bootstrap pipelines,
+    `known_codes` maps each pipeline code a release describes to its directory name. Their
+    contents are not read: they are not the release's business. The bootstrap pipelines,
     this checker included, are in the manifest like any other (ADR 0042), so they are checked by
-    code above and never land here. A failure is an
+    code above and never land here. A template-created code is still recognised and named in
+    `stands_for` (template_stands_for). A failure is an
     error that makes the report incomplete, but does not stop the run - every pipeline a
     release describes has already been checked by code. `in_target` is False when there is a
     target (no release describes them, so the target does not either) and None when there is
@@ -1265,8 +1322,52 @@ def list_unknown_pipelines(
             continue
         name = (item.get("currentVersion") or {}).get("versionName")
         in_target = False if has_target else None
-        unknown.append(pipeline_report(None, item["code"], in_target, name, None, "not_in_any_release"))
+        stands_for, remediation_key = template_stands_for(item["code"], known_codes)
+        unknown.append(
+            pipeline_report(None, item["code"], in_target, name, None, remediation_key, stands_for)
+        )
     return unknown, None
+
+
+def template_stands_for(code: str, known_codes: dict[str, str]) -> tuple[str | None, str]:
+    """Recognise a code that a template gave a pipeline no release describes by that code.
+
+    Two shapes are recognised (ADR 0040): a release pipeline's code with OpenHEXA's collision
+    suffix (`snt-map-extracts-1a2b3c`), and a code created from an old snt-development template
+    (`b-2-map-extracts`, any step number, with or without the suffix). The title is looked up
+    whole first, so a title that happens to end like a suffix is never cut short.
+
+    Returns
+    -------
+    tuple[str | None, str]
+        (the directory name the code stands for, or None; the PIPELINE_REMEDIATION key).
+    """
+    base = COLLISION_SUFFIX.sub("", code)
+    if base != code and base in known_codes:
+        return known_codes[base], "template_copy"
+
+    legacy = LEGACY_TEMPLATE_CODE.match(code)
+    if legacy:
+        title = legacy["title"]
+        for candidate in (title, COLLISION_SUFFIX.sub("", title)):
+            if candidate in LEGACY_TEMPLATE_SLUGS:
+                return LEGACY_TEMPLATE_SLUGS[candidate], "old_template"
+
+    return None, "not_in_any_release"
+
+
+def template_slug(title: str) -> str:
+    """Turn a template's display title into the slug OpenHEXA builds a pipeline code from.
+
+    Returns
+    -------
+    str
+        Lower case, every run of characters other than a-z and 0-9 replaced by one "-".
+    """
+    return re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")
+
+
+LEGACY_TEMPLATE_SLUGS = {template_slug(title): name for title, name in LEGACY_TEMPLATE_TITLES.items()}
 
 
 def call_graphql(token: str, operation: str, variables: dict) -> dict:
@@ -1322,15 +1423,22 @@ def read_zip_members(encoded_zipfile: str) -> dict:
     }
 
 
-def claimed_release_tag(version_name: str) -> str:
-    """Recover the release tag a pipeline version's name claims, ignoring OpenHEXA's suffix.
+def claimed_release_tag(version_name: str) -> str | None:
+    """Recover the release tag a pipeline version's name claims.
+
+    OpenHEXA's " [v<number>]" suffix and the deployers' "+redeploy-<date>" suffix are removed.
+    A name that is then only "v<number>" (a plain CLI push, or a version a template update
+    delivered) claims nothing.
 
     Returns
     -------
-    str
-        The version name with a trailing " [v<number>]" removed, if it had one.
+    str | None
+        The claimed tag, or None when the name claims no release.
     """
-    return VERSION_NUMBER_SUFFIX.sub("", version_name).strip()
+    name = REDEPLOY_SUFFIX.sub("", VERSION_NUMBER_SUFFIX.sub("", version_name).strip())
+    if not name or NO_CLAIM_VERSION_NAME.match(name):
+        return None
+    return name
 
 
 def name_matches_content(dir_name: str, version_name: str, members: dict, index: ReleaseIndex) -> bool | None:
@@ -1343,8 +1451,8 @@ def name_matches_content(dir_name: str, version_name: str, members: dict, index:
 
     With every manifest loaded, a version named after ANY release can be judged, not only
     one named after the target. The zip must hold exactly that release's files for this
-    pipeline, byte for byte - an extra file is a disagreement too. A name that is not a
-    release tag at all ("v3" from a plain CLI push) claims nothing and is reported as null.
+    pipeline, byte for byte - an extra file is a disagreement too. A name that claims no
+    release ("v3" from a plain CLI push or a template update) is reported as null.
 
     Returns
     -------
@@ -1352,7 +1460,7 @@ def name_matches_content(dir_name: str, version_name: str, members: dict, index:
         True or False when the name claims a release with a usable manifest, None otherwise.
     """
     claimed = claimed_release_tag(version_name)
-    manifest = index.manifests.get(claimed)
+    manifest = index.manifests.get(claimed) if claimed else None
     if manifest is None:
         return None
     spec = manifest["pipelines"].get(dir_name)
@@ -1369,12 +1477,14 @@ def pipeline_report(
     version_name: str | None,
     matches_content: bool | None,
     remediation_key: str | None,
+    stands_for: str | None = None,
 ) -> dict:
     """Build the per-pipeline block that sits alongside the per-file entries.
 
     The name/content disagreement, and a pipeline's presence or absence from the target, are
     properties of the deployment rather than of any one file inside the zip, so they are
-    reported here rather than as per-file statuses.
+    reported here rather than as per-file statuses. `stands_for` is set only on a pipeline no
+    release describes whose template-created code was recognised (template_stands_for).
 
     Returns
     -------
@@ -1391,6 +1501,7 @@ def pipeline_report(
         "current_version_name": version_name,
         "current_version_claims_tag": claimed_release_tag(version_name) if version_name else None,
         "version_name_matches_content": matches_content,
+        "stands_for": stands_for,
         "remediation": PIPELINE_REMEDIATION.get(remediation_key),
     }
 
@@ -1722,7 +1833,12 @@ def log_summary(report: dict, report_path: Path) -> None:
                 "The name is metadata someone typed; the hash is evidence."
             )
         if not block["in_any_release"]:
-            current_run.log_info(f"{block['code']}: deployed here, described by no release - reported only.")
+            stands_for = (
+                f" (template-created, stands for {block['stands_for']})" if block["stands_for"] else ""
+            )
+            current_run.log_info(
+                f"{block['code']}: deployed here, described by no release{stands_for} - reported only."
+            )
 
     if report["incomplete"]:
         current_run.log_warning(

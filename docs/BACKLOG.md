@@ -549,15 +549,6 @@ master-list check of the healthcare-access layers, 2026-10-29.
 
 ## Bootstrap pipelines
 
-### <a id="boot-1"></a>BOOT-1 · The checker should read `<tag>+redeploy-<date>` as `<tag>`
-
-A redeploy names a pipeline version `<tag>+redeploy-<YYYYMMDD>` (D22). The checker's
-`claimed_release_tag()` (`pipelines/snt_workspace_checker/pipeline.py`) strips only a `[vN]` suffix,
-so such a version claims no release. Known and stated in [`bootstrap/deployer.md`](bootstrap/deployer.md);
-this is the action.
-
-**Source:** Giulia's plan of action (local), 2026-09-30.
-
 ### <a id="boot-2"></a>BOOT-2 · A readable status page from the checker
 
 Besides the JSON report ([ADR 0027](decisions/0027-checker-report-is-a-workspace-file.md)), write a
@@ -583,6 +574,18 @@ and a migration. The first release of this repo is `v0.1.0` ([`MIGRATION_PLAN.md
 Phase 4).
 
 **Source:** `docs/bootstrap/roadmap.md` §2 (superseded), 2026-10-02.
+
+### <a id="boot-5"></a>BOOT-5 · Deployers and a suffixed template copy whose plain code was deleted
+
+A pipeline created from a template while its code was taken gets `snt-<name>-<6 hex>`
+([ADR 0040](decisions/0040-templates-kept-alongside-the-deployer.md)). Both deployers look a
+pipeline up by its exact code `snt-<name>` only. While the plain one exists they deploy onto it, and
+the checker names the copy in `stands_for`. If someone deletes the plain one, the next deploy creates
+a new `snt-<name>` beside the copy, which keeps running old code. Decide whether the deployers should
+adopt the copy (and what to do with several), warn, or leave it. Change both deployers together
+(`tests/test_pipeline_deployer.py`).
+
+**Source:** Migration Phase 4 commit 6, 2026-11-13 (deferred: the checker only, for now).
 
 ---
 

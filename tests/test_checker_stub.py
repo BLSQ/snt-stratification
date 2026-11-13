@@ -562,5 +562,89 @@ assert (block["code"], block["pipeline"], block["in_any_release"]) == (
 print("bootstrap attribution OK")
 
 
+# ============================================================================================
+# Migration Phase 4: version names that claim no release, and template-created codes
+# ============================================================================================
+# A version name's claim: OpenHEXA's [vN] and the deployers' +redeploy- suffixes are stripped; a
+# bare v<N> (plain CLI push, or a template update, spike S6) claims nothing.
+for name, claim in [
+    ("v0.1.0-test [v1]", "v0.1.0-test"),
+    ("v0.1.0", "v0.1.0"),
+    ("v0.1.0+redeploy-20261113 [v4]", "v0.1.0"),
+    ("v0.1.0+redeploy-20261113T101500Z [v5]", "v0.1.0"),
+    ("v3", None),
+    ("v3 [v3]", None),
+    ("v0.1.0+hotfix [v2]", "v0.1.0+hotfix"),  # only the deployers' own suffix is stripped
+]:
+    assert fresh.claimed_release_tag(name) == claim, (name, fresh.claimed_release_tag(name))
+redeployed = "v0.1.0-test+redeploy-20261113 [v3]"
+assert chk.name_matches_content("snt_dhis2_incidence", redeployed, members_010, index) is True
+assert chk.name_matches_content("snt_dhis2_incidence", "v3 [v3]", members_010, index) is None
+
+# Template-created codes, named in `stands_for` (ADR 0040). snt-map-extracts and the checker are
+# the example manifest's pipelines.
+known = {"snt-map-extracts": "snt_map_extracts", "snt-workspace-checker": "snt_workspace_checker"}
+for code, expected in [
+    ("snt-map-extracts-1a2b3c", ("snt_map_extracts", "template_copy")),
+    ("b-2-map-extracts", ("snt_map_extracts", "old_template")),  # observed in snt-testing
+    ("a-1-dhis2-extract-ec1130", ("snt_dhis2_extract", "old_template")),  # observed, workshop workspace
+    ("a-5-dhis2-population-transformation", ("snt_dhis2_population_transformation", "old_template")),
+    ("a-6-dhis2-population-transformation", ("snt_dhis2_population_transformation", "old_template")),
+    ("a-4-dhis2-reporting-rate-data-element", ("snt_dhis2_reporting_rate_dataelement", "old_template")),
+    ("d-2-era5-seasonality-rainfall-0f9e8d", ("snt_seasonality_rainfall", "old_template")),
+    ("f-1-assemble-results", ("snt_assemble_results", "old_template")),  # retired, ADR 0006
+    ("snt-dhis2-extract-1a2b3c", (None, "not_in_any_release")),  # base code in no release here
+    ("snt-map-extracts-1a2b3", (None, "not_in_any_release")),  # 5 hex: not the collision suffix
+    ("b-2-something-else", (None, "not_in_any_release")),
+    ("dhis2-extract-dataset", (None, "not_in_any_release")),
+]:
+    assert fresh.template_stands_for(code, known) == expected, (code, fresh.template_stands_for(code, known))
+# every title in the table makes a distinct slug, so no two map onto one code
+assert len(fresh.LEGACY_TEMPLATE_SLUGS) == len(fresh.LEGACY_TEMPLATE_TITLES)
+
+# Through the listing: the recognised ones carry `stands_for`, and the report still conforms.
+listing = {
+    "pipelines": {
+        "totalPages": 1,
+        "items": [
+            {"code": "snt-workspace-checker", "currentVersion": None},
+            {"code": "snt-map-extracts-1a2b3c", "currentVersion": {"versionName": "v1 [v1]"}},
+            {"code": "b-2-map-extracts", "currentVersion": {"versionName": "v2 [v2]"}},
+            {"code": "lifenet-hmiss", "currentVersion": None},
+        ],
+    }
+}
+fresh.call_graphql = lambda token, operation, variables: listing
+_, pipes_t, errs_t = fresh.check_pipeline_versions(index_b, "token")
+assert errs_t == [], errs_t
+blocks_t = {b["code"]: b for b in pipes_t}
+assert {code: blocks_t[code]["stands_for"] for code in blocks_t} == {
+    "snt-workspace-checker": None,  # in a release: checked by code, nothing to name
+    "snt-map-extracts-1a2b3c": "snt_map_extracts",
+    "b-2-map-extracts": "snt_map_extracts",
+    "lifenet-hmiss": None,
+}, blocks_t
+assert all(not blocks_t[c]["in_any_release"] for c in blocks_t if c != "snt-workspace-checker")
+assert blocks_t["b-2-map-extracts"]["current_version_claims_tag"] is None  # "v2 [v2]" claims nothing
+assert blocks_t["b-2-map-extracts"]["remediation"] == fresh.PIPELINE_REMEDIATION["old_template"]
+assert blocks_t["lifenet-hmiss"]["remediation"] == fresh.PIPELINE_REMEDIATION["not_in_any_release"]
+releases_b = [{"tag_name": "v0.1.0", "published_at": None}]
+rep_t = fresh.build_report(
+    [],
+    index_b,
+    pipes_t,
+    [],
+    errs_t,
+    "o/r",
+    None,
+    considered(releases_b, {"v0.1.0": example}),
+    "nothing_given",
+    None,
+    None,
+)
+assert_conforms(rep_t, "template-created codes")
+print("template-created codes OK")
+
+
 def test_stub_assertions_hold() -> None:
     """Give pytest a test to collect: every assertion above runs at import, so reaching here means all held."""

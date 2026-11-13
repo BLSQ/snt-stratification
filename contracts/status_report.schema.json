@@ -283,11 +283,15 @@
         },
         "current_version_claims_tag": {
           "type": ["string", "null"],
-          "description": "The release tag parsed out of current_version_name."
+          "description": "The release tag current_version_name claims, with OpenHEXA's ' [vN]' suffix and the deployers' '+redeploy-<date>' suffix removed. null when the name claims no release: a bare 'v<N>', which is what a plain CLI push or a template update names a version."
         },
         "version_name_matches_content": {
           "type": ["boolean", "null"],
           "description": "true when the zip holds exactly the files, byte for byte, that the named release ships for this pipeline. false otherwise, including an extra file or a name pointing at a release that does not ship the pipeline. null when the name is not a release tag with a usable manifest."
+        },
+        "stands_for": {
+          "type": ["string", "null"],
+          "description": "On a pipeline no release describes (pipeline null): the pipeline directory name its template-created code stands for. Either a release pipeline's code with OpenHEXA's '-<6 hex>' collision suffix ('snt-map-extracts-1a2b3c'), or a code from an old snt-development template ('b-2-map-extracts', any step number, which may name a pipeline this repository no longer has). null otherwise. Added in Phase 4 of docs/MIGRATION_PLAN.md (an added key, not a breaking change), so older reports lack it."
         },
         "remediation": { "type": ["string", "null"], "x-display-only": true }
       }
