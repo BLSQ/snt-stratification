@@ -1,13 +1,16 @@
-# `contracts/snt_config_json/` — `SNT_config.json`
+# `contracts/snt_config/` — `SNT_config.json`
 
 Reference for the structure of the SNT configuration file. **Nothing in this folder is read by a
 pipeline.** In a workspace, pipelines read `<workspace>/configuration/SNT_config.json`: one file, one
-country, one workspace. That file is placed there by hand (or, in future, by the config webapp, see
+country, one workspace. That file is placed there by hand (or, in future, by the config editor, see
 below).
 
 | File | What it is | Trust it? |
 |---|---|---|
-| `SNT_config.skeleton.json` | The **fixed part** of `SNT_config.json`, which is the same in every country and workspace. The country-specific values are left empty. | **Yes.** This is the reference for the current structure. |
+| `SNT_config.skeleton.json` | The **fixed part** of `SNT_config.json`, which is the same in every country and workspace. The country-specific values are left empty. The one copy, shared by the pipelines and the config editor. | **Yes.** This is the reference for the current structure. |
+| [`config_analysis_notes.md`](config_analysis_notes.md) | What "valid" means, per-field rules and traps, read from the pipeline code. | **Yes**, it is the source of truth for the field rules. |
+| [`config_field_matrix.md`](config_field_matrix.md) | Field by field across the five archived country copies: what is fixed, what varies. | As a survey of those copies, which were never verified (below). |
+| [`fixtures/`](fixtures/) | Conformance cases: configs with the verdict `validate_config()` must return ([below](#conformance-fixtures--fixtures)). | **Yes**, run in CI. |
 
 Past per-country copies (BDI, BFA, CMR, COD, NER) are archived in
 [`deprecated/configuration/`](https://github.com/BLSQ/snt_development/blob/94cfc383c0f8804d2eba264f26a4bd3d372d94da/deprecated/configuration/README.md). They were never checked
@@ -34,7 +37,7 @@ there.
 ### What it deliberately does not do
 
 - **It does not explain how to fill in the country-specific values.** That belongs in a future
-  `snt_config.schema.json`, on the same model as the schema proposed for `SNT_metadata.json` in
+  `snt_config.schema.json`, on the same model as the schema for `SNT_metadata.json` in
   [`../snt_metadata_json/`](../snt_metadata_json/README.md). Not created yet:
   [BACKLOG CFG-3](../../docs/BACKLOG.md#cfg-3).
 - **It is not a working config.** Copying it into a workspace without filling it in will make the
@@ -47,30 +50,20 @@ there.
 | Single value (string or number) | `null` | `COUNTRY_CODE`, `ANALYTICS_ORG_UNITS_LEVEL`, `REPORTING_DATASETS[].DATASET`, `REPORTING_INDICATORS.*` |
 | List | `[]` | `REPORTING_RATE_PRODUCT_UID`, every `ids`, every `DHIS2_INDICATOR_DEFINITIONS.*` |
 
-> **Differs from the webapp repo.** The config editor webapp (below) uses `""` for an empty string
-> value and `null` for an empty number. Keep this difference in mind when comparing the two
-> skeletons.
+The config editor must write empty values the same way: an empty string is `null`, never `""`
+([D-11](../../docs/MIGRATION_PLAN.md#2-decision-log-agreed)).
 
 ---
 
-## Where configuration is heading: the config editor webapp
+## Where configuration is heading: the config editor
 
-Filling in `SNT_config.json` is moving to a dedicated OpenHEXA webapp with its own repository:
-**[BLSQ/openhexa-webapps-edit-snt-config-json](https://github.com/BLSQ/openhexa-webapps-edit-snt-config-json)**.
-Its [`CLAUDE.md`](https://github.com/BLSQ/openhexa-webapps-edit-snt-config-json/blob/main/CLAUDE.md)
-goes deeper than this folder: what each part of `SNT_config.json` is used for, how to fill it in,
-and validation rules. **Go there for anything about the country-specific values.**
-
-### Known drift between the two skeletons
-
-The webapp repo keeps its own copy of the skeleton, and it **may have drifted** from
-`SNT_config.skeleton.json` here (on top of the `""`/`null` difference above). This is known and
-accepted for now. Because configuration is moving to the webapp, the two will be reconciled **in the
-webapp repo**, not here. Until that happens:
-
-- **This file** describes the structure that the pipelines in `snt_development` expect today.
-- If the two disagree, check the pipeline code (`snt_config[...]` lookups) before deciding which one
-  is right.
+Filling in `SNT_config.json` is moving to an OpenHEXA webapp, the config editor, in
+[`webapps/config_editor/`](../../webapps/config_editor/CLAUDE.md) (docs and a design prototype; no
+app code yet). It must emit exactly the shape and key order of `SNT_config.skeleton.json`, and keeps
+no copy of its own. The skeleton is the pipelines' contract, so a change to it is a pipeline change:
+update the skeleton first, then the editor's form
+([editor spec §12.3](../../webapps/config_editor/docs/PRODUCT_SPEC.md#123-the-skeleton-is-a-derived-artefact)).
+For how to fill in the country-specific values, read [`config_analysis_notes.md`](config_analysis_notes.md).
 
 ---
 
