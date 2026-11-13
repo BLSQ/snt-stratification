@@ -64,15 +64,6 @@ outputs (rule R2) stops depending on each developer remembering.
 
 **Source:** CLAUDE.md *Suggestions*.
 
-### <a id="tool-2"></a>TOOL-2 · A CI job on pull requests
-
-No check runs on a pull request: the repo has no workflows yet (the old `push_snt_*.yaml` were not
-imported). `ruff check .` and `pytest` run only when someone runs them. Planned as `ci.yaml` in
-[`MIGRATION_PLAN.md`](MIGRATION_PLAN.md) Phase 3, together with [TOOL-5](#tool-5) to
-[TOOL-7](#tool-7). Facts about the old repo's CI: [`DATA_ARCHITECTURE.md` §7.3](DATA_ARCHITECTURE.md#73-ci-coverage).
-
-**Source:** CLAUDE.md *Suggestions*; DATA_ARCHITECTURE §9 #9.
-
 ### <a id="tool-3"></a>TOOL-3 · A `tests/` seed
 
 Pure functions such as `validate_yyyymm`, `validate_period_range`, `get_unique_data_elements`,
@@ -90,33 +81,16 @@ is absent, so the helpers are closer to runnable than they look. Pairs with [DEP
 
 **Source:** CLAUDE.md *Suggestions*.
 
-### <a id="tool-5"></a>TOOL-5 · Commit the docs link checker
+### <a id="tool-6"></a>TOOL-6 · JSON Schemas for the orchestrator contracts
 
-A stdlib-only script that checks every relative link and `#anchor` in the repo's Markdown exists
-only outside the repo (the old repo's git-ignored `ignore/docs-restructure/check_links.py`, and a
-copy used during the migration). Commit it as `tools/check_links.py` and run it in `ci.yaml`
-([TOOL-2](#tool-2)).
-
-**Owner:** Giulia. **Source:** docs restructure plan, 2026-10; Phase 2 sweep, 2026-11.
-
-### <a id="tool-6"></a>TOOL-6 · Dependency-free check script
-
-Validate the JSON files against `contracts/`, check map node ids == description keys, and check
-that relative links in every `.md` resolve.
-
-The link-check part of it is [TOOL-5](#tool-5).
+The three files in [`contracts/orchestrator/`](../contracts/orchestrator/) are prose references
+(`_description`, `_generation_instructions`), not JSON Schema, so nothing validates
+`pipeline_map.json` and `pipeline_descriptions.json` against them, or a workspace's
+`pipeline_cards.json`. `pytest` checks only that map node ids equal description keys
+(`tests/test_contracts.py`). Write them as JSON Schema (keeping the prose), then validate the two
+bundle files in `pytest` like the other contracts.
 
 **Source:** `snt_webapp_orchestrator` BACKLOG. **Old ID:** orchestrator `TOOL-1`.
-
-### <a id="tool-7"></a>TOOL-7 · CI check for country data and notebook outputs (R1, R2)
-
-Nothing stops a PR that adds a `.csv`/`.xlsx`/`.parquet`/`.rds`/`.geojson` file or a notebook with
-outputs. `.gitignore` covers most data files, but `git add -f` gets past it, and the `nbstripout`
-filter ([TOOL-1](#tool-1)) lives in each developer's `.git/config`, so a clone without it commits
-outputs silently. Add both checks to `ci.yaml` ([TOOL-2](#tool-2)). Test notebooks by reading their
-`outputs` directly, not with `nbstripout --verify` (the handover skill explains why).
-
-**Source:** Giulia's git-practices notes (local), 2026-10; Phase 2 sweep, 2026-11.
 
 ### <a id="tool-8"></a>TOOL-8 · Merge policy for pull requests
 

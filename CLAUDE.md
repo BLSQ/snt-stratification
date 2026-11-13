@@ -57,8 +57,8 @@ calling each other.
 |---|---|---|
 | Scheduler / DAG engine | **deliberate** ([ADR 0001](docs/decisions/0001-no-dag-engine.md)) | Nothing enforces run order; pipelines may run against stale upstreams |
 | dbt | **permanent** | Analytics are R, not SQL |
-| Tests for the SNT pipelines and webapps | **debt** | `pytest` covers only the bootstrap pipelines and contracts. Verify by reading; say what you could not verify |
-| CI | **debt** ([TOOL-2](docs/BACKLOG.md#tool-2), Phase 3) | Nothing runs `ruff` or `pytest`, and nothing deploys. Run them yourself |
+| Tests for the SNT pipelines and webapps | **debt** | `pytest` covers only the bootstrap pipelines, contracts and `tools/`. Verify by reading; say what you could not verify |
+| CI that releases or deploys | **debt** (Phase 3: `release.yaml`, `push_templates.yaml`) | [`ci.yaml`](.github/workflows/ci.yaml) only checks each PR and push to `main` (ruff, pytest, R1/R2, links, registry, Explorer list); nothing deploys |
 | Full local runtime | **debt** | R runs on the workspace kernel — [`dev/README.md`](dev/README.md) |
 
 ---
@@ -69,7 +69,7 @@ calling each other.
 values. The repo is **public**, and this is health data for real districts. Do not add `.gitignore`
 exceptions for data, do not `git add -f`.
 
-**2. Merging here deploys nothing.** There is no CI yet, and `Pull scripts` = ON still pulls notebooks
+**2. Merging here deploys nothing.** CI only runs checks, and `Pull scripts` = ON still pulls notebooks
 and shared R from the **old** `snt_development` repo (`snt_lib` hardcodes it). The routes from this
 repo — the deployer installing a release, a new template set, self-sync of the R half — are built in
 Phases 3–6 ([ADR 0040](docs/decisions/0040-templates-kept-alongside-the-deployer.md)). Live
@@ -97,8 +97,8 @@ the rule, never half-convert a violator. **Old ID** (where it changed): o = orch
 
 | ID | Rule | Status | Old ID |
 |---|---|---|---|
-| [**R1**](docs/CONVENTIONS.md#r1) | No country data in git — no `.csv`/`.xlsx`/`.parquet`/`.rds`/`.geojson` with real values | `enforced` (`.gitignore`); never `git add -f` | |
-| [**R2**](docs/CONVENTIONS.md#r2) | Notebook outputs stripped before commit | `convention` → [TOOL-1](docs/BACKLOG.md#tool-1) | |
+| [**R1**](docs/CONVENTIONS.md#r1) | No country data in git — no `.csv`/`.xlsx`/`.parquet`/`.rds`/`.geojson` with real values | `enforced` (`.gitignore`, CI); never `git add -f` | |
+| [**R2**](docs/CONVENTIONS.md#r2) | Notebook outputs stripped before commit | `enforced` (CI); local filter → [TOOL-1](docs/BACKLOG.md#tool-1) | |
 | [**R3**](docs/CONVENTIONS.md#r3) | `pipeline.py` orchestrates, never computes | `convention` | |
 | [**R4**](docs/CONVENTIONS.md#r4) | An output only exists if it is passed to `add_files_to_dataset(...)` | `convention` | |
 | [**R5**](docs/CONVENTIONS.md#r5) | Each template set is published from exactly one workspace; never push a pipeline from this repo to `snt-development` | `convention` | |
@@ -114,7 +114,7 @@ the rule, never half-convert a violator. **Old ID** (where it changed): o = orch
 | [**R15**](docs/CONVENTIONS.md#r15) | One vocabulary per concept in operator-facing `choices=[...]` | `⚠ exceptions` — [PIPE-2](docs/BACKLOG.md#pipe-2) | |
 | [**R16**](docs/CONVENTIONS.md#r16) | `readme.md` updated in the same PR as the `pipeline.py` change it describes | `convention` | |
 | [**R17**](docs/CONVENTIONS.md#r17) | Failure messages a run surfaces (R or Python) start `[ERROR]` or `[WARNING]`, chosen deliberately | `convention` | b R17 |
-| [**R18**](docs/CONVENTIONS.md#r18) | Python: snake_case, line-length 110, numpydoc docstrings with `Returns` | `ruff`, run by hand | b R18 |
+| [**R18**](docs/CONVENTIONS.md#r18) | Python: snake_case, line-length 110, numpydoc docstrings with `Returns` | `enforced` (`ruff` in CI) | b R18 |
 | [**R19**](docs/CONVENTIONS.md#r19) | Agents never run destructive / history-rewriting `git` or `gh` commands | `enforced` — hook + `permissions.deny` | o R1, b R19 |
 | [**R20**](docs/CONVENTIONS.md#r20) | R: roxygen2 docstrings above every function | `convention` | |
 | [**R21**](docs/CONVENTIONS.md#r21) | Every published output **table** carries a `YEAR` column | `convention` — existing outputs not audited | |
@@ -135,7 +135,9 @@ conda activate snt-stratification         # everything below needs this first (s
 
 ruff check .                              # config in pyproject.toml (line-length 110)
 ruff check --fix . && ruff format .
-pytest tests/ -q                          # offline: bootstrap pipelines + contracts only
+pytest tests/ -q                          # offline: bootstrap pipelines, contracts, tools/
+python tools/check_tracked_files.py       # R1 data files, R2 notebook outputs
+python tools/check_links.py               # relative links and #anchors in Markdown
 
 nbstripout pipelines/<name>/code/<notebook>.ipynb
 nbdime diff <a>.ipynb <b>.ipynb           # readable notebook diffs
@@ -143,7 +145,10 @@ nbdime diff <a>.ipynb <b>.ipynb           # readable notebook diffs
 openhexa pipelines push pipelines/<name> --yes   # by hand, test workspaces only — read R5 first
 ```
 
-No `make`, no pre-commit, no CI. Do not invent commands or report a check you could not have run.
+No `make`, no pre-commit. [`ci.yaml`](.github/workflows/ci.yaml) runs the `ruff`, `pytest` and
+`check_*` commands above on every PR, plus the registry and Explorer-list checks (its steps are
+commands you can run too); run them yourself before pushing. Do not invent commands or report a
+check you could not have run.
 Without a workspace, verify by: the commands above; the R11/R12 check; tracing dataset ids and
 filenames against [`docs/DATA_ARCHITECTURE.md` §3](docs/DATA_ARCHITECTURE.md#3-data-lineage);
 saying plainly what was *not* verified.

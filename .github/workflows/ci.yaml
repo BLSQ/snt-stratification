@@ -1,0 +1,80 @@
+# Checks every pull request and every push to main. Deploys nothing (root CLAUDE.md, rule 2).
+#
+# checks: ruff, rules R1/R2 on tracked files, Markdown links, registry <-> folders (via the manifest
+#         builder), the SNT Explorer master list. Light installs; every step runs even if an earlier
+#         one fails, so one run lists every problem.
+# pytest: the offline tests, with snt_lib installed at its pin so the config conformance test runs
+#         against the real validate_config() and fails instead of skipping (SNT_LIB_REQUIRED=1).
+#
+# Each step is a command you can run locally from the repo root (CLAUDE.md "Commands").
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # The workspace image's Python; snt_lib needs >= 3.12.
+  PYTHON_VERSION: "3.13"
+  # Exact pin: pyproject.toml sets preview = true, so rules move between ruff versions. Bump it on
+  # purpose, together with any fixes the new version asks for (dev/environment.yml has the floor).
+  RUFF_VERSION: "0.17.3"
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install ruff and jsonschema
+        id: install
+        run: pip install "ruff==${RUFF_VERSION}" jsonschema
+
+      - name: ruff check
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: ruff check --output-format=github .
+      - name: ruff format --check
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: ruff format --check .
+      - name: No country data or notebook outputs in git (R1, R2)
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: python tools/check_tracked_files.py
+      - name: Markdown links and anchors
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: python tools/check_links.py
+      - name: Registry matches pipeline folders; manifest is valid
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: >-
+          python tools/build_manifest.py --version ci --repo "$GITHUB_REPOSITORY"
+          --output "$RUNNER_TEMP/release_manifest.json"
+      - name: SNT Explorer master list
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: python .claude/skills/add-explorer-layer/validate_metadata.py
+
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: tests/requirements-conformance.txt
+      - name: Install test dependencies and the pinned snt_lib
+        # openhexa.sdk: the deployer tests load pipelines that import it. The conformance file pins
+        # snt_lib, which pulls in geopandas, polars and papermill.
+        run: pip install pytest jsonschema openhexa.sdk -r tests/requirements-conformance.txt
+      - name: pytest
+        env:
+          SNT_LIB_REQUIRED: "1"
+        run: pytest -q

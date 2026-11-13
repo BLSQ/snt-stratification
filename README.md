@@ -117,8 +117,9 @@ deliberate; none is a bug to fix.
    `add_files_to_dataset(...)` is invisible downstream. → [R4](docs/CONVENTIONS.md#r4)
 5. **Some pipelines deliberately overwrite each other** — alternative methods, last run wins.
    → [Pipeline traps](pipelines/CLAUDE.md#pipeline-traps)
-6. **There is no CI, and tests cover only the bootstrap pipelines and contracts.** Nothing runs
-   `ruff` or `pytest` for you. → [`CLAUDE.md`](CLAUDE.md#commands)
+6. **CI only checks, and tests cover only the bootstrap pipelines, contracts and tools.** A PR runs
+   `ruff`, `pytest` and the repo checks; nothing tests the SNT pipelines' R half. →
+   [`CLAUDE.md`](CLAUDE.md#commands)
 
 ---
 
@@ -216,7 +217,7 @@ Stated plainly, so nobody spends a day rediscovering them:
 
 | | |
 |---|---|
-| **No automated tests** | `ruff` is the only check, and no CI job runs it. |
+| **No tests for the SNT pipelines** | CI runs `ruff` and `pytest`, but `pytest` covers only the bootstrap pipelines, contracts and tools; the R notebooks are verified by reading and by running them in a workspace. |
 | **Dependencies are unpinned** | Both entries in every `requirements.txt` install from a Git branch, so two deploys of identical code can produce different runtimes. → [detail](docs/BACKLOG.md#dep-1) |
 | **No full offline development** | R notebooks are edited locally but execute on the workspace kernel. → [the loop](pipelines/CLAUDE.md#editing-r-notebooks-the-vs-code-remote-kernel-loop) |
 | **Run order is not written down yet** | Tracked in [`docs/DATA_ARCHITECTURE.md` §4.2](docs/DATA_ARCHITECTURE.md). |

@@ -1,4 +1,4 @@
-"""Fixtures validate against the contracts in contracts/.
+"""Fixtures validate against the contracts in contracts/; the orchestrator bundle's two files agree.
 
 The status reports and v1 manifests are real sandbox artefacts. The v2 manifest example is
 synthetic until the first release of this repo produces a real one.
@@ -154,3 +154,17 @@ def test_v2_invariants_reject(case: str) -> None:
     manifest = _v2_example()
     INVARIANT_BREAKS[case](manifest)
     assert manifest_v2_invariant_errors(manifest)
+
+
+def test_orchestrator_map_ids_match_description_keys() -> None:
+    """Every orchestrator map node has a description and every description has a node.
+
+    The join key between the two hand-authored files in the orchestrator bundle
+    (contracts/orchestrator/pipeline_descriptions.schema.json, rule 2). Their schemas there are prose
+    references, not JSON Schema, so this pairing is the part checked mechanically (BACKLOG TOOL-6).
+    """
+    app = ROOT / "webapps" / "orchestrator" / "app"
+    node_ids = [node["id"] for node in load(app / "pipeline_map.json")["nodes"]]
+    description_keys = set(load(app / "pipeline_descriptions.json")["descriptions"])
+    assert len(node_ids) == len(set(node_ids)), "duplicate node id in pipeline_map.json"
+    assert set(node_ids) == description_keys

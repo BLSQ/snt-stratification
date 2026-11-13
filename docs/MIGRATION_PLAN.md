@@ -769,7 +769,7 @@ Give Giulia the exact commands, one commit at a time.
 | 5 | `tools/build_manifest.py` + `tests/test_build_manifest.py`; `pythonpath = ["tools"]` in `pyproject.toml` | `tools: build_manifest.py, the release manifest v2 builder` |
 | 6 | Config conformance fixtures + `tests/test_config_conformance.py`; `snt_lib` pin for the test; editor §12.2 settled (option 2); DEP-1 facts | `contracts: config conformance fixtures, run through snt_lib validate_config()` |
 | 6a | This file: commit 7 hand-off, Session log | `plan: Phase 3 commits 2–6, hand-off for ci.yaml` |
-| 7 | `ci.yaml` + the scripts it runs — see the hand-off below | — |
+| 7 | `ci.yaml` + the scripts it runs — see the hand-off below | `ci: ci.yaml with ruff, pytest, R1/R2, link, registry and Explorer-list checks` |
 | 8 | `release.yaml` | — |
 | 9 | `push_templates.yaml` (disabled) | — |
 
@@ -849,7 +849,12 @@ Consequences:
       2026-11-12). v1 moves to `release_manifest.v1.schema.json`, which Phase 4 deletes. The
       consumers switch in Phase 4, a PR later than the schema: harmless, because nothing produces a
       v2 manifest before the first release (`v0.1.0`, Phase 4).
-- [ ] `ci.yaml`: ruff, pytest, contract validation, metadata validator (`validate_metadata.py`), link check.
+- [x] `ci.yaml`: ruff, pytest, contract validation, metadata validator (`validate_metadata.py`), link check.
+      Commit 7: two jobs, `checks` (ruff 0.17.3 pinned, `tools/check_tracked_files.py` for R1/R2,
+      `tools/check_links.py` over git's file list so `.claude/` is checked too, the manifest builder,
+      the metadata validator) and `pytest` (pinned `snt_lib`, `SNT_LIB_REQUIRED=1`). TOOL-2, 5, 7
+      closed; TOOL-6 narrowed to JSON Schemas for `contracts/orchestrator/` (prose today), with
+      map ids == description keys now in `pytest`.
 - [ ] `release.yaml`: on `release: published`, build and attach `release_manifest.json`, a **slim
       release tarball** (only manifest-listed files, so the deployer doesn't download design PNGs and
       docs), and `webapp-<name>-<tag>.zip` with a stamped `version.json`. Plus a job that runs on

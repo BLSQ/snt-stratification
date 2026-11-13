@@ -16,13 +16,17 @@ missed; a rule that is only in the Register will be misapplied.
 ### R1 — No country data in git
 
 No `.csv`, `.xlsx`, `.parquet`, `.rds`, `.geojson` with real values. This is health data for real
-districts. `.gitignore` blocks most of these — do not add exceptions, do not `git add -f`.
+districts. `.gitignore` blocks most of these — do not add exceptions, do not `git add -f`. CI
+([`tools/check_tracked_files.py`](../tools/check_tracked_files.py)) fails on any tracked file with
+one of these suffixes, real values or not.
 
 <a id="r2"></a>
 ### R2 — Notebook outputs stripped before commit
 
 Executed notebooks leak country data into git and produce unreviewable diffs. Detail:
-[`../pipelines/CLAUDE.md`](../pipelines/CLAUDE.md#notebook-hygiene). Planned enforcement:
+[`../pipelines/CLAUDE.md`](../pipelines/CLAUDE.md#notebook-hygiene). CI
+([`tools/check_tracked_files.py`](../tools/check_tracked_files.py)) fails on a tracked notebook
+with any cell `outputs`. Stripping before the commit, as a local git filter:
 [BACKLOG TOOL-1](BACKLOG.md#tool-1).
 
 ## Pipeline structure
@@ -182,8 +186,9 @@ pipeline's `choices=[...]` before assuming. Migration: [BACKLOG PIPE-2](BACKLOG.
 <a id="r18"></a>
 ### R18 — Python: snake_case, line-length 110, numpydoc docstrings with `Returns`
 
-pydocstyle and pydoclint are enabled in `ruff` ([`../pyproject.toml`](../pyproject.toml)). Nothing
-runs it in CI ([BACKLOG TOOL-2](BACKLOG.md#tool-2)) — run `ruff check` yourself.
+pydocstyle and pydoclint are enabled in `ruff` ([`../pyproject.toml`](../pyproject.toml)). CI
+([`ci.yaml`](../.github/workflows/ci.yaml)) runs `ruff check` and `ruff format --check` at a pinned
+ruff version; run them yourself before pushing.
 
 <a id="r20"></a>
 ### R20 — R: roxygen2 docstrings above every function

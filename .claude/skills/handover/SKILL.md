@@ -65,7 +65,7 @@ do either — the user pushes and runs. The note contains:
 2. **Checklist results** — the table from §2, one line per item.
 3. **Not verified** — everything you could not check (there is no test suite; R notebooks were not
    executed). Say which country/workspace it was tested in, or that it was not tested.
-4. **Merging deploys nothing** (root rule 2) — say so: there is no CI, and `Pull scripts` = ON
+4. **Merging deploys nothing** (root rule 2) — say so: CI only runs checks, and `Pull scripts` = ON
    still pulls notebooks and shared R from the old `snt_development` repo. A fix a live country
    needs must be ported to the old repo by hand. Plus the countries from item 8 that need a manual
    fix.
