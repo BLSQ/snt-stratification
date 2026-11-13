@@ -775,64 +775,24 @@ Give Giulia the exact commands, one commit at a time.
 | 7c | This file: commit 8 hand-off, Session log | `plan: Phase 3 commit 7, hand-off for release.yaml` |
 | 8 | `release.yaml` + `tools/build_release_assets.py` + tests; release assets and `version.json` in `release_manifest.md`; R23 fixes in `contracts/README.md`, `CLAUDE.md`, `ARCHITECTURE.md`, `CONVENTIONS.md` | `ci: release.yaml, the release manifest, slim tarball and webapp zips on each release` |
 | 8a | This file: commit 9 hand-off, Session log | `plan: Phase 3 commit 8, hand-off for push_templates.yaml` |
-| 9 | `push_templates.yaml` (disabled) — see the hand-off below | — |
+| 9 | `push_templates.yaml` (disabled); R23 fixes in `CLAUDE.md`, `ARCHITECTURE.md`, BACKLOG TOOL-8 | `ci: push_templates.yaml, the new SNT template set on each full release (disabled)` |
+| 9a | This file: Phase 3 checklist closed, Phase 6 items, closing hand-off, Session log; `ARCHITECTURE.md` bootstrap-templates state | `plan: Phase 3 commit 9, hand-off for closing Phase 3` |
 
-**Hand-off for commit 9, `push_templates.yaml` (2026-11-13).** Commits 1–8a are on the branch; start here.
+**Hand-off for closing Phase 3 (2026-11-13).** Commits 1–9a are on the branch and every checklist
+item below is done; start here.
 
-**Step 0, before writing anything: the CI run on commit 8.** Ask Giulia for the result on the open
-Phase 3 PR. Expected: `checks` all green; `pytest` **115 passed, 0 skipped** (98 before commit 8,
-plus 17 in `tests/test_build_release_assets.py`; locally 99 passed, 16 skipped). A failure there is
-fixed first, in its own commit. Also ask whether `checks` and `pytest` are now required status
-checks in the `main` ruleset (suggested 2026-11-13, Giulia sets it).
-
-Scope, from the `push_templates.yaml` checklist item below, Phase 6 and ADRs 0040–0041: one workflow
-that pushes every registry `kind: snt` and `kind: support` pipeline (22 today) to the new templates
-publishing workspace, which publishes their template versions. **One matrix job generated from
-`pipelines/registry.json`**, so no hand-written per-pipeline path filter can be typo'd again (the old
-repo's `readme.txt`, `worlpopclient.py`). **Disabled** until Phase 6, like `release.yaml`'s
-bootstrap-templates job. Any logic beyond a `jq` one-liner goes in a `tools/` script with `pytest`
-coverage, as in commit 8.
-
-Facts to build on:
-- **`release.yaml`'s bootstrap-templates job is the pattern** (commit 8): `blsq/openhexa-cli-action@v1`,
-  the repository variable `OH_TEMPLATES_WORKSPACE` and the secret `OH_TEMPLATES_TOKEN` (the same
-  publishing workspace, ADR 0041: one per template set), `--code "${name//_/-}"`, `--name` = the tag
-  (the deployer names its versions after the tag too), `--link`, `--yes`. It loops in shell over the
-  three bootstrap pipelines; here the plan asks for a matrix, one job per pipeline, so one failed
-  push does not hide the others and can be re-run alone.
-- **Every push from the publishing workspace publishes a template version** (S6, `--yes` skips the
-  prompt), and OpenHEXA does not compare contents: an unchanged pipeline pushed again still becomes a
-  new template version, which every auto-updating workspace then receives. R5 binds the new set.
-- **The code comes from the source pipeline** (S3): `--code` on the first push sets it, so
-  template-created pipelines get `snt-<name>` (Phase 6 item "Name the templates").
-- **The R half travels in the zip** (S1: the SDK zips `code/`, `reporting/`, `utils/` with
-  `pipeline.py`), but nothing copies it to a template user's filesystem yet: that is OD-9's route
-  choice in Phase 6, not this commit.
-- **Old repo's pattern** (read only, `~/Bluesquare/snt_development/.github/workflows/push_snt_*.yaml`):
-  20 copies, each on `push` to `main` with path filters, Python 3.11, `--description` = the head
-  commit's message, which a merge commit turns into "Merge pull request #N …" (TOOL-8).
-- `.gitignore` allows `.github/workflows/*.yaml`; check a new file with `git add --dry-run` **before**
-  the real `git add` (after it, the dry run prints nothing). Python 3.13 as in `ci.yaml`.
-- `release.yaml`'s bootstrap job also pushes all three pipelines on every full release, changed or
-  not. Whatever question 3 below settles applies to it too.
-
-**Ask Giulia at the start of commit 9**, one at a time, each with its context (which commit, which
-file, why it matters), in plain words and without abbreviations:
-1. **Trigger.** ADR 0041 leaves "on every merge to `main` or only on release" to Phase 6
-   (recommended: on release), but the disabled file needs a trigger written in. Recommend **full
-   releases only** (`release: released`), like the bootstrap templates: every template version then
-   matches a tag, and its description can be "Release `<tag>`", which takes the template route out of
-   TOOL-8. Alternative: `push` to `main` filtered on `pipelines/**`, with a step that finds which
-   pipelines changed.
-2. **Own file or a job in `release.yaml`?** If the trigger is a release, the job could sit in
-   `release.yaml` beside the bootstrap one. The plan's tree (§4.1) and checklist name a separate
-   `push_templates.yaml`. Recommend the separate file as planned: Phase 6 enables it by editing one
-   file, and `release.yaml` stays about release assets plus the one D-17 job.
-3. **Push every pipeline, or only the changed ones?** Pushing all 22 on each release makes 22 new
-   template versions even when nothing changed (S6). Recommend pushing only the pipelines whose zip
-   files differ from the previous full release, by comparing the two releases' manifests
-   (`pipelines.<name>.zip_files` with their hashes in `files`), in a `tools/` script with tests; the
-   first release pushes all. Alternative: push all, simpler, more template versions.
+1. **CI on commit 9a.** Ask Giulia for the result on the open Phase 3 PR. Expected: `checks` and
+   `pytest` green, `pytest` **115 passed, 0 skipped** (locally 99 passed, 16 skipped). A failure is
+   fixed first, in its own commit.
+2. **Required status checks.** Decided 2026-11-13: `checks` and `pytest` must pass before a merge
+   into `main` (the `main` ruleset, "Require status checks to pass"; Giulia sets it). Ask whether
+   it is set.
+3. **PR description.** Update it for commits 1–9a: what each added, the decisions (D-17, and the
+   commit 8 and 9 notes in the checklist below), what ran (CI) and what never ran (`release.yaml`
+   and `push_templates.yaml`: no release exists, and both template jobs are disabled). Merging
+   deploys nothing (root `CLAUDE.md`, rule 2).
+4. **Merge** with a merge commit, as for Phases 1–2.
+5. **Phase 4** in a new session, from its checklist below.
 
 #### Phase 3 findings
 
@@ -896,9 +856,16 @@ Consequences:
       (hash-checks every file against the manifest, writes nothing on a mismatch). The bootstrap job
       reads `vars.OH_TEMPLATES_WORKSPACE` and `secrets.OH_TEMPLATES_TOKEN`, created when it is
       enabled. Not run yet: no release exists, and the manual run needs the file on `main`.
-- [ ] `push_templates.yaml`: one matrix job **generated from `pipelines/registry.json`** (kinds `snt` + `support`),
+- [x] `push_templates.yaml`: one matrix job **generated from `pipelines/registry.json`** (kinds `snt` + `support`),
       so typo'd per-pipeline path filters (`readme.txt`, `worlpopclient.py`) can't come back.
       Target = the new templates workspace. Keep it **disabled** until Phase 6.
+      Commit 9, decided 2026-11-13: on **full releases only** (`release: released`), the trigger
+      ADR 0041 left to Phase 6; its own file, not a job in `release.yaml`; **every** pipeline pushed
+      on every full release, changed or not (simpler; costs one template version per pipeline per
+      release, S6), which holds for the bootstrap job too. A `pipelines` job lists the names with
+      `jq`, then one `push` matrix job per pipeline (`fail-fast: false`) with the bootstrap job's
+      flags (`--code`, `--name` = tag, `--description "Release <tag>"`, `--link`, `--yes`), so the
+      template route leaves TOOL-8. Not run: disabled (`if: false`), and no release exists.
 - [-] `push_bootstrap.yaml`: dropped by D-17. Bootstrap templates publish from `release.yaml` on
       full releases, not on every merge to `main`.
 - [x] Config conformance fixtures (`contracts/snt_config/fixtures/`) + a Python runner against the
@@ -966,8 +933,13 @@ proceed in parallel against the new schema.
 - [ ] Create a dedicated publishing workspace for the new templates (it does **not** replace
       `snt-development`, which keeps publishing the old templates from the old repo, D-4).
 - [ ] Name the templates according to the S3 result, so template-created codes = `snt-<name>`.
-- [ ] Enable `push_templates.yaml`. Decide whether it publishes on every merge to `main` or **only
-      on release** (recommended: on release, so templates match a tag).
+- [ ] Enable `push_templates.yaml` (written in Phase 3 commit 9: full releases only, every pipeline
+      on each, decided 2026-11-13).
+- [ ] Publish each pipeline as a template by hand once in the publishing workspace, and each
+      pipeline added later, before relying on either template workflow (`push_templates.yaml`,
+      `release.yaml`'s bootstrap job). A push is expected to publish a template version only onto a
+      pipeline that is already a template's source, so a first push only creates a plain pipeline.
+      Spike S6 tested only the template-source case: check the first-push behaviour when enabling.
 - [ ] Choose the R-half route for template users per OD-9: self-sync, or Pull scripts with `snt_lib`
       (today `snt_lib` hardcodes the shared `code/` path and the `snt_development` repo name; see the
       2026-11-09 correction under Phase 1 "Facts checked")
@@ -1077,6 +1049,7 @@ proceed in parallel against the new schema.
 | 2026-11-12 | Phase 3 commits 2–6: ADR 0042; two R23 fixes (templates are not being retired); manifest v2 schema (`filesystem_files`, `webapps` now, v1 file kept until Phase 4); `tools/build_manifest.py`; config conformance fixtures, `snt_lib` pinned to `v1.0.2` for the test. Order 5–9 chosen. Found: `release-v1` is a branch (DEP-1). `BLSQ/snt_utils` cloned at `~/Bluesquare/snt_utils` for reading `snt_lib` | Commit 6a (this log + hand-off), then commit 7 `ci.yaml` in a new session: see the [Phase 3 hand-off](#phase-3--tooling-and-ci) |
 | 2026-11-13 | Phase 3 commit 7: `ci.yaml` (jobs `checks` and `pytest`), `tools/check_links.py` (ported, now over git's file list so `.claude/` is checked), `tools/check_tracked_files.py` (R1/R2); TOOL-2, 5, 7 closed, TOOL-6 narrowed (the orchestrator contracts are prose, not JSON Schema); R1, R2, R18 now `enforced`. Commits 7a–7b: `contracts/snt_config/README.md` aligned with D-11, the old `snt_config_json/` name replaced. CI has not run yet: it runs once the Phase 3 PR is open | Commit 7c (this log + hand-off), then commit 8 `release.yaml` in a new session: step 0 is the first CI result, then four questions — see the [Phase 3 hand-off](#phase-3--tooling-and-ci) |
 | 2026-11-13 | Phase 3 commit 8. First CI run on the Phase 3 PR green (`pytest` 98 passed, 0 skipped). Decided: `version.json` = tag, commit, build time; slim tarball `snt-stratification-<tag>.tar.gz` with one top folder; `gh release upload`; a manual-run trigger for testing before `v0.1.0`. `release.yaml` written (assets job; bootstrap-templates job disabled) with `tools/build_release_assets.py` and 17 tests; R23 fixes in `contracts/`, `CLAUDE.md`, `ARCHITECTURE.md`, `CONVENTIONS.md` (approved beyond the plan's scope) | Commit 8a (this log + hand-off), then commit 9 `push_templates.yaml` in a new session: step 0 is the CI result on commit 8, then three questions — see the [Phase 3 hand-off](#phase-3--tooling-and-ci) |
+| 2026-11-13 | Phase 3 commit 9. CI green on every commit through 8a; `checks` and `pytest` to become required in the `main` ruleset. Decided for `push_templates.yaml`: full releases only, its own file, every pipeline on each release. Written and disabled, with R23 fixes (`CLAUDE.md`, `ARCHITECTURE.md`; TOOL-8 no longer reaches OpenHEXA from this repo). New Phase 6 item: publish each pipeline as a template by hand once. Phase 3 checklist complete | Commit 9a (this log + hand-off), then close Phase 3: CI on 9a, PR description, merge — see the [Phase 3 hand-off](#phase-3--tooling-and-ci) |
 
 ---
 
