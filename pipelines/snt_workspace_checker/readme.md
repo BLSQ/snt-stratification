@@ -1,7 +1,8 @@
 # SNT Workspace Checker Pipeline
 
 Reports what is actually deployed in this OpenHEXA workspace, compared against the GitHub releases
-of the SNT codebase. It is **read-only**: it writes a status report and changes nothing else.
+of the SNT codebase (release manifest v2, the releases of this repository). It is **read-only**: it
+writes a status report and changes nothing else.
 Installing and updating is `snt_workspace_deployer`'s job. The report is a JSON file on the
 workspace filesystem under **`snt_status/`**, not an OpenHEXA dataset (decision D3).
 
@@ -28,12 +29,13 @@ Both modes report the per-release scores.
   * **Description:** The `owner/repo` whose releases this workspace is checked against. A parameter
     while the product is in testing; it will be hard-coded before production, so a user cannot point
     the checker at an arbitrary repository ([`docs/checker.md`](../../docs/bootstrap/checker.md) §5.4).
-  * **Default:** `BLSQ/snt_development_sandbox`.
+  * **Default:** `BLSQ/snt-stratification`.
 * **`release_tag`** (String, Optional):
   * **Name:** Target release tag
-  * **Description:** The release to check this workspace against, e.g. `v0.2.1-test`. Left empty, the
+  * **Description:** The release to check this workspace against, e.g. `v0.1.0`. Left empty, the
     pipeline falls back to the tag recorded in `.snt_release` by the last `snt_workspace_deployer`
-    run. With neither, it runs in **attribution mode**. The reserved value **`none`** (any case)
+    run, when the marker names `github_repo` or no repository at all. With neither, it runs in
+    **attribution mode**. The reserved value **`none`** (any case)
     forces attribution mode even when `.snt_release` exists (decision D17), so a scheduled
     attribution check never needs the marker deleted. A release literally tagged `none` could
     therefore never be targeted.
@@ -45,23 +47,29 @@ unattended in a country workspace that holds no connection at all.
 
 ## Functionality Overview
 
-1. Read `.snt_release` at the workspace root, if present, for the **declared** release. Its absence
-   is the normal starting state for every country workspace today and is never an error.
+1. Read `.snt_release` at the workspace root, if present, for the **declared** release: its tag and,
+   when the deployer recorded it, its repository. Its absence is the normal starting state for every
+   country workspace today and is never an error. A marker naming another repository than
+   `github_repo` is reported under `declared_release` with a `[WARNING]` and not used as a target.
 2. Resolve the **target** release: `release_tag` = `none` means no target; otherwise the parameter,
-   else the declared release, else no target. No target means attribution mode. The report records
-   the outcome under `target_release.resolved_from`: `parameter`, `marker` or `nothing_given`.
+   else the declared release (when usable, step 1), else no target. No target means attribution mode.
+   The report records the outcome under `target_release.resolved_from`: `parameter`, `marker` or
+   `nothing_given`.
 3. **List every published full release** of the repository (one GitHub API request per 100 releases)
    and download each one's **`release_manifest.json`** asset. Drafts are skipped, and so are
    pre-releases unless one is the target: pre-releases are for development and testing only, and do
    not appear anywhere in the report (D27). A release whose manifest is absent, cannot
-   be downloaded, or has no `pipelines` block cannot be used for comparison. It is listed with
-   `manifest_available: false`, added to `errors`, and the report is marked `incomplete`. The run
+   be downloaded, or has a `schema_version` this checker cannot read (none: a v1 manifest from the old
+   `snt_development` repository; or a newer one) cannot be used for comparison. It is logged as a
+   `[WARNING]`, listed with `manifest_available: false`, added to `errors`, and the report is marked
+   `incomplete`. The run
    stops (raises) only if the **target** is not among the published releases or has no usable
    manifest.
 4. **Filesystem source.** Walk `workspace.files_path`, minus the exclusions below. A file at a path
    no release has ever shipped is `untracked` and is **not read**. A file at a known path is hashed
-   and classified. A file inside a pipeline directory is listed in `inert_filesystem_copies` and
-   not classified. In verification mode, every filesystem path the target ships that the walk did
+   and classified. A file at a path releases ship only inside a pipeline zip (`pipeline.py`,
+   `requirements.txt`, …) is listed in `inert_filesystem_copies` and not classified. In verification
+   mode, every filesystem path the target ships (its `filesystem_files`) that the walk did
    not find is then checked directly, and reported `missing` if it is absent. In attribution mode
    absence means nothing, so this step is skipped.
 5. **Pipeline-version source.** For each pipeline directory described by **any** release, read that
@@ -71,16 +79,20 @@ unattended in a country workspace that holds no connection at all.
    deployed yields `missing` for all its files. An API failure yields `unreadable` for that pipeline
    and does not stop the others.
 6. **List the workspace's pipelines** to name any that no release describes. Their contents are not
-   read.
+   read. A code a template created is still recognised and named in `stands_for`: a release
+   pipeline's code with OpenHEXA's 6-hex collision suffix (`snt-map-extracts-1a2b3c`), or a code from
+   an old `snt-development` template (`b-2-map-extracts`, any step number).
 7. Score every release on agreement and completeness, judged only on the paths it ships
    (`summary.attribution`).
 8. Write the report twice, and log a summary: the scores per release and the best fit, one line per
    actionable file, and a count plus sample for untracked filesystem files.
 
-Each tracked path is read from **exactly one** source. Anything inside a pipeline directory comes
-from the version zip. A copy of the same file on the workspace filesystem is **not** used as
-evidence. OpenHEXA runs pipelines from the registered version and never from the bucket, so such a
-copy is inert. It is listed, but it cannot make a file look fine.
+Each copy a release ships is read from its own source. A notebook or R helper under
+`pipelines/<name>/` ships twice, in the zip and to the filesystem, so it gets two entries, one per
+`source`: the filesystem copy is what the notebooks run, the zip copy is what the version carries. A
+file a release ships only in the zip comes from the version zip alone; a copy of it on the workspace
+filesystem is **not** used as evidence. OpenHEXA runs pipelines from the registered version and never
+from the bucket, so such a copy is inert. It is listed, but it cannot make a file look fine.
 
 ### Excluded from the filesystem walk
 
@@ -143,7 +155,7 @@ Nothing is published to an OpenHEXA dataset.
 
 **The report's top-level keys** (all always present; types, enums and nullability are in the
 [schema](../../contracts/status_report.schema.json)): `schema_version`,
-`snt_workspace_check_version`, `generated_at`, `workspace`, `repo`, `mode`, `target_release`,
+`snt_workspace_checker_version`, `generated_at`, `workspace`, `repo`, `mode`, `target_release`,
 `declared_release`, `releases_considered`, `incomplete`, `summary` (`by_status`, `attribution`),
 `pipelines`, `entries`, `inert_filesystem_copies`, `scan_exclusions`, `errors`, `blind_spots`.
 
@@ -156,7 +168,7 @@ Nothing is published to an OpenHEXA dataset.
 >   `summary.attribution.rule` are for a human. Never parse or compare them; their wording can
 >   change without a version bump. `remediation`'s wording depends on the source as well as the
 >   status: an `untracked` file in a zip is deployed code, one on the filesystem is a stray.
-> - **`snt_workspace_check_version`** is meant to record which version of this pipeline generated
+> - **`snt_workspace_checker_version`** is meant to record which version of this pipeline generated
 >   the report. It is **`null` today**: a run cannot read the name of the pipeline version executing
 >   it, and no source for the value has been found. The key is frozen and nullable.
 > - **`errors[].scope`** is `manifest:<tag>`, `pipeline_version:<code>` or `pipeline_list`.
@@ -169,8 +181,9 @@ Nothing is published to an OpenHEXA dataset.
 >   one file means its content was changed and later reverted.
 > - **`summary.attribution`**, in both modes (decision D15). Each release is judged **only on the
 >   paths it ships**. Per release, `by_release` gives:
->   * `shipped`: the number of files the release ships.
->   * `present`: how many of those paths are found here.
+>   * `shipped`: the number of file copies the release ships, one per route: a notebook shipped in
+>     its pipeline's zip and to the filesystem counts twice.
+>   * `present`: how many of those copies are found here.
 >   * `agreeing`: how many of those have exactly the release's bytes.
 >   * `extra`: files found here at paths the release does not ship. Typically these are leftovers of
 >     files it removed. They count neither for nor against it.
@@ -191,11 +204,14 @@ Nothing is published to an OpenHEXA dataset.
 >   attribution mode its `tag` and `published_at` are `null`, and `resolved_from` says why, either
 >   `parameter` (`release_tag` was `none`) or `nothing_given`.
 > - **`declared_release`** vs **`target_release`**: the declared one is what `.snt_release` says was
->   last deployed. It is written even after a partial run, so it records **intent, not verified
->   fact**. When the two disagree, the run logs a warning and checks against the target.
+>   last deployed, with the repository it came from (`repo`, `null` for a marker that predates it).
+>   It is written even after a partial run, so it records **intent, not verified fact**. When the
+>   two disagree, the run logs a warning and checks against the target.
 > - **`pipelines[]`** has one block per pipeline that any release describes and that is either
 >   deployed or in the target, plus one per deployed pipeline that no release describes
->   (`in_any_release: false`, contents not read). `in_target: false` on a deployed pipeline means it
+>   (`in_any_release: false`, contents not read). On those, **`stands_for`** names the pipeline a
+>   template-created code corresponds to (step 6), or is `null`. The bootstrap pipelines, this one
+>   included, are in the manifest like any other. `in_target: false` on a deployed pipeline means it
 >   is **not part of the target release and is left in place**. A pipeline cannot delete another
 >   pipeline in OpenHEXA ([`docs/deployer.md`](../../docs/bootstrap/deployer.md) §7.5). In attribution mode `in_target` is `null`, because
 >   there is no target to be part of.
@@ -203,10 +219,12 @@ Nothing is published to an OpenHEXA dataset.
 >   its hash is evidence. It is `true` when the zip holds exactly the files, byte for byte, that the
 >   named release ships for that pipeline, and `false` otherwise. That includes a zip with an extra
 >   file, or a name that points at a release that does not ship the pipeline. It is `null` when the
->   name is not a release tag with a usable manifest (e.g. `v3` from a plain CLI push).
+>   name is not a release tag with a usable manifest (e.g. `v3` from a plain CLI push or a template
+>   update).
 > - **`current_version_name`** is the raw API value and **`current_version_claims_tag`** is the
->   release tag parsed out of it. They differ because OpenHEXA appends the version number:
->   `v0.1.0-test` reads back as `v0.1.0-test [v1]`.
+>   release tag it claims. They differ because OpenHEXA appends the version number (`v0.1.0` reads
+>   back as `v0.1.0 [v1]`) and because a redeploy's `+redeploy-<date>` suffix is stripped
+>   (`v0.1.0+redeploy-20261113 [v4]` claims `v0.1.0`). A bare `v<N>` claims nothing: `null`.
 > - **`inert_filesystem_copies`**: files on the filesystem inside a pipeline directory. They never
 >   execute and are not classified.
 > - Every field that could be absent is present as `null` rather than omitted.

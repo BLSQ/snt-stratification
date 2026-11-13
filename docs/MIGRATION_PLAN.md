@@ -78,6 +78,7 @@ and documented separately:
 | D-15 | **No CODEOWNERS for now** (was OD-8): ADR 0005 stands. Giulia discusses per-area review with the team later; tracked in the BACKLOG | 2026-11-06 |
 | D-16 | **Merged Register IDs.** R1–R22 keep their IDs (cited in code and notebooks). Rules the three repos share (git guardrail, `[ERROR]`/`[WARNING]`, Python style) appear once, as R17–R19. Webapp-only rules get `W<n>` in `webapps/CLAUDE.md`. The doc-hygiene rules (bootstrap DOC1–5, orchestrator R12) merge into root rules from R23 on. Rules for the bootstrap pipelines go in `pipelines/CLAUDE.md`: no `CLAUDE.md` inside a pipeline folder, because every `.md` there ships in the pipeline zip. Every renumbered rule keeps its old ID in an "old ID" column | 2026-11-06 |
 | D-17 | **Bootstrap pipelines reach a workspace as OpenHEXA templates published on each full release, and the deployer also updates them, never downgrading** (was OD-4). Users never manage a workspace with the `openhexa` CLI (too technical), so templates and the bootstrap pipelines themselves are the only realistic routes (Giulia, 2026-11-12). (1) On a **full** release only (never a pre-release), `release.yaml` pushes `snt_workspace_deployer`, `snt_pipeline_deployer` and `snt_workspace_checker` from the new templates publishing workspace (ADR 0041), which publishes their template versions; a workspace installs them once from the template. So a workspace's deployer is the latest full release, never older than the release it deploys. (2) They are in the release manifest as `kind: bootstrap`. The deployer deploys them **only when the target tag is the latest full release or newer** (an rc); for an older target it skips them with an `[INFO]`, so it never replaces itself with an older, possibly buggy copy. (3) The deployer must read every manifest `schema_version` from 2 on, or refuse an unknown one with a clear `[ERROR]`. (4) ADR 0040's rule ("never the same pipeline from a template and the deployer") is narrowed to `snt` and `support` pipelines, whose R half the deployer installs with them; for bootstrap pipelines both routes deliver the same code from the same tag. Proven by spike S6 ([Phase 3 findings](#phase-3-findings)). Supersedes ADR 0029; ADR 0037 (one release train) stands. Recorded as ADR 0042 (Phase 3, commit 2). Until the publishing workspace exists, maintainers push by hand: there are no users yet, so that is not a gap | 2026-11-12 |
+| D-18 | **Releases are tested as pre-releases of this repo** (was OD-6). A test release is a GitHub release of `BLSQ/snt-stratification` marked pre-release (`v0.x.y`, or `vX.Y.Z-rc.N` before a full release), deployed into a test workspace by typing its tag. `snt_development_sandbox` is no longer used for testing releases, and the bootstrap pipelines' `github_repo` default becomes `BLSQ/snt-stratification`. The deployer and the checker already leave pre-releases out unless one is typed or is the target (D27) | 2026-11-13 |
 
 ## 3. Open decisions (owner: Giulia unless stated)
 
@@ -87,7 +88,6 @@ blocks, and move it to the Decision log.
 
 | ID | Question | Recommendation / current leaning | Blocks |
 |---|---|---|---|
-| OD-6 | Testing releases: keep a sandbox repo, or use pre-releases? | Pre-release tags (`v0.x.y`, marked pre-release) on the new repo + a test workspace. Drop `snt_development_sandbox`. The deployer already ignores pre-releases unless asked (D27) | Phase 4 |
 | OD-9 | Retiring Pull scripts | **S2b passed (2026-11-03):** self-sync works, so Pull scripts can go for both routes. Still open: the S2b sub-questions (§4.3), in particular the per-run escape hatch | Phase 6 |
 | OD-10 | **How to version country-specific notebooks, and analyst-edited ones** (raised 2026-11-03). Today nothing versions `_<CC>` variants, and no route delivers them to their country. Analysts also edit notebooks in their workspace, and updates (templates, deployer, self-sync) must not silently overwrite those edits. We need one system that keeps good practice (versioned, reviewable, no country data in the public repo) and still lets users run what they edited | No leaning yet. Constraints so far: country variants are not in the public repo (D-13); self-sync skips `_<CC>` files and archives what it replaces (S2b). Inputs: OD-9's escape hatch, and possibly a private per-country repo or dataset | None (not scheduled). Must be settled before Pull scripts is retired (OD-9) |
 
@@ -353,6 +353,18 @@ the template name**. If that code already exists, the new pipeline gets a random
   those codes. Not verified.
 - Not separated by this test: whether the code comes from the source pipeline's code or from its
   `@pipeline` id. Both were the same here.
+
+**S3 corrected (2026-11-13, Phase 4 commit 6).** The code is the slug of the source pipeline's
+**display name**, not its code. Read-only pipeline lists: in `snt-development` the source has code
+`snt-map-extracts` and name "B.2 MAP Extracts"; installed from its template, `snt-testing` and
+`snt-development-sandbox` have `b-2-map-extracts`, and `snt-atelier-kinshasa-2026-group-1` has
+`a-1-dhis2-extract`, `a-1-dhis2-extract-ec1130`, … for "A.1 DHIS2 Extract". S3's spike pipeline was
+named `spike_monorepo_layout`, which slugs to its own code, so the test could not tell the two
+apart. The slug rule seen: lower case, dots and spaces to `-`; names with brackets or " - " were not
+observed installed. The display names have been renumbered over time ("A.5 DHIS2 Population
+Transformation" is now "A.6 …"), so older workspaces carry older numbers. Consequences: the bullets
+above that say "code" mean "display name" (Phase 6 item updated), and the `b-2-…` codes are
+explained.
 
 **Pre-publication audit (2026-11-03, first pass).** A text scan of the four local source trees.
 It found no credentials, `.env` files or raw country data files. The UID scan only catches 11-character
@@ -778,21 +790,7 @@ Give Giulia the exact commands, one commit at a time.
 | 9 | `push_templates.yaml` (disabled); R23 fixes in `CLAUDE.md`, `ARCHITECTURE.md`, BACKLOG TOOL-8 | `ci: push_templates.yaml, the new SNT template set on each full release (disabled)` |
 | 9a | This file: Phase 3 checklist closed, Phase 6 items, closing hand-off, Session log; `ARCHITECTURE.md` bootstrap-templates state | `plan: Phase 3 commit 9, hand-off for closing Phase 3` |
 
-**Hand-off for closing Phase 3 (2026-11-13).** Commits 1–9a are on the branch and every checklist
-item below is done; start here.
-
-1. **CI on commit 9a.** Ask Giulia for the result on the open Phase 3 PR. Expected: `checks` and
-   `pytest` green, `pytest` **115 passed, 0 skipped** (locally 99 passed, 16 skipped). A failure is
-   fixed first, in its own commit.
-2. **Required status checks.** Decided 2026-11-13: `checks` and `pytest` must pass before a merge
-   into `main` (the `main` ruleset, "Require status checks to pass"; Giulia sets it). Ask whether
-   it is set.
-3. **PR description.** Update it for commits 1–9a: what each added, the decisions (D-17, and the
-   commit 8 and 9 notes in the checklist below), what ran (CI) and what never ran (`release.yaml`
-   and `push_templates.yaml`: no release exists, and both template jobs are disabled). Merging
-   deploys nothing (root `CLAUDE.md`, rule 2).
-4. **Merge** with a merge commit, as for Phases 1–2.
-5. **Phase 4** in a new session, from its checklist below.
+**Phase 3 closed (2026-11-13):** the PR with commits 1–9a is merged into `main`.
 
 #### Phase 3 findings
 
@@ -876,22 +874,130 @@ Consequences:
       and set `SNT_LIB_REQUIRED=1`.
 
 ### Phase 4 — Bootstrap adapted to the monorepo
-- [ ] Deployer and checker read manifest v2 (pipelines under `pipelines/<name>/`, `kind`, ignore
+
+**Branch:** `phase-4/bootstrap-monorepo`, one PR, merged with a merge commit. OD-6 is settled first
+(D-18) and lands as commit 1. **Agents:** run no `git`/`gh` command yourself (R19). Give Giulia the
+exact commands, one commit at a time. Every code commit leaves `ruff` and `pytest` green on its own;
+the manifest schema, the builder and the three consumers end the PR agreeing (R22). Commit 2 changes
+the two deployers together, because `tests/test_pipeline_deployer.py` fails when their shared
+functions differ.
+
+| # | Content | Commit message |
+|---|---|---|
+| 1 | This file: D-18 (was OD-6), Phase 3 closed, this table, Session log | `plan: settle OD-6 (D-18), Phase 4 commit table` |
+| 2 | Both deployers read manifest v2: refuse a missing or unknown `schema_version` with an `[ERROR]` (v1 manifests included), copy exactly `filesystem_files`, zip each pipeline from `pipelines.<name>.path`; `github_repo` default `BLSQ/snt-stratification`; tests against the v2 example fixture | `bootstrap: deployers read release manifest v2` |
+| 3 | Bootstrap guard (D-17) in both deployers, with tests | `bootstrap: deployers never install bootstrap pipelines from an older release` |
+| 4 | `.snt_release` records `repo` and the tag; the checker reads the old and the new marker shape; `snt_release_marker.md` | `bootstrap: .snt_release records the repository` |
+| 5 | Checker reads manifest v2: zip members keyed under `pipelines.<name>.path`, filesystem files from `filesystem_files`, the scan's root exclusions checked for `shared/r/`, bootstrap pipelines attributed like any other; `github_repo` default; `tests/test_checker_stub.py` on v2 | `bootstrap: checker reads release manifest v2` |
+| 5a | This file: commits 2–5 recorded, hand-off for commit 6, Session log | `plan: Phase 4 commits 2–5, hand-off for commit 6` |
+| 6 | Checker: `claimed_release_tag` reads a template-delivered `v<N>` as no claim; template-created codes named (legacy `b-2-…` through a mapping table) | `bootstrap: checker names template-created pipelines` |
+| 7 | Delete `release_manifest.v1.schema.json`, its two v1 fixtures and the v1 prose in `release_manifest.md`; current-truth fixes for commits 2–6 and D-18 (`docs/bootstrap/`, the three `readme.md`, `pipelines/CLAUDE.md`) | `contracts: drop release manifest v1` |
+| 7a | This file: hand-off for cutting `v0.1.0`, Session log | `plan: Phase 4 commits 2–7, hand-off for v0.1.0` |
+| 7b | Report key `snt_workspace_check_version` → `snt_workspace_checker_version` (BOOT-4), `schema_version` stays 1 | `bootstrap: rename the checker's report version key` |
+| 8 | Cut `v0.1.0` (pre-release, D-18) and verify it in a fresh test workspace; results recorded here | `plan: Phase 4 results, v0.1.0 verified` |
+| 9 | `release` skill, from what cutting `v0.1.0` taught | `skills: release, cutting and promoting a release` |
+
+**Questions to ask at the commit that needs them** (not before):
+- ~~**Commit 2:** slim tarball or GitHub's source tarball?~~ Slim tarball (decided 2026-11-13).
+- ~~**Commit 3:** "latest full release or newer" by `published_at` or by version number?~~
+  `published_at` (decided 2026-11-13).
+- ~~**Commit 6:** legacy codes, the collision suffix, `+redeploy-` names.~~ Decided 2026-11-13:
+  the old-template codes read from the workspaces themselves (see the S3 correction under
+  [Phase 0 findings](#phase-0-findings)) and matched on the title, ignoring the step number; the
+  checker only, the deployers unchanged ([BOOT-5](BACKLOG.md#boot-5)); `+redeploy-` stripped.
+- **Commit 8:** see the hand-off below.
+
+**Hand-off for commit 8 (2026-11-13): cut `v0.1.0` and verify it.** Commits 1–7 are on the branch,
+CI green through commit 5a (ask Giulia for the result on 6, 7 and 7a first; a failure is fixed
+first, in its own commit). Start here, in a new session.
+
+1. **Read first:** this hand-off, the commit 8 row above, the `v0.1.0` item of the checklist below,
+   D-18 in the [Decision log](#2-decision-log-agreed), [§8 Verification](#8-verification-end-to-end-per-milestone)
+   "Phase 4 rc", [`deployer.md`](bootstrap/deployer.md) (§6.7 test plan, and "Single-pipeline
+   deployer"), [`checker.md`](bootstrap/checker.md) §4, the header of
+   [`release.yaml`](../.github/workflows/release.yaml), and
+   [`release_manifest.md`](../contracts/release_manifest.md) "Release assets". R5: push by hand only
+   into a test workspace, never into `snt-development`.
+2. **Ask Giulia, one question at a time, before doing anything** (plain words, file links, a
+   recommendation each):
+   1. ~~**BOOT-4: rename `snt_workspace_check_version` → `snt_workspace_checker_version`
+      first?**~~ Yes (decided 2026-11-13): commit 7b, `schema_version` stays 1, BOOT-4 deleted.
+   2. **Tag the branch, or merge first?** The table above puts commits 8 and 9 in this PR, so
+      `v0.1.0` would be tagged on the branch head; the PR is merged with a merge commit, so that
+      commit reaches `main`. §6 says "release from `main` only when `main` is green". Recommended:
+      merge commits 1–7a(b) first, tag `v0.1.0` on `main`, and put commits 8–9 in a short follow-up
+      PR. Either way, check that `release.yaml` runs from the tagged commit (believed for `release`
+      events; not verified) and that its `assets` job attaches the manifest, the slim tarball and
+      the webapp zips.
+   3. **The test workspace, the country config to copy, and the old-repo workspace to compare
+      against.** A fresh workspace has no deployer: push `pipelines/snt_workspace_deployer` by hand
+      from a checkout of the tag, and create the `oh` CUSTOM connection
+      ([`openhexa_deployment.md`](bootstrap/openhexa_deployment.md) §7.3b). NER cannot run from
+      this repo (its pyramid notebook is a country notebook, D-13), so choose another country.
+3. **Verification, results recorded here in commit 8** (the checklist item and §8): deployer dry
+   run, then for real (every pipeline created or registered under `v0.1.0`, the bootstrap ones
+   included because no full release exists, `.snt_release` naming tag and repo); the same tag again
+   ("already up to date, skipped" everywhere); the checker with `release_tag` empty (verification
+   mode from the marker: all `match`) and with `none` (attribution: best fit `v0.1.0`); the
+   single-pipeline deployer as a dry run; then the SNT chain for one country, compared with the
+   old-repo workspace (same filenames, columns and row counts). Optional, from commit 6: the
+   checker in `snt-testing` with `release_tag` = `none`, expecting `stands_for` on
+   `b-2-map-extracts`, `b-3-access-to-health-care` and `c-1-dhs-indicators`; a suffixed copy
+   (`snt-<name>-<6 hex>`) can only be named once `v0.1.0` exists.
+4. **Known and left for later** (not commit 8 unless Giulia asks): the deployer `readme.md`'s "R5
+   interaction" note still links the old repo's R5, which differs from this repo's; the root
+   `README.md` manifest section still describes the old layout; ADR 0040 and 0041 say the source
+   pipelines need the *code* `snt-<name>` (the S3 correction makes it the display name, see
+   Phase 6).
+5. **After commit 8:** commit 9, the `release` skill, from what cutting `v0.1.0` taught.
+
+**Checklist**
+- [x] Deployer and checker read manifest v2 (pipelines under `pipelines/<name>/`, `kind`, ignore
       `webapps` for now; the checker's root exclusions are updated for `shared/r/`). The deployer
       copies exactly `filesystem_files`. Then delete `contracts/release_manifest.v1.schema.json`, its
       two v1 test fixtures, and the v1 prose in `release_manifest.md`.
-- [ ] `github_repo` default = the new repo (no longer `snt_development_sandbox`).
-- [ ] `.snt_release` marker records `repo` + tag (closes roadmap §7.4 for this case).
-- [ ] Checker: name pipelines with legacy template codes (`b-2-map-extracts`, …) through a mapping
+      Commit 2 (deployers), decided 2026-11-13: they download the release's **slim tarball** asset,
+      not GitHub's source tarball; a release without it stops the run with an `[ERROR]`. Commit 5
+      (checker): a v1 or unknown manifest makes that release unusable, with a `[WARNING]`; an
+      **inert copy** is now a file found on the filesystem at a path releases ship only in a zip
+      (`pipeline.py`, …), since notebooks under `pipelines/<name>/` ship by both routes; the
+      attribution score's `shipped` counts **copies** (route + path), so a notebook shipped both
+      ways counts twice and `present` can't exceed it (same numbers as before for one-route
+      paths; `schema_version` stays 1). Root exclusions checked: none names `code/` or `shared/`,
+      so nothing changed; an old-layout `code/` folder in a workspace reads `untracked`. Commit 7:
+      the v1 schema, its two fixtures and the v1 prose deleted (`release_manifest.md` §2.1 kept,
+      rewritten for v2, because ADR 0033 and the bootstrap docs cite it); docs brought in line
+      with commits 2–6 and D-18.
+- [x] `github_repo` default = the new repo (no longer `snt_development_sandbox`). Commits 2 and 5.
+- [x] `.snt_release` marker records `repo` + tag (closes roadmap §7.4 for this case). Commit 4,
+      decided 2026-11-13: the tag keeps its key `snt_release`; the checker uses a marker as its
+      target only when it names the repository being checked, or none (an old marker); one naming
+      another repository is reported in `declared_release` (which gains `repo`) with a
+      `[WARNING]`, and not used.
+- [x] Checker: name pipelines with legacy template codes (`b-2-map-extracts`, …) through a mapping
       table, instead of reporting them as plain `not_in_any_release`.
-- [ ] **Bootstrap guard (D-17).** `snt_workspace_deployer` deploys `kind: bootstrap` pipelines only
+      Commit 6, decided 2026-11-13: a new report key `pipelines[].stands_for` (added key,
+      `schema_version` stays 1), set on a pipeline no release describes when its code is an
+      old-template code or a release code with the `-<6 hex>` collision suffix. Old-template codes
+      are matched on the title after `<letter>-<number>-`, so a renumbered step still matches;
+      the 21 titles (`LEGACY_TEMPLATE_TITLES`, including the retired Assemble Results) come from
+      `snt-development`'s pipeline list. The deployers still look up by exact code
+      ([BOOT-5](BACKLOG.md#boot-5)).
+- [x] **Bootstrap guard (D-17).** `snt_workspace_deployer` deploys `kind: bootstrap` pipelines only
       when the target tag is the latest full release or newer; for an older target it skips them with
       an `[INFO]`. `snt_pipeline_deployer` refuses, with an `[ERROR]`, to deploy a bootstrap pipeline
       from an older release. Both read every manifest `schema_version` from 2 on and refuse an unknown
       one with an `[ERROR]`. Keep the two copies identical (`tests/test_pipeline_deployer.py`).
-- [ ] Checker: bootstrap pipelines are attributed through the manifest like any other (it stops
+      Commits 2 (version check) and 3 (guard), decided 2026-11-13: "newer" = published at the same
+      time as or after GitHub's latest full release (`published_at`, the checker's order); with no
+      full release yet (until `v1.0.0`), every release counts as the newest.
+- [x] Checker: bootstrap pipelines are attributed through the manifest like any other (it stops
       reporting itself as `in_any_release: false`); `claimed_release_tag` reads a template-delivered
       version name `v<N>` as no claim (S6), and still strips `[vN]` and `+redeploy-…`.
+      Attribution: done in commit 5 (they are in the v2 manifest, so nothing special was needed;
+      a stub test proves the checker reports itself `in_any_release: true`). `claimed_release_tag`:
+      commit 6 strips `[vN]` and `+redeploy-<date>` and returns `null` for a bare `v<N>`
+      (BOOT-1 closed).
 - [ ] **Release `v0.1.0` (pre-release) = pure move, no behaviour change.** Bootstrap a fresh test workspace,
       run the SNT chain for one country (copy a config), compare outputs with an old-repo workspace,
       and confirm the checker reports `match`. This isolates "did the move break anything" from the
@@ -933,6 +1039,12 @@ proceed in parallel against the new schema.
 - [ ] Create a dedicated publishing workspace for the new templates (it does **not** replace
       `snt-development`, which keeps publishing the old templates from the old repo, D-4).
 - [ ] Name the templates according to the S3 result, so template-created codes = `snt-<name>`.
+      Per the S3 correction ([Phase 0 findings](#phase-0-findings)), the code comes from the source
+      pipeline's **display name**: name each source pipeline after its `@pipeline` id
+      (`snt_map_extracts` slugs to `snt-map-extracts`), as the pipelines the deployer creates
+      already are. ADR 0040 ("source pipelines carry the code `snt-<name>`") and ADR 0041 say
+      "code"; their decisions stand, the mechanism differs. Decide then whether that needs a short
+      ADR of its own (R24: the two are not edited).
 - [ ] Enable `push_templates.yaml` (written in Phase 3 commit 9: full releases only, every pipeline
       on each, decided 2026-11-13).
 - [ ] Publish each pipeline as a template by hand once in the publishing workspace, and each
@@ -1050,6 +1162,9 @@ proceed in parallel against the new schema.
 | 2026-11-13 | Phase 3 commit 7: `ci.yaml` (jobs `checks` and `pytest`), `tools/check_links.py` (ported, now over git's file list so `.claude/` is checked), `tools/check_tracked_files.py` (R1/R2); TOOL-2, 5, 7 closed, TOOL-6 narrowed (the orchestrator contracts are prose, not JSON Schema); R1, R2, R18 now `enforced`. Commits 7a–7b: `contracts/snt_config/README.md` aligned with D-11, the old `snt_config_json/` name replaced. CI has not run yet: it runs once the Phase 3 PR is open | Commit 7c (this log + hand-off), then commit 8 `release.yaml` in a new session: step 0 is the first CI result, then four questions — see the [Phase 3 hand-off](#phase-3--tooling-and-ci) |
 | 2026-11-13 | Phase 3 commit 8. First CI run on the Phase 3 PR green (`pytest` 98 passed, 0 skipped). Decided: `version.json` = tag, commit, build time; slim tarball `snt-stratification-<tag>.tar.gz` with one top folder; `gh release upload`; a manual-run trigger for testing before `v0.1.0`. `release.yaml` written (assets job; bootstrap-templates job disabled) with `tools/build_release_assets.py` and 17 tests; R23 fixes in `contracts/`, `CLAUDE.md`, `ARCHITECTURE.md`, `CONVENTIONS.md` (approved beyond the plan's scope) | Commit 8a (this log + hand-off), then commit 9 `push_templates.yaml` in a new session: step 0 is the CI result on commit 8, then three questions — see the [Phase 3 hand-off](#phase-3--tooling-and-ci) |
 | 2026-11-13 | Phase 3 commit 9. CI green on every commit through 8a; `checks` and `pytest` to become required in the `main` ruleset. Decided for `push_templates.yaml`: full releases only, its own file, every pipeline on each release. Written and disabled, with R23 fixes (`CLAUDE.md`, `ARCHITECTURE.md`; TOOL-8 no longer reaches OpenHEXA from this repo). New Phase 6 item: publish each pipeline as a template by hand once. Phase 3 checklist complete | Commit 9a (this log + hand-off), then close Phase 3: CI on 9a, PR description, merge — see the [Phase 3 hand-off](#phase-3--tooling-and-ci) |
+| 2026-11-13 | Phase 3 merged. Phase 4 opened on `phase-4/bootstrap-monorepo`. **OD-6 settled as D-18**: releases are tested as pre-releases of this repo, not in `snt_development_sandbox`. Commit table 1–9 written, with the questions each commit must ask first. Commit 1 written | Commit 1, then commit 2 (deployers read manifest v2): ask the slim-tarball question first — see the [Phase 4 table](#phase-4--bootstrap-adapted-to-the-monorepo) |
+| 2026-11-13 | Phase 4 commits 2–5, CI green through commit 4. Deployers read manifest v2 from the **slim tarball**; bootstrap guard by **`published_at`** (no full release yet = every release newest); `.snt_release` records `repo`, and a marker from another repository is not used as the checker's target; checker reads v2 (inert copies = zip-only files on the filesystem, `shipped` counts copies). `pytest` 119 passed, 16 skipped locally | Commit 5a (this log + hand-off), then commit 6 in a new session: three questions first — see the [commit 6 hand-off](#phase-4--bootstrap-adapted-to-the-monorepo) |
+| 2026-11-13 | Phase 4 commits 6–7, CI green through 5a. Checker: `stands_for` names template-created pipelines (old `snt-development` codes matched on the title, step number ignored; the `-<6 hex>` suffix), `+redeploy-` stripped, a bare `v<N>` claims nothing; BOOT-1 closed, BOOT-5 opened (deployers keep exact-code lookup). **S3 corrected:** a template-created code is the slug of the source pipeline's display name, not its code (read from `snt-development`, `snt-testing`, the sandbox and a workshop workspace). Manifest v1 deleted; bootstrap docs, the three readmes and `pipelines/CLAUDE.md` brought in line (D-18 included). `pytest` 118 passed, 16 skipped locally | Commit 7a (this log + hand-off), then commit 8 in a new session: CI on 6–7a, then three questions (BOOT-4, tag the branch or merge first, the test workspace) — see the [commit 8 hand-off](#phase-4--bootstrap-adapted-to-the-monorepo) |
 
 ---
 

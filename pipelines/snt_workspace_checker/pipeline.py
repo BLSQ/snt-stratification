@@ -18,15 +18,20 @@ Every release's manifest is fetched on each run. The release list is ONE GitHub 
 not from api.github.com - measured 2026-09-29 not to be charged per download, so a run costs
 about one API request whatever the release count (docs/checker.md section 7.2, closed).
 
-Two sources are hashed, and each tracked path is routed to exactly ONE of them:
+Two sources are hashed, and the release manifest (v2, contracts/release_manifest.schema.json)
+says which copies each one is expected to hold:
 
-    filesystem        files under workspace.files_path, at their repository-relative paths
-    pipeline_version  the files inside each pipeline's CURRENT registered version zip
+    filesystem        files under workspace.files_path, at their repository paths: the
+                      manifest's `filesystem_files` (notebooks, R helpers, shared/r/)
+    pipeline_version  the files inside each pipeline's CURRENT registered version zip: the
+                      manifest's `pipelines.<name>.zip_files`, under `pipelines.<name>.path`
 
-Anything under a pipeline directory is read from the zip only. A copy of such a file on the
-workspace filesystem is inert - OpenHEXA runs pipelines from the registered version, never
-from the bucket - so it is listed in `inert_filesystem_copies` and not classified: treating
-it as evidence would report a file as fine on the strength of bytes that never execute.
+A notebook under pipelines/<name>/ is shipped by both routes, so it has two copies, each
+checked on its own. A file that releases ship only inside a zip (pipeline.py, requirements.txt,
+...) and that turns up on the workspace filesystem is inert - OpenHEXA runs pipelines from the
+registered version, never from the bucket - so it is listed in `inert_filesystem_copies` and not
+classified: treating it as evidence would report a file as fine on the strength of bytes that
+never execute.
 
 Credentials: none. A run's own HEXA_TOKEN reads `currentVersion.zipfile` in full, established
 by the snt-token-probe run of 2026-09-22 (docs/HISTORY.md section 2.4). The checker can
@@ -50,6 +55,10 @@ from openhexa.sdk import current_run, parameter, pipeline, workspace
 # Bumped only when the report shape changes in a way a consumer must notice. v1 was frozen at
 # phase 4; the contract is docs/contracts/status_report.schema.json.
 SCHEMA_VERSION = 1
+
+# The release manifest shapes this checker can read (contracts/release_manifest.schema.json).
+# A manifest without `schema_version` is v1, from the old snt_development repository.
+SUPPORTED_MANIFEST_VERSIONS = (2,)
 
 REPORT_DIR_NAME = "snt_status"
 LATEST_REPORT_NAME = "status_latest.json"
@@ -86,9 +95,53 @@ SCAN_EXCLUDES_DOT_DIRECTORIES = True
 # number, so a version deployed as "v0.1.0-test" reads back as "v0.1.0-test [v1]". Observed
 # in the first real run, 2026-09-22, where an exact comparison silently disabled the whole
 # name-versus-content check (HISTORY.md section 1). The tag is recovered by stripping the
-# suffix; a version whose name never carried a tag (a plain CLI push reads back as "v3")
-# simply fails to match any tag, which is the right answer.
+# suffix.
 VERSION_NUMBER_SUFFIX = re.compile(r"\s*\[v\d+\]\s*$")
+# A version name that is only "v<number>" claims no release: a plain CLI push reads back as
+# "v3", and a version delivered by a template update is named "v<pipeline version number>"
+# (spike S6, 2026-11-12). Release tags are "v<major>.<minor>.<patch>[-...]", never this shape.
+NO_CLAIM_VERSION_NAME = re.compile(r"^v\d+$")
+# The deployers' fallback name for a redeploy under a tag a version already holds:
+# "<tag>+redeploy-<YYYYMMDD>", or "...T<HHMMSS>Z" for a second one the same day
+# (docs/bootstrap/deployer.md). It still claims <tag>.
+REDEPLOY_SUFFIX = re.compile(r"\+redeploy-\d{8}(?:T\d{6}Z)?$")
+
+# OpenHEXA gives a pipeline created from a template the code of its display name made into a
+# slug, plus "-<6 hex>" when that code is already taken. Observed 2026-11-13: "B.2 MAP Extracts"
+# installed as `b-2-map-extracts`, "A.1 DHIS2 Extract" as `a-1-dhis2-extract-ec1130`.
+COLLISION_SUFFIX = re.compile(r"-[0-9a-f]{6}$")
+# The old templates, published from the `snt-development` workspace (old repository), carry
+# display names "<letter>.<number> <title>". The step number has been renumbered over time
+# ("A.5 DHIS2 Population Transformation" became "A.6 ..."), so a code is matched on its title
+# alone: `<letter>-<number>-<title slug>`, optionally with the collision suffix. Titles as listed
+# in `snt-development` on 2026-11-13; only the slugs of A.1, B.2, B.3 and C.1 were observed in an
+# installed workspace, the others assume the same slug rule (lower case, every run of other
+# characters becomes one "-").
+LEGACY_TEMPLATE_CODE = re.compile(r"^[a-z]-\d+-(?P<title>[a-z0-9-]+)$")
+LEGACY_TEMPLATE_TITLES = {
+    "DHIS2 Extract": "snt_dhis2_extract",
+    "DHIS2 Formatting": "snt_dhis2_formatting",
+    "DHIS2 Outlier Detection and Imputation (IQR)": "snt_dhis2_outliers_imputation_iqr",
+    "DHIS2 Outlier Detection and Imputation (MAGIC GLASSES)": "snt_dhis2_outliers_imputation_magic_glasses",
+    "DHIS2 Outlier Detection and Imputation (MEAN)": "snt_dhis2_outliers_imputation_mean",
+    "DHIS2 Outlier Detection and Imputation (MEDIAN)": "snt_dhis2_outliers_imputation_median",
+    "DHIS2 Outlier Detection and Imputation (PATH)": "snt_dhis2_outliers_imputation_path",
+    "DHIS2 Reporting Rate (Data element)": "snt_dhis2_reporting_rate_dataelement",
+    "DHIS2 Reporting Rate (Dataset)": "snt_dhis2_reporting_rate_dataset",
+    "User population": "snt_user_population",
+    "DHIS2 Population Transformation": "snt_dhis2_population_transformation",
+    "DHIS2 Incidence": "snt_dhis2_incidence",
+    "DHIS2 Seasonality - Cases": "snt_seasonality_cases",
+    "DHIS2 Quality Of Care": "snt_dhis2_quality_of_care",
+    "WorldPop Extract": "snt_worldpop_extract",
+    "MAP Extracts": "snt_map_extracts",
+    "Access to health care": "snt_healthcare_access",
+    "DHS Indicators": "snt_dhs_indicators",
+    "ERA5 Climate Data": "snt_era5_climate_data",
+    "ERA5 Seasonality - Rainfall": "snt_seasonality_rainfall",
+    # Retired and not in this repository (ADR 0006), but still installed in older workspaces.
+    "Assemble Results": "snt_assemble_results",
+}
 
 # Human-readable display text, never parsed by a consumer (docs/checker.md section 5.5).
 REMEDIATION = {
@@ -164,6 +217,16 @@ PIPELINE_REMEDIATION = {
     "not_in_any_release": (
         "No release describes this pipeline. Reported for completeness only; its contents are not read."
     ),
+    "old_template": (
+        "Created from an old template of the snt-development workspace (the old repository), so no "
+        "release of this repository describes it; `stands_for` names the pipeline it corresponds to. "
+        "Reported for completeness only; its contents are not read."
+    ),
+    "template_copy": (
+        "Created from a template while the pipeline's own code was already taken, so OpenHEXA added a "
+        "6-character suffix; `stands_for` names the pipeline it copies. Only the pipeline with the "
+        "plain code is checked; this one's contents are not read."
+    ),
 }
 
 
@@ -171,16 +234,16 @@ PIPELINE_REMEDIATION = {
 @parameter(
     "github_repo",
     name="GitHub repository",
-    help="owner/repo holding the releases to check against (e.g. BLSQ/snt_development_sandbox)",
+    help="owner/repo holding the releases to check against (e.g. BLSQ/snt-stratification)",
     type=str,
-    default="BLSQ/snt_development_sandbox",
+    default="BLSQ/snt-stratification",
     required=True,
 )
 @parameter(
     "release_tag",
     name="Target release tag",
     help=(
-        "Release to check this workspace against (e.g. v0.2.1-test). Leave empty to use the tag "
+        "Release to check this workspace against (e.g. v0.1.0). Leave empty to use the tag "
         "recorded in .snt_release by the last snt_workspace_deployer run; with neither, the "
         "workspace is attributed to releases without a target. Enter 'none' to force that "
         "attribution mode even when .snt_release exists."
@@ -197,16 +260,17 @@ def snt_workspace_checker(github_repo: str, release_tag: str | None) -> None:
     """
     snt_root_path = Path(workspace.files_path)
 
-    declared_tag = read_release_marker(snt_root_path)
-    target_tag, resolved_from = resolve_target(release_tag, declared_tag)
+    declared_tag, declared_repo = read_release_marker(snt_root_path)
+    marker_tag = marker_target(declared_tag, declared_repo, github_repo)
+    target_tag, resolved_from = resolve_target(release_tag, marker_tag)
     if target_tag is None:
         current_run.log_info(
             f"Attribution mode: assessing workspace '{workspace.slug}' against every release of "
             f"{github_repo}, with no target ({describe_no_target(resolved_from)})."
         )
-        if declared_tag:
+        if marker_tag:
             current_run.log_info(
-                f"The workspace declares release '{declared_tag}'; it is not used as a target in "
+                f"The workspace declares release '{marker_tag}'; it is not used as a target in "
                 "this mode, and the coverage summary shows how far the files bear it out."
             )
     else:
@@ -214,9 +278,9 @@ def snt_workspace_checker(github_repo: str, release_tag: str | None) -> None:
             f"Verification mode: checking workspace '{workspace.slug}' against "
             f"{github_repo}@{target_tag} (target resolved from the {resolved_from})."
         )
-        if declared_tag and declared_tag != target_tag:
+        if marker_tag and marker_tag != target_tag:
             current_run.log_warning(
-                f"The workspace declares release '{declared_tag}' but is being checked against "
+                f"[WARNING] The workspace declares release '{marker_tag}' but is being checked against "
                 f"'{target_tag}'. The declaration records intent, not verified fact."
             )
 
@@ -252,6 +316,7 @@ def snt_workspace_checker(github_repo: str, release_tag: str | None) -> None:
         releases_considered=releases_considered,
         resolved_from=resolved_from,
         declared_tag=declared_tag,
+        declared_repo=declared_repo,
     )
     report_path = write_report(snt_root_path, report)
 
@@ -296,36 +361,71 @@ def describe_no_target(resolved_from: str) -> str:
     """
     if resolved_from == "parameter":
         return f"the 'Target release tag' parameter is '{NO_TARGET_TAG}'"
-    return f"the 'Target release tag' parameter is empty and there is no {RELEASE_MARKER_NAME} marker"
+    return (
+        f"the 'Target release tag' parameter is empty and no {RELEASE_MARKER_NAME} marker names a "
+        "release of this repository"
+    )
 
 
-def read_release_marker(snt_root_path: Path) -> str | None:
-    """Read the release tag the last snt_workspace_deployer run claims to have deployed.
+def read_release_marker(snt_root_path: Path) -> tuple[str | None, str | None]:
+    """Read the release the last snt_workspace_deployer run claims to have deployed.
 
     A workspace with no marker is the normal starting state for every country workspace
-    today, so its absence is reported, never treated as an error.
+    today, so its absence is reported, never treated as an error. Two shapes are read
+    (contracts/snt_release_marker.md): `{"snt_release": tag, "repo": owner/name}`, and the
+    older `{"snt_release": tag}`, which names no repository.
 
     Returns
     -------
-    str | None
-        The declared release tag, or None if there is no readable marker.
+    tuple[str | None, str | None]
+        (the declared release tag, the repository the marker names), each None if absent or
+        if there is no readable marker.
     """
     marker_path = snt_root_path / RELEASE_MARKER_NAME
     if not marker_path.exists():
         current_run.log_info(f"No {RELEASE_MARKER_NAME} marker - this workspace declares no release.")
-        return None
+        return None, None
 
     try:
-        declared = json.loads(marker_path.read_text())["snt_release"]
-    except (OSError, ValueError, KeyError) as exception:
+        marker = json.loads(marker_path.read_text())
+        declared = marker["snt_release"]
+        repo = marker.get("repo")
+    except (OSError, ValueError, KeyError, TypeError, AttributeError) as exception:
         current_run.log_warning(
             f"[WARNING] {RELEASE_MARKER_NAME} exists but could not be read: {exception}. "
             "Treating the workspace as declaring no release."
         )
-        return None
+        return None, None
 
-    current_run.log_info(f"Workspace declares release '{declared}' in {RELEASE_MARKER_NAME}.")
-    return declared
+    where = f"{repo}@{declared}" if repo else f"'{declared}' (no repository recorded)"
+    current_run.log_info(f"Workspace declares release {where} in {RELEASE_MARKER_NAME}.")
+    return declared, repo
+
+
+def marker_target(declared_tag: str | None, declared_repo: str | None, github_repo: str) -> str | None:
+    """Say which tag the marker offers as this run's target: its own, unless it names another repository.
+
+    A tag alone is ambiguous across repositories, so a marker that names a repository other than
+    the one being checked offers no target: checking its tag here would compare the workspace with
+    an unrelated release that merely shares the name. Repository names compare without case, as
+    GitHub's do. A marker that names no repository (written before the field existed) is taken to
+    mean the repository being checked, as it always was.
+
+    Returns
+    -------
+    str | None
+        The tag to use as the marker's target, or None.
+    """
+    if declared_tag is None or declared_repo is None:
+        return declared_tag
+    if declared_repo.lower() == github_repo.lower():
+        return declared_tag
+    current_run.log_warning(
+        f"[WARNING] {RELEASE_MARKER_NAME} declares release {declared_repo}@{declared_tag}, not a release "
+        f"of {github_repo}, so it is not used as the target. To check against it, set the 'GitHub "
+        f"repository' parameter to {declared_repo}."
+    )
+    return None
 
 
 def get_run_token() -> str:
@@ -479,10 +579,8 @@ def load_manifests(releases: list[dict]) -> tuple[dict, list[dict], list[dict]]:
     only that release shipped would otherwise be mislabelled `untracked` or `unknown_content`
     without anything saying so (docs/checker.md sections 5.4 and 5.5).
 
-    A manifest with no `pipelines` block predates the phase-0 generator. snt_workspace_deployer
-    carries a fallback for that; this checker deliberately does not
-    (docs/contracts/release_manifest.md section 2.1), so such a manifest is treated as unusable
-    rather than half-read.
+    A manifest whose shape this checker cannot read (`manifest_problem()`) is treated as
+    unusable rather than half-read.
 
     Returns
     -------
@@ -504,9 +602,10 @@ def load_manifests(releases: list[dict]) -> tuple[dict, list[dict], list[dict]]:
         else:
             if manifest is None:
                 problem = f"it has no {MANIFEST_ASSET_NAME} asset"
-            elif not manifest.get("pipelines"):
-                manifest = None
-                problem = "its manifest has no 'pipelines' block (it predates the phase-0 generator)"
+            else:
+                problem = manifest_problem(manifest)
+                if problem:
+                    manifest = None
 
         if manifest is not None:
             manifests[tag] = manifest
@@ -534,6 +633,29 @@ def load_manifests(releases: list[dict]) -> tuple[dict, list[dict], list[dict]]:
         "manifest downloads are outside the GitHub API budget."
     )
     return manifests, considered, errors
+
+
+def manifest_problem(manifest: object) -> str | None:
+    """Say why a downloaded manifest cannot be read by this checker, if it cannot.
+
+    Only the shapes in SUPPORTED_MANIFEST_VERSIONS are read. A manifest with no
+    `schema_version` is v1, whose paths follow the old snt_development layout; a newer one may
+    change what a key means. Either is refused rather than half-read (ADR 0042).
+
+    Returns
+    -------
+    str | None
+        A clause for the warning, or None when the manifest is readable.
+    """
+    if not isinstance(manifest, dict):
+        return "its manifest is not a JSON object"
+    version = manifest.get("schema_version")
+    if version is None:
+        return "its manifest has no schema_version (a v1 manifest, from the old snt_development layout)"
+    if version not in SUPPORTED_MANIFEST_VERSIONS:
+        readable = ", ".join(str(v) for v in SUPPORTED_MANIFEST_VERSIONS)
+        return f"its manifest has schema_version {version!r}, and this checker reads only {readable}"
+    return None
 
 
 def github_rate_limit_remaining() -> str | None:
@@ -592,11 +714,16 @@ class ReleaseIndex:
         Every release's tag in `published_at` order, including releases with no usable
         manifest - which is what lets such a release break an attribution span.
     paths : dict
-        {repository path: {tag: sha256}} across every usable manifest.
+        {repository path: {tag: sha256}} across every usable manifest, both routes together.
     pipeline_codes : dict
-        {pipeline directory: OpenHEXA code} across every usable manifest.
+        {pipeline name: OpenHEXA code} across every usable manifest.
     manifests : dict
         {tag: manifest}.
+    pipeline_paths : dict
+        {pipeline name: its folder, the manifest's `path` (pipelines/<name>)}.
+    filesystem_paths : set
+        Every path any usable manifest lists in `filesystem_files`. A known path outside it is
+        shipped only inside a pipeline zip.
     """
 
     target_tag: str | None
@@ -606,6 +733,8 @@ class ReleaseIndex:
     paths: dict
     pipeline_codes: dict
     manifests: dict
+    pipeline_paths: dict
+    filesystem_paths: set
 
     @property
     def target_files(self) -> dict:
@@ -614,9 +743,20 @@ class ReleaseIndex:
         Returns
         -------
         dict
-            The target's tracked files.
+            The target's tracked files, both routes together.
         """
         return self.manifests[self.target_tag]["files"] if self.target_tag else {}
+
+    @property
+    def target_filesystem_files(self) -> list:
+        """The target manifest's `filesystem_files`; empty with no target.
+
+        Returns
+        -------
+        list
+            The repository paths the target copies into the workspace filesystem.
+        """
+        return self.manifests[self.target_tag]["filesystem_files"] if self.target_tag else []
 
     @property
     def target_pipelines(self) -> dict:
@@ -625,9 +765,19 @@ class ReleaseIndex:
         Returns
         -------
         dict
-            {pipeline directory: {"code": ..., "zip_files": [...]}}.
+            {pipeline name: {"path": ..., "kind": ..., "code": ..., "zip_files": [...]}}.
         """
         return self.manifests[self.target_tag]["pipelines"] if self.target_tag else {}
+
+    def zip_path(self, name: str, member: str) -> str:
+        """Turn a member of a pipeline's zip into its repository path, the key into `paths`.
+
+        Returns
+        -------
+        str
+            `<pipeline path>/<member>`, e.g. pipelines/snt_map_extracts/pipeline.py.
+        """
+        return f"{self.pipeline_paths[name]}/{member}"
 
     def releases_holding(self, rel_path: str, observed: str | None) -> list[str]:
         """List the releases whose manifest holds exactly these bytes at this path.
@@ -658,11 +808,15 @@ def build_index(manifests: dict, releases: list[dict], target_tag: str | None) -
 
     paths: dict[str, dict[str, str]] = {}
     pipeline_codes: dict[str, str] = {}
+    pipeline_paths: dict[str, str] = {}
+    filesystem_paths: set[str] = set()
     for tag in ordered_tags:
         for rel_path, checksum in manifests[tag]["files"].items():
             paths.setdefault(rel_path, {})[tag] = checksum
-        for dir_name, spec in manifests[tag]["pipelines"].items():
-            pipeline_codes[dir_name] = spec["code"]
+        for name, spec in manifests[tag]["pipelines"].items():
+            pipeline_codes[name] = spec["code"]
+            pipeline_paths[name] = spec["path"]
+        filesystem_paths.update(manifests[tag]["filesystem_files"])
 
     return ReleaseIndex(
         target_tag=target_tag,
@@ -672,6 +826,8 @@ def build_index(manifests: dict, releases: list[dict], target_tag: str | None) -
         paths=paths,
         pipeline_codes=pipeline_codes,
         manifests=manifests,
+        pipeline_paths=pipeline_paths,
+        filesystem_paths=filesystem_paths,
     )
 
 
@@ -909,27 +1065,27 @@ def walk_workspace(snt_root_path: Path) -> list[str]:
 
 
 def check_filesystem(snt_root_path: Path, index: ReleaseIndex) -> tuple[list[dict], list[str]]:
-    """Walk the workspace filesystem and classify every file outside a pipeline directory.
+    """Walk the workspace filesystem and classify every file found there.
 
     Files at paths no release ever shipped are reported `untracked` without being read -
-    the content question is never asked for them. Files inside a pipeline directory never
-    execute, so they are returned separately as inert copies and not classified. Tracked
-    target paths the walk did not see are then checked directly, so a file the exclusions
-    happened to hide is still found rather than reported `missing`. With no target there are
-    no target paths, and absence means nothing, so that second pass is skipped.
+    the content question is never asked for them. A file at a path releases ship only inside
+    a pipeline zip (pipeline.py, requirements.txt, ...) never executes from the filesystem, so
+    it is returned separately as an inert copy and not classified. Target filesystem paths the
+    walk did not see are then checked directly, so a file the exclusions happened to hide is
+    still found rather than reported `missing`. With no target there are no target paths, and
+    absence means nothing, so that second pass is skipped.
 
     Returns
     -------
     tuple[list[dict], list[str]]
-        (report entries, inert copies found inside pipeline directories).
+        (report entries, inert copies of zip-only files).
     """
-    pipeline_dirs = set(index.pipeline_codes)
     entries: list[dict] = []
     inert_copies: list[str] = []
     seen: set[str] = set()
 
     for rel_path in walk_workspace(snt_root_path):
-        if PurePosixPath(rel_path).parts[0] in pipeline_dirs:
+        if rel_path in index.paths and rel_path not in index.filesystem_paths:
             inert_copies.append(rel_path)
             continue
         seen.add(rel_path)
@@ -938,8 +1094,8 @@ def check_filesystem(snt_root_path: Path, index: ReleaseIndex) -> tuple[list[dic
     if index.target_tag is None:
         return entries, inert_copies
 
-    for rel_path in sorted(index.target_files):
-        if rel_path in seen or PurePosixPath(rel_path).parts[0] in pipeline_dirs:
+    for rel_path in sorted(index.target_filesystem_files):
+        if rel_path in seen:
             continue
         file_path = snt_root_path / rel_path
         if file_path.is_file():
@@ -1011,10 +1167,11 @@ def check_pipeline_versions(index: ReleaseIndex, token: str) -> tuple[list[dict]
             current_run.log_error(f"[ERROR] {message}")
             errors.append({"scope": f"pipeline_version:{code}", "message": message})
             for member in sorted(expected_members):
-                target_sha = index.target_files.get(f"{dir_name}/{member}")
+                rel_path = index.zip_path(dir_name, member)
+                target_sha = index.target_files.get(rel_path)
                 entries.append(
                     make_entry(
-                        f"{dir_name}/{member}",
+                        rel_path,
                         "pipeline_version",
                         dir_name,
                         None,
@@ -1057,7 +1214,8 @@ def check_pipeline_versions(index: ReleaseIndex, token: str) -> tuple[list[dict]
             )
         )
 
-    unknown, listing_error = list_unknown_pipelines(token, set(index.pipeline_codes.values()), has_target)
+    known_codes = {code: dir_name for dir_name, code in index.pipeline_codes.items()}
+    unknown, listing_error = list_unknown_pipelines(token, known_codes, has_target)
     if listing_error:
         errors.append(listing_error)
     pipeline_reports.extend(unknown)
@@ -1079,7 +1237,7 @@ def classify_zip_member(dir_name: str, member: str, observed: str | None, index:
     dict
         One report entry, sourced from `pipeline_version`.
     """
-    rel_path = f"{dir_name}/{member}"
+    rel_path = index.zip_path(dir_name, member)
     result = classify(rel_path, observed, index)
     if result["status"] == "untracked" and not zip_rule_covers(member):
         result = verdict("not_covered")
@@ -1120,12 +1278,15 @@ def fetch_current_version(token: str, code: str) -> dict | None:
 
 
 def list_unknown_pipelines(
-    token: str, known_codes: set[str], has_target: bool
+    token: str, known_codes: dict[str, str], has_target: bool
 ) -> tuple[list[dict], dict | None]:
     """Name the pipelines deployed in this workspace that no release describes.
 
-    Their contents are not read: they are not the release's business. Before the checker
-    ships in a release, it appears here itself (docs/checker.md section 6.2). A failure is an
+    `known_codes` maps each pipeline code a release describes to its directory name. Their
+    contents are not read: they are not the release's business. The bootstrap pipelines,
+    this checker included, are in the manifest like any other (ADR 0042), so they are checked by
+    code above and never land here. A template-created code is still recognised and named in
+    `stands_for` (template_stands_for). A failure is an
     error that makes the report incomplete, but does not stop the run - every pipeline a
     release describes has already been checked by code. `in_target` is False when there is a
     target (no release describes them, so the target does not either) and None when there is
@@ -1161,8 +1322,52 @@ def list_unknown_pipelines(
             continue
         name = (item.get("currentVersion") or {}).get("versionName")
         in_target = False if has_target else None
-        unknown.append(pipeline_report(None, item["code"], in_target, name, None, "not_in_any_release"))
+        stands_for, remediation_key = template_stands_for(item["code"], known_codes)
+        unknown.append(
+            pipeline_report(None, item["code"], in_target, name, None, remediation_key, stands_for)
+        )
     return unknown, None
+
+
+def template_stands_for(code: str, known_codes: dict[str, str]) -> tuple[str | None, str]:
+    """Recognise a code that a template gave a pipeline no release describes by that code.
+
+    Two shapes are recognised (ADR 0040): a release pipeline's code with OpenHEXA's collision
+    suffix (`snt-map-extracts-1a2b3c`), and a code created from an old snt-development template
+    (`b-2-map-extracts`, any step number, with or without the suffix). The title is looked up
+    whole first, so a title that happens to end like a suffix is never cut short.
+
+    Returns
+    -------
+    tuple[str | None, str]
+        (the directory name the code stands for, or None; the PIPELINE_REMEDIATION key).
+    """
+    base = COLLISION_SUFFIX.sub("", code)
+    if base != code and base in known_codes:
+        return known_codes[base], "template_copy"
+
+    legacy = LEGACY_TEMPLATE_CODE.match(code)
+    if legacy:
+        title = legacy["title"]
+        for candidate in (title, COLLISION_SUFFIX.sub("", title)):
+            if candidate in LEGACY_TEMPLATE_SLUGS:
+                return LEGACY_TEMPLATE_SLUGS[candidate], "old_template"
+
+    return None, "not_in_any_release"
+
+
+def template_slug(title: str) -> str:
+    """Turn a template's display title into the slug OpenHEXA builds a pipeline code from.
+
+    Returns
+    -------
+    str
+        Lower case, every run of characters other than a-z and 0-9 replaced by one "-".
+    """
+    return re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")
+
+
+LEGACY_TEMPLATE_SLUGS = {template_slug(title): name for title, name in LEGACY_TEMPLATE_TITLES.items()}
 
 
 def call_graphql(token: str, operation: str, variables: dict) -> dict:
@@ -1218,15 +1423,22 @@ def read_zip_members(encoded_zipfile: str) -> dict:
     }
 
 
-def claimed_release_tag(version_name: str) -> str:
-    """Recover the release tag a pipeline version's name claims, ignoring OpenHEXA's suffix.
+def claimed_release_tag(version_name: str) -> str | None:
+    """Recover the release tag a pipeline version's name claims.
+
+    OpenHEXA's " [v<number>]" suffix and the deployers' "+redeploy-<date>" suffix are removed.
+    A name that is then only "v<number>" (a plain CLI push, or a version a template update
+    delivered) claims nothing.
 
     Returns
     -------
-    str
-        The version name with a trailing " [v<number>]" removed, if it had one.
+    str | None
+        The claimed tag, or None when the name claims no release.
     """
-    return VERSION_NUMBER_SUFFIX.sub("", version_name).strip()
+    name = REDEPLOY_SUFFIX.sub("", VERSION_NUMBER_SUFFIX.sub("", version_name).strip())
+    if not name or NO_CLAIM_VERSION_NAME.match(name):
+        return None
+    return name
 
 
 def name_matches_content(dir_name: str, version_name: str, members: dict, index: ReleaseIndex) -> bool | None:
@@ -1239,8 +1451,8 @@ def name_matches_content(dir_name: str, version_name: str, members: dict, index:
 
     With every manifest loaded, a version named after ANY release can be judged, not only
     one named after the target. The zip must hold exactly that release's files for this
-    pipeline, byte for byte - an extra file is a disagreement too. A name that is not a
-    release tag at all ("v3" from a plain CLI push) claims nothing and is reported as null.
+    pipeline, byte for byte - an extra file is a disagreement too. A name that claims no
+    release ("v3" from a plain CLI push or a template update) is reported as null.
 
     Returns
     -------
@@ -1248,13 +1460,13 @@ def name_matches_content(dir_name: str, version_name: str, members: dict, index:
         True or False when the name claims a release with a usable manifest, None otherwise.
     """
     claimed = claimed_release_tag(version_name)
-    manifest = index.manifests.get(claimed)
+    manifest = index.manifests.get(claimed) if claimed else None
     if manifest is None:
         return None
     spec = manifest["pipelines"].get(dir_name)
     if spec is None:
         return False  # named after a release that does not ship this pipeline at all
-    expected = {member: manifest["files"].get(f"{dir_name}/{member}") for member in spec["zip_files"]}
+    expected = {member: manifest["files"].get(f"{spec['path']}/{member}") for member in spec["zip_files"]}
     return members == expected
 
 
@@ -1265,12 +1477,14 @@ def pipeline_report(
     version_name: str | None,
     matches_content: bool | None,
     remediation_key: str | None,
+    stands_for: str | None = None,
 ) -> dict:
     """Build the per-pipeline block that sits alongside the per-file entries.
 
     The name/content disagreement, and a pipeline's presence or absence from the target, are
     properties of the deployment rather than of any one file inside the zip, so they are
-    reported here rather than as per-file statuses.
+    reported here rather than as per-file statuses. `stands_for` is set only on a pipeline no
+    release describes whose template-created code was recognised (template_stands_for).
 
     Returns
     -------
@@ -1287,6 +1501,7 @@ def pipeline_report(
         "current_version_name": version_name,
         "current_version_claims_tag": claimed_release_tag(version_name) if version_name else None,
         "version_name_matches_content": matches_content,
+        "stands_for": stands_for,
         "remediation": PIPELINE_REMEDIATION.get(remediation_key),
     }
 
@@ -1324,6 +1539,10 @@ def attribution_summary(entries: list[dict], index: ReleaseIndex, releases_consi
     all are also reported on their own. Scores come from the observed bytes, not from each
     entry's status, so they mean the same thing in both modes.
 
+    What a release ships is counted in copies (`shipped_copies()`): a notebook it copies to the
+    filesystem and also zips with its pipeline is two copies, matched by source and path, so
+    `present` can never exceed `shipped`.
+
     Returns
     -------
     dict
@@ -1357,16 +1576,18 @@ def attribution_summary(entries: list[dict], index: ReleaseIndex, releases_consi
             "completeness": None,
         }
         if release["manifest_available"]:
-            files = index.manifests[release["tag"]]["files"]
-            at_shipped = [entry for entry in counted if entry["path"] in files]
+            manifest = index.manifests[release["tag"]]
+            files = manifest["files"]
+            copies = shipped_copies(manifest)
+            at_shipped = [entry for entry in counted if (entry["source"], entry["path"]) in copies]
             agreeing = sum(1 for entry in at_shipped if entry["observed_sha256"] == files[entry["path"]])
             row.update(
-                shipped=len(files),
+                shipped=len(copies),
                 present=len(at_shipped),
                 agreeing=agreeing,
                 extra=total - len(at_shipped),
                 agreement=ratio(agreeing, len(at_shipped)),
-                completeness=ratio(len(at_shipped), len(files)),
+                completeness=ratio(len(at_shipped), len(copies)),
             )
         by_release.append(row)
 
@@ -1385,9 +1606,10 @@ def attribution_summary(entries: list[dict], index: ReleaseIndex, releases_consi
             "paths; agreeing = those whose bytes are exactly the release's; extra = files found here "
             "at paths it does not ship. agreement = agreeing / present; completeness = present / "
             "shipped. Files are every entry for a file present in the workspace, filesystem and "
-            "pipeline versions together, except `untracked` and `missing`. A file unchanged across "
-            "releases agrees with each of them, so no column adds up to 1. Best fit: highest "
-            "agreement, then highest completeness, then newest."
+            "pipeline versions together, except `untracked` and `missing`; shipped counts copies, so "
+            "a notebook the release puts both on the filesystem and in its pipeline's zip counts "
+            "twice. A file unchanged across releases agrees with each of them, so no column adds up "
+            "to 1. Best fit: highest agreement, then highest completeness, then newest."
         ),
         "by_release": by_release,
         "best_fit": (
@@ -1398,6 +1620,24 @@ def attribution_summary(entries: list[dict], index: ReleaseIndex, releases_consi
         "matches_no_release": {"count": matches_none, "share": ratio(matches_none, total)},
         "unreadable": {"count": unreadable, "share": ratio(unreadable, total)},
     }
+
+
+def shipped_copies(manifest: dict) -> set[tuple[str, str]]:
+    """List every copy a release puts in a workspace, as (source, repository path).
+
+    A path can be shipped by both routes - a notebook is copied to the filesystem and zipped
+    with its pipeline - and the workspace then holds two copies, each with its own entry.
+
+    Returns
+    -------
+    set[tuple[str, str]]
+        ("filesystem", path) for each of `filesystem_files`, and ("pipeline_version", path) for
+        each zip member, at `<pipeline path>/<member>`.
+    """
+    copies = {("filesystem", path) for path in manifest["filesystem_files"]}
+    for spec in manifest["pipelines"].values():
+        copies.update(("pipeline_version", f"{spec['path']}/{member}") for member in spec["zip_files"])
+    return copies
 
 
 def build_report(
@@ -1411,6 +1651,7 @@ def build_report(
     releases_considered: list[dict],
     resolved_from: str,
     declared_tag: str | None,
+    declared_repo: str | None,
 ) -> dict:
     """Assemble the report document from what each source produced.
 
@@ -1435,7 +1676,7 @@ def build_report(
         # The version of THIS pipeline that produced the report. A run cannot read the name of
         # the pipeline version executing it, so this is null until a source for it is found.
         # The key is part of the frozen v1 schema and stays, nullable.
-        "snt_workspace_check_version": None,
+        "snt_workspace_checker_version": None,
         "workspace": workspace.slug,
         "repo": github_repo,
         "mode": "verification" if release else "attribution",
@@ -1447,7 +1688,11 @@ def build_report(
             "resolved_from": resolved_from,
             "published_at": release.get("published_at") if release else None,
         },
-        "declared_release": ({"tag": declared_tag, "source": RELEASE_MARKER_NAME} if declared_tag else None),
+        "declared_release": (
+            {"tag": declared_tag, "repo": declared_repo, "source": RELEASE_MARKER_NAME}
+            if declared_tag
+            else None
+        ),
         "releases_considered": releases_considered,
         "incomplete": incomplete,
         "summary": {
@@ -1588,7 +1833,12 @@ def log_summary(report: dict, report_path: Path) -> None:
                 "The name is metadata someone typed; the hash is evidence."
             )
         if not block["in_any_release"]:
-            current_run.log_info(f"{block['code']}: deployed here, described by no release - reported only.")
+            stands_for = (
+                f" (template-created, stands for {block['stands_for']})" if block["stands_for"] else ""
+            )
+            current_run.log_info(
+                f"{block['code']}: deployed here, described by no release{stands_for} - reported only."
+            )
 
     if report["incomplete"]:
         current_run.log_warning(

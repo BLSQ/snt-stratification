@@ -69,18 +69,22 @@ Two things that are easy to get wrong:
 
 ### Testing a feature branch: staging pre-releases — proposal
 
-**Not built or decided** (Giulia, 2026-10-02). The intent: before a PR is merged, cut a **GitHub
+**Settled for releases:** a release is tested as a pre-release of `BLSQ/snt-stratification`
+(`v0.x.y`, or `vX.Y.Z-rc.N` before a full release), deployed into a test workspace by typing its tag;
+`BLSQ/snt_development_sandbox` is no longer used for that (D-18 in
+[`MIGRATION_PLAN.md`](../MIGRATION_PLAN.md)). **Per-PR staging is not built or decided** (Giulia,
+2026-10-02). The intent: before a PR is merged, cut a **GitHub
 pre-release from the feature branch**, not from `main`, and deploy it with `snt_workspace_deployer`
 into a clean workspace, so the reviewer tries the whole set of pipelines together. It is one strategy
 for both repositories: a PR in `snt_development` and a PR here are tested the same way.
 
 What already supports it:
 
-* **The manifest is generated.** `generate_manifest.yaml` in `snt_development` runs on
-  `release: published`, which GitHub also fires for a pre-release, and checks out
-  `release.tag_name`, so a tag on a branch commit gets its own manifest. (From the workflow file and
-  GitHub's event docs. The first pre-release of `snt_development`, `pr138_snt25-685`, exists as of
-  2026-10-02; whether it carries a manifest is not checked here.)
+* **The manifest is generated.** [`release.yaml`](../../.github/workflows/release.yaml) runs on
+  `release: published`, which GitHub also fires for a pre-release, and builds the manifest and the
+  slim tarball from the tag, so a tag on a branch commit gets its own
+  ([`release_manifest.md`](../../contracts/release_manifest.md#release-assets-beside-the-manifest)).
+  Not yet run: no release exists.
 * **Countries cannot pick one up by accident.** An empty `release_tag` resolves through
   `/releases/latest`, which skips pre-releases (D23), so a staging release is deployed only by typing
   its tag, and the deployer then logs a `[WARNING]` (D27).
@@ -105,8 +109,8 @@ What has to be settled first:
    ([ADR 0037](../decisions/0037-one-release-train.md)). The deployer under test is pushed by hand
    from the branch: templates are published only on full releases
    ([ADR 0042](../decisions/0042-bootstrap-pipelines-as-templates-on-release.md)), and a pre-release
-   target is newer than the latest full release, so once the guard is built (Phase 4) the deployer
-   also updates itself from it.
+   target counts as newer than the latest full release, so the deployer's bootstrap guard lets it
+   update itself from it.
 4. **What "clean workspace" means.** The deployer cannot delete pipelines or files
    ([`deployer.md`](deployer.md) §7.5), so a reused staging workspace keeps strays from the last PR.
    Either a new workspace per test, which needs the `oh` connection set up each time

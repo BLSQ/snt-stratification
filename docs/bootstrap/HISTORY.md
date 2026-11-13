@@ -387,8 +387,8 @@ as the schema says.
 Written 2026-10-02 as `roadmap.md` §1–§2, when the bootstrap had to deploy releases of several
 repositories into one workspace. The monorepo ([ADR 0036](../decisions/0036-one-monorepo.md)) and its one
 release train ([ADR 0037](../decisions/0037-one-release-train.md)) leave one source per workspace, so neither
-proposal is needed. Two items in it outlived it: the report-key rename is
-[BOOT-4](../BACKLOG.md#boot-4), and the tag ruleset exists on `BLSQ/snt-stratification`. The text, as
+proposal is needed. Two items in it outlived it: the report-key rename (BOOT-4, done on
+2026-11-13 before `v0.1.0`), and the tag ruleset exists on `BLSQ/snt-stratification`. The text, as
 it was:
 
 ### 1. Sources replace `github_repo` — proposal

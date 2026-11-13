@@ -65,8 +65,10 @@ scope for v1 (D5), and until it is done a workspace with one looks alarming.
 
 `.github/workflows/generate_manifest.yaml` lives in `snt_development` and stays there (M3): it runs on
 `release: published` (and `workflow_dispatch`) and attaches `release_manifest.json` to the release.
-Its shape is manifest v1, the contract in [`release_manifest.v1.schema.json`](../../../contracts/release_manifest.v1.schema.json);
-how it is generated is in [`../contracts/release_manifest.md`](../../../contracts/release_manifest.md).
+Its shape is manifest v1 (no `schema_version`), whose contract is
+[`release_manifest.schema.json` in `snt_workspace_bootstrap`](https://github.com/BLSQ/snt_workspace_bootstrap/blob/abbe8c0ebdbfdda481adbb0156d99f9ce04c5924/docs/contracts/release_manifest.schema.json)
+at the commit imported here. No consumer in this repo reads it: the deployers and the checker read
+v2 only ([`release_manifest.md`](../../../contracts/release_manifest.md)).
 What `snt_development` ships, which the schema deliberately does not fix:
 
 * **Filesystem half:** `pipelines/**/code/*.ipynb`, `pipelines/**/reporting/*.ipynb`,
@@ -84,9 +86,10 @@ As of 2026-10-01 the workflow sits on branch `SNT25-670` only; Session 4 of the 
 
 * `BLSQ/snt_development_sandbox` — a **GitHub repo**, independent (not a fork), seeded from
   `snt_development` @ `551ddd8` minus the 20 `push_snt_*.yaml`. Fixture releases are cut from it.
-* `snt-development-sandbox` — the **OpenHEXA workspace** the deployer and checker run in.
+* `snt-development-sandbox` — the **OpenHEXA workspace** the deployer and checker were tested in.
 
-Both pipelines still default `github_repo` to the sandbox repo. Details: [`../sandbox.md`](../sandbox.md).
+The bootstrap pipelines now default `github_repo` to `BLSQ/snt-stratification`, and releases are no
+longer tested in the sandbox (D-18). Details: [`../sandbox.md`](../sandbox.md).
 
 ## Dependencies outside either repo
 

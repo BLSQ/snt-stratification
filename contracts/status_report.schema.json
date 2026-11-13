@@ -8,7 +8,7 @@
   "required": [
     "schema_version",
     "generated_at",
-    "snt_workspace_check_version",
+    "snt_workspace_checker_version",
     "workspace",
     "repo",
     "mode",
@@ -34,7 +34,7 @@
       "format": "date-time",
       "description": "UTC, second precision, ending in Z (e.g. 2026-09-29T13-39-32Z in the filename, 2026-09-29T13:39:32Z here)."
     },
-    "snt_workspace_check_version": {
+    "snt_workspace_checker_version": {
       "type": ["string", "null"],
       "description": "The version of the snt_workspace_checker pipeline that generated this report. A run cannot currently read the name of the pipeline version executing it, so this is null until a source for it is found; the key is frozen regardless."
     },
@@ -59,7 +59,7 @@
         "tag": { "type": ["string", "null"] },
         "resolved_from": {
           "enum": ["parameter", "marker", "nothing_given"],
-          "description": "parameter: the release_tag parameter (in attribution mode: the reserved value 'none'). marker: the tag in .snt_release. nothing_given: no parameter and no marker."
+          "description": "parameter: the release_tag parameter (in attribution mode: the reserved value 'none'). marker: the tag in .snt_release. nothing_given: no parameter, and no marker naming a release of this repository."
         },
         "published_at": { "type": ["string", "null"], "format": "date-time" }
       }
@@ -73,11 +73,15 @@
           "required": ["tag", "source"],
           "properties": {
             "tag": { "type": "string" },
+            "repo": {
+              "type": ["string", "null"],
+              "description": "The repository the marker names, as owner/name. null for a marker written before the deployer recorded it. Added in Phase 4 of docs/MIGRATION_PLAN.md (an added key, not a breaking change), so older reports lack it."
+            },
             "source": { "const": ".snt_release" }
           }
         }
       ],
-      "description": "What the .snt_release marker says was last deployed: intent, not verified fact. null when the marker is absent."
+      "description": "What the .snt_release marker says was last deployed: intent, not verified fact. null when the marker is absent. Reported as read, even when it names another repository and is therefore not used as the target."
     },
     "releases_considered": {
       "type": "array",
@@ -112,7 +116,7 @@
     },
     "inert_filesystem_copies": {
       "type": "array",
-      "description": "Repository-relative paths of files on the filesystem inside a pipeline directory. They never execute and are not classified.",
+      "description": "Repository-relative paths of files found on the filesystem at a path releases ship only inside a pipeline zip (in files, never in filesystem_files: pipeline.py, requirements.txt, ...). They never execute and are not classified.",
       "items": { "type": "string" }
     },
     "scan_exclusions": {
@@ -279,11 +283,15 @@
         },
         "current_version_claims_tag": {
           "type": ["string", "null"],
-          "description": "The release tag parsed out of current_version_name."
+          "description": "The release tag current_version_name claims, with OpenHEXA's ' [vN]' suffix and the deployers' '+redeploy-<date>' suffix removed. null when the name claims no release: a bare 'v<N>', which is what a plain CLI push or a template update names a version."
         },
         "version_name_matches_content": {
           "type": ["boolean", "null"],
           "description": "true when the zip holds exactly the files, byte for byte, that the named release ships for this pipeline. false otherwise, including an extra file or a name pointing at a release that does not ship the pipeline. null when the name is not a release tag with a usable manifest."
+        },
+        "stands_for": {
+          "type": ["string", "null"],
+          "description": "On a pipeline no release describes (pipeline null): the pipeline directory name its template-created code stands for. Either a release pipeline's code with OpenHEXA's '-<6 hex>' collision suffix ('snt-map-extracts-1a2b3c'), or a code from an old snt-development template ('b-2-map-extracts', any step number, which may name a pipeline this repository no longer has). null otherwise. Added in Phase 4 of docs/MIGRATION_PLAN.md (an added key, not a breaking change), so older reports lack it."
         },
         "remediation": { "type": ["string", "null"], "x-display-only": true }
       }
@@ -316,7 +324,7 @@
         "tag": { "type": "string" },
         "published_at": { "type": ["string", "null"], "format": "date-time" },
         "manifest_available": { "type": "boolean" },
-        "shipped": { "type": ["integer", "null"], "minimum": 0, "description": "Files the release ships." },
+        "shipped": { "type": ["integer", "null"], "minimum": 0, "description": "File copies the release ships: one per filesystem file and one per pipeline zip member, so a notebook shipped by both routes counts twice. With one route per path, as in every v1 manifest, this is the number of files." },
         "present": { "type": ["integer", "null"], "minimum": 0, "description": "Of those, how many are found in the workspace." },
         "agreeing": { "type": ["integer", "null"], "minimum": 0, "description": "Of those present, how many have exactly the release's bytes." },
         "extra": { "type": ["integer", "null"], "minimum": 0, "description": "Files found in the workspace at paths the release does not ship. They count neither for nor against it." },

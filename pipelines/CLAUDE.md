@@ -149,17 +149,19 @@ import (migration plan D-13). The few that existed are readable in `snt_developm
 ## Bootstrap pipelines
 
 `snt_workspace_deployer`, `snt_pipeline_deployer` and `snt_workspace_checker` (`kind: bootstrap`)
-manage which **release** a workspace runs. Not live in any country workspace, and they still read
-**manifest v1** from the old repo's releases (`code/` as the shared library; v2 is Phase 4).
+manage which **release** a workspace runs. Not live in any country workspace. They read **manifest
+v2**, the releases of this repo (`BLSQ/snt-stratification`), and refuse a v1 manifest from the old
+repo; no release exists yet (the first is `v0.1.0`).
 
-- **`snt_workspace_deployer`** installs one GitHub release, whole: R files to the workspace
-  filesystem, every `pipeline.py` through the OpenHEXA API, then `.snt_release`. The only component
-  that changes a workspace.
+- **`snt_workspace_deployer`** installs one GitHub release, whole, from its slim tarball asset: the
+  manifest's `filesystem_files` to the workspace filesystem, every `pipelines/<name>/` through the
+  OpenHEXA API, then `.snt_release` (tag and repo). The only component that changes a workspace.
+  Bootstrap pipelines only from the latest full release or newer (ADR 0042).
 - **`snt_pipeline_deployer`** deploys **one** named pipeline into a workspace that already holds
-  real work: never the shared R library, never `.snt_release`. Its shared functions are a copy of
-  the deployer's; `tests/test_pipeline_deployer.py` fails when they drift, so change both.
+  real work: never the shared R library (`shared/r/`), never `.snt_release`. Its shared functions are
+  a copy of the deployer's; `tests/test_pipeline_deployer.py` fails when they drift, so change both.
 - **`snt_workspace_checker`** is read-only: hashes the workspace and reports, per file, which
-  releases it matches. Its report is frozen at `schema_version: 1`.
+  releases it matches. Its report is frozen at `schema_version: 1` (keys may be added).
 
 ```bash
 pytest tests/ -q     # offline: checker stub, contract fixtures, deployer ↔ single-deployer drift
@@ -176,17 +178,17 @@ could not verify. Their docs are in [`../docs/bootstrap/`](../docs/bootstrap/); 
 |---|---|
 | [`deployer.md`](../docs/bootstrap/deployer.md), then [`openhexa_deployment.md`](../docs/bootstrap/openhexa_deployment.md) | Changing either deployer, or anything about deployment and tokens |
 | [`checker.md`](../docs/bootstrap/checker.md) + [`status_report.schema.json`](../contracts/status_report.schema.json) | Changing the checker or its report (the schema wins over `checker.md` §5.5) |
-| [`release_manifest.v1.schema.json`](../contracts/release_manifest.v1.schema.json) (read today), [`release_manifest.schema.json`](../contracts/release_manifest.schema.json) (v2, from Phase 4) + [`release_manifest.md`](../contracts/release_manifest.md) | Changing how the manifest is read or written (R22) |
+| [`release_manifest.schema.json`](../contracts/release_manifest.schema.json) (v2) + [`release_manifest.md`](../contracts/release_manifest.md) | Changing how the manifest is read or written (R22) |
 | [`snt_release_marker.md`](../contracts/snt_release_marker.md) | Reading or writing `.snt_release` |
 | [`context/snt_development.md`](../docs/bootstrap/context/snt_development.md) | What an old-repo release contains |
 | [`release_strategy.md`](../docs/bootstrap/release_strategy.md), [`roadmap.md`](../docs/bootstrap/roadmap.md) | Big-picture questions, testing a PR, planning ahead |
 | [`decisions.md`](../docs/bootstrap/decisions.md) | Before reopening any choice (`D1–D28`; the architectural ones are ADRs 0026–0035) |
-| [`sandbox.md`](../docs/bootstrap/sandbox.md) | Testing: sandbox repo and workspace, fixture releases |
+| [`sandbox.md`](../docs/bootstrap/sandbox.md) | The former test bed (manifest v1 fixture releases); releases are now tested as pre-releases of this repo (D-18) |
 | [`HISTORY.md`](../docs/bootstrap/HISTORY.md) | Before re-investigating something that seems solved |
 
 **§ references** in these docs keep the numbers of the former bootstrap `PRODUCT_SPEC.md`:
 `release_strategy.md` §1, §1.1, §1.3 · `checker.md` §1.2, §2, §3, §3.1, §4–§5, §6, §6.2–§6.6, §7,
 §7.2, §7.6, §7.8–§7.11 · `deployer.md` §6.7, §7.5 ·
-`openhexa_deployment.md` §7.3, §7.7 · `release_manifest.md` §2.1, §7.1 · `snt_release_marker.md`
+`openhexa_deployment.md` §7.3, §7.7 · `release_manifest.md` §2.1 · `snt_release_marker.md`
 §3.2, §7.4 · `sandbox.md` §6.1 · `decisions.md` §8. A § in `HISTORY.md` is its own unless it names
 another file.

@@ -1,6 +1,11 @@
 # Sandbox — repo, workspace and fixture releases
 
-> Everything the deployer and checker are tested against. Commands with `git`/`gh` in them are for a
+> **No longer used for testing releases (D-18 in [`MIGRATION_PLAN.md`](../MIGRATION_PLAN.md)).**
+> Releases are now tested as pre-releases of `BLSQ/snt-stratification` in a test workspace. The
+> fixture releases below carry **manifest v1**, which the bootstrap pipelines no longer read, so they
+> serve as a record of how the checker was verified, not as a test bed.
+>
+> What the deployer and checker were tested against until Phase 4. Commands with `git`/`gh` in them are for a
 > human to run (R19). Folded in 2026-10-01 from the local runbooks `sandbox_fixture_plan.md` and
 > `sandbox_reset_runbook.md`, which are deleted; their one-time steps (the 2026-09-21 reset itself,
 > creating each fixture) are not repeated here.

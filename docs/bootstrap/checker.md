@@ -35,9 +35,10 @@ Its requirements, statuses, report contract and build phases are below. Design i
 
 ### 1.2 In scope / out of scope
 
-In scope for the checker: everything the release manifest tracks — `pipelines/**/code/*.ipynb`,
-`pipelines/**/reporting/*.ipynb`, `pipelines/**/utils/*.r`, `code/**/*.r`, and each deployed
-pipeline's registered version contents.
+In scope for the checker: everything the release manifest tracks — its `filesystem_files`
+(`pipelines/*/code/*.ipynb`, `pipelines/*/reporting/*.ipynb`, `pipelines/*/utils/*.r`,
+`shared/r/**/*.r`), and each deployed pipeline's registered version contents, the bootstrap pipelines
+included.
 
 Out of scope, and to be stated as blind spots in the report:
 
@@ -54,7 +55,7 @@ Out of scope, and to be stated as blind spots in the report:
 | Term | Meaning |
 |---|---|
 | **Release tag** | A GitHub release tag, e.g. `v1.2.0`. The single source of truth for "what version is this workspace on". Tags are protected and never moved (`release_strategy.md` §"Release tags are never moved"). |
-| **Release manifest** | `release_manifest.json`, attached as an asset to each release: `{version, files: {path: sha256}, pipelines: {dir: {code, zip_files}}}`. `files` is flat and covers both sources; the `pipelines` block says which of those paths ship inside which pipeline zip, and under what name once inside it ([`release_manifest.md`](../../contracts/release_manifest.md) §2.1). |
+| **Release manifest** | `release_manifest.json` (v2), attached as an asset to each release: `{schema_version, version, repo, files: {path: sha256}, filesystem_files: [path], pipelines: {name: {path, kind, code, zip_files}}, …}`. `files` is flat and covers both sources; `filesystem_files` says which of those paths are copied to the workspace filesystem, and the `pipelines` block which ship inside which pipeline zip, and under what name once inside it ([`release_manifest.md`](../../contracts/release_manifest.md) §2.1). A notebook can be in both. |
 | **Tracked file** | A path present in some release manifest. |
 | **Target release** | The release the workspace is being compared *against*, when one is given. |
 | **Declared release** | What `.snt_release` says the workspace was last deployed to. Intent, not verified fact ([`snt_release_marker.md`](../../contracts/snt_release_marker.md) §3.2). |
@@ -71,6 +72,11 @@ Every entry in the report carries which source it came from.
 |---|---|---|
 | `filesystem` | Files under `workspace.files_path` at their repository-relative paths | Where the R analytics live |
 | `pipeline_version` | The files inside each OpenHEXA pipeline's **current registered version zip** | `pipeline.py` is *never* on the filesystem — a copy there is inert and misleading (`openhexa_deployment.md`) |
+
+Each **copy** a release ships is read from its own source. A notebook or R helper under
+`pipelines/<name>/` ships twice, in the zip and to the filesystem, so it gets one entry per source.
+A file found on the filesystem at a path releases ship *only* in a zip (`pipeline.py`,
+`requirements.txt`, …) never executes; it goes to `inert_filesystem_copies` and is not classified.
 
 Both are read from v1 (decision D7). The zip is readable through the GraphQL field
 `pipelineByCode.currentVersion.zipfile`, which returns the base64 of the whole archive — the same
@@ -107,6 +113,25 @@ as misleading.** This is not a per-file status — it is a per-pipeline flag in 
 property of the deployment, not of any one file inside the zip. The point of surfacing it at all is
 that a workspace where the version labels have stopped meaning anything looks perfectly healthy
 from the OpenHEXA UI, which only shows the names.
+
+**What a name claims** (`current_version_claims_tag`). OpenHEXA appends ` [v<N>]` to every name it
+reads back, and a redeploy is named `<tag>+redeploy-<date>` ([`deployer.md`](deployer.md)); both
+suffixes are stripped, so the redeploy still claims `<tag>`. A name that is then a bare `v<N>` claims
+no release: a plain CLI push reads back that way, and so does a version delivered by a template
+update (spike S6 in [`MIGRATION_PLAN.md`](../MIGRATION_PLAN.md#phase-3-findings)). With no claim,
+`version_name_matches_content` is `null`.
+
+#### Pipelines no release describes, and template-created codes
+
+Every pipeline a release describes is probed by its manifest `code`. The workspace's pipeline list
+names the others (`in_any_release: false`, contents not read). A pipeline created from a template
+has a code OpenHEXA built from the source pipeline's display name, plus `-<6 hex>` when that code was
+taken. Two shapes are recognised and named in `pipelines[].stands_for`
+([ADR 0040](../decisions/0040-templates-kept-alongside-the-deployer.md)): a release pipeline's code
+with the suffix (`snt-map-extracts-1a2b3c`, a second copy; only the plain code is checked), and a code
+from an old `snt-development` template (`b-2-map-extracts`, `a-1-dhis2-extract-ec1130`), matched on
+the title after the step number, which has been renumbered over time. The table of old titles is
+`LEGACY_TEMPLATE_TITLES` in the checker's `pipeline.py`.
 
 ## 4. The two modes
 
@@ -249,8 +274,8 @@ Excluded from the scan entirely, so the bucket stays readable: `archive/`, `pape
   the full detail in the JSON — not 300 log lines.
 * **Partial results are labelled.** If a source could not be read, the report carries
   `incomplete: true` and says which, rather than implying a clean bill of health.
-* **The repository is a parameter now, hard-coded later.** Testing runs against
-  `BLSQ/snt_development_sandbox`; the shipped product must not let a user point it anywhere.
+* **The repository is a parameter now, hard-coded later.** It defaults to `BLSQ/snt-stratification`;
+  the shipped product must not let a user point it anywhere.
 
 ### 5.5 The report contract
 
@@ -266,21 +291,22 @@ A JSON file, written to the workspace filesystem, timestamped **and** latest (de
 <workspace root>/snt_status/status_latest.json             ← byte-identical; the stable path the web app reads
 ```
 
-Top-level keys, all always present: `schema_version`, `generated_at`, `snt_workspace_check_version`,
+Top-level keys, all always present: `schema_version`, `generated_at`, `snt_workspace_checker_version`,
 `workspace`, `repo`, `mode`, `target_release`, `declared_release`, `releases_considered`,
 `incomplete`, `summary` (`by_status`, `attribution`), `pipelines`, `entries`,
-`inert_filesystem_copies`, `scan_exclusions`, `errors`, `blind_spots`. An abridged example:
+`inert_filesystem_copies`, `scan_exclusions`, `errors`, `blind_spots`. An abridged example (shape
+current; tags, paths and numbers illustrative):
 
 ```json
 {
   "schema_version": 1,
   "generated_at": "2026-09-29T13:39:32Z",
-  "snt_workspace_check_version": null,
+  "snt_workspace_checker_version": null,
   "workspace": "<slug>",
-  "repo": "BLSQ/snt_development_sandbox",
+  "repo": "BLSQ/snt-stratification",
   "mode": "attribution",
   "target_release": {"tag": null, "resolved_from": "parameter", "published_at": null},
-  "declared_release": {"tag": "v0.3.0-test", "source": ".snt_release"},
+  "declared_release": {"tag": "v0.3.0-test", "repo": "BLSQ/snt-stratification", "source": ".snt_release"},
   "releases_considered": [{"tag": "v0.1.0-test", "published_at": "2026-09-21T15:20:03Z", "manifest_available": true}],
   "incomplete": true,
   "summary": {
@@ -300,11 +326,14 @@ Top-level keys, all always present: `schema_version`, `generated_at`, `snt_works
   "pipelines": [
     {"pipeline": "snt_dhis2_extract", "code": "snt-dhis2-extract", "in_target": null, "in_any_release": true,
      "current_version_name": "v0.1.0-test [v2]", "current_version_claims_tag": "v0.1.0-test",
-     "version_name_matches_content": true, "remediation": null}
+     "version_name_matches_content": true, "stands_for": null, "remediation": null},
+    {"pipeline": null, "code": "b-2-map-extracts", "in_target": null, "in_any_release": false,
+     "current_version_name": "v1", "current_version_claims_tag": null,
+     "version_name_matches_content": null, "stands_for": "snt_map_extracts", "remediation": "<display text>"}
   ],
   "entries": [
     {
-      "path": "code/fixture_stable.r",
+      "path": "shared/r/snt_utils.r",
       "source": "filesystem",
       "pipeline": null,
       "status": "attributed",
@@ -339,11 +368,13 @@ Top-level keys, all always present: `schema_version`, `generated_at`, `snt_works
   parse or compare them; their wording may change at any time without a version bump.
 * Every key that could be absent is present with `null`, never omitted.
 
-**`snt_workspace_check_version`** records which version of the `snt_workspace_checker` pipeline
+**`snt_workspace_checker_version`** records which version of the `snt_workspace_checker` pipeline
 generated the report, so a report can be tied to the code that wrote it. **It is `null` today.** A
 run has no way to read the name of the pipeline version executing it, and no source for the value
 has been found; the key is frozen and nullable so that filling it later is not a breaking change.
-It replaces the earlier name `checker_version`, renamed for clarity before the freeze.
+Its earlier names, `checker_version` and then `snt_workspace_check_version`, were both
+retired before the first release (`v0.1.0`), so no released checker writes them; reports saved
+before 2026-11-13 carry the old name and do not validate against the schema.
 
 ## 6. Build phases
 
@@ -386,7 +417,9 @@ Three things that run established, beyond the exit criterion itself:
   appears in no manifest and in no `pipelines` block. From phase 2 it reports as a pipeline no
   release describes (`in_any_release: false`). Expected, not a defect. Both it and
   `snt_workspace_deployer` are to move to a separate repository of their own eventually (Giulia,
-  2026-09-29), so the checker may never describe itself through *these* manifests.
+  2026-09-29), so the checker may never describe itself through *these* manifests. *Since manifest
+  v2 the bootstrap pipelines are in the manifest ([ADR 0042](../decisions/0042-bootstrap-pipelines-as-templates-on-release.md)),
+  and the checker reports itself with `in_any_release: true`.*
 
 ### 6.3 Phase 2, as verified
 
@@ -442,6 +475,8 @@ What changed from phase 1, and why:
   it, it is `not_covered`.
 * **Filesystem copies inside pipeline directories** go to `inert_filesystem_copies`. They are listed
   and not classified: they never run, and giving them a status would mix them into the verdict.
+  *Since manifest v2, only copies at paths releases ship only in a zip; a notebook under
+  `pipelines/<name>/` ships to the filesystem too (§3.1).*
 * **Every release-described pipeline is probed by code**, which is how a deployed pipeline removed in
   the target is found. It gets `in_target: false`, report-and-leave ([`deployer.md`](deployer.md) §7.5). The workspace pipeline
   list is read only to name pipelines no release describes, with
@@ -687,7 +722,8 @@ after sandbox run 1** (§6.5). Each release is judged **only on the paths it shi
 
 | Field | Meaning |
 |---|---|
-| `present` | Files found here at paths the release ships. The pool is every entry for a present file except `untracked`, both sources together. |
+| `shipped` | File copies the release ships, one per route (path and source): a notebook shipped in its pipeline's zip and to the filesystem counts twice, so `present` cannot exceed it. |
+| `present` | Copies found here at paths the release ships. The pool is every entry for a present file except `untracked`, both sources together. |
 | `agreeing` | Of those, how many have exactly the release's bytes. |
 | `extra` | Files found here at paths the release does not ship. They count neither for nor against it. |
 | `agreement` | `agreeing / present` |
