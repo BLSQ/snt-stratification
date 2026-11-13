@@ -18,15 +18,20 @@ Every release's manifest is fetched on each run. The release list is ONE GitHub 
 not from api.github.com - measured 2026-09-29 not to be charged per download, so a run costs
 about one API request whatever the release count (docs/checker.md section 7.2, closed).
 
-Two sources are hashed, and each tracked path is routed to exactly ONE of them:
+Two sources are hashed, and the release manifest (v2, contracts/release_manifest.schema.json)
+says which copies each one is expected to hold:
 
-    filesystem        files under workspace.files_path, at their repository-relative paths
-    pipeline_version  the files inside each pipeline's CURRENT registered version zip
+    filesystem        files under workspace.files_path, at their repository paths: the
+                      manifest's `filesystem_files` (notebooks, R helpers, shared/r/)
+    pipeline_version  the files inside each pipeline's CURRENT registered version zip: the
+                      manifest's `pipelines.<name>.zip_files`, under `pipelines.<name>.path`
 
-Anything under a pipeline directory is read from the zip only. A copy of such a file on the
-workspace filesystem is inert - OpenHEXA runs pipelines from the registered version, never
-from the bucket - so it is listed in `inert_filesystem_copies` and not classified: treating
-it as evidence would report a file as fine on the strength of bytes that never execute.
+A notebook under pipelines/<name>/ is shipped by both routes, so it has two copies, each
+checked on its own. A file that releases ship only inside a zip (pipeline.py, requirements.txt,
+...) and that turns up on the workspace filesystem is inert - OpenHEXA runs pipelines from the
+registered version, never from the bucket - so it is listed in `inert_filesystem_copies` and not
+classified: treating it as evidence would report a file as fine on the strength of bytes that
+never execute.
 
 Credentials: none. A run's own HEXA_TOKEN reads `currentVersion.zipfile` in full, established
 by the snt-token-probe run of 2026-09-22 (docs/HISTORY.md section 2.4). The checker can
@@ -50,6 +55,10 @@ from openhexa.sdk import current_run, parameter, pipeline, workspace
 # Bumped only when the report shape changes in a way a consumer must notice. v1 was frozen at
 # phase 4; the contract is docs/contracts/status_report.schema.json.
 SCHEMA_VERSION = 1
+
+# The release manifest shapes this checker can read (contracts/release_manifest.schema.json).
+# A manifest without `schema_version` is v1, from the old snt_development repository.
+SUPPORTED_MANIFEST_VERSIONS = (2,)
 
 REPORT_DIR_NAME = "snt_status"
 LATEST_REPORT_NAME = "status_latest.json"
@@ -171,16 +180,16 @@ PIPELINE_REMEDIATION = {
 @parameter(
     "github_repo",
     name="GitHub repository",
-    help="owner/repo holding the releases to check against (e.g. BLSQ/snt_development_sandbox)",
+    help="owner/repo holding the releases to check against (e.g. BLSQ/snt-stratification)",
     type=str,
-    default="BLSQ/snt_development_sandbox",
+    default="BLSQ/snt-stratification",
     required=True,
 )
 @parameter(
     "release_tag",
     name="Target release tag",
     help=(
-        "Release to check this workspace against (e.g. v0.2.1-test). Leave empty to use the tag "
+        "Release to check this workspace against (e.g. v0.1.0). Leave empty to use the tag "
         "recorded in .snt_release by the last snt_workspace_deployer run; with neither, the "
         "workspace is attributed to releases without a target. Enter 'none' to force that "
         "attribution mode even when .snt_release exists."
@@ -516,10 +525,8 @@ def load_manifests(releases: list[dict]) -> tuple[dict, list[dict], list[dict]]:
     only that release shipped would otherwise be mislabelled `untracked` or `unknown_content`
     without anything saying so (docs/checker.md sections 5.4 and 5.5).
 
-    A manifest with no `pipelines` block predates the phase-0 generator. snt_workspace_deployer
-    carries a fallback for that; this checker deliberately does not
-    (docs/contracts/release_manifest.md section 2.1), so such a manifest is treated as unusable
-    rather than half-read.
+    A manifest whose shape this checker cannot read (`manifest_problem()`) is treated as
+    unusable rather than half-read.
 
     Returns
     -------
@@ -541,9 +548,10 @@ def load_manifests(releases: list[dict]) -> tuple[dict, list[dict], list[dict]]:
         else:
             if manifest is None:
                 problem = f"it has no {MANIFEST_ASSET_NAME} asset"
-            elif not manifest.get("pipelines"):
-                manifest = None
-                problem = "its manifest has no 'pipelines' block (it predates the phase-0 generator)"
+            else:
+                problem = manifest_problem(manifest)
+                if problem:
+                    manifest = None
 
         if manifest is not None:
             manifests[tag] = manifest
@@ -571,6 +579,29 @@ def load_manifests(releases: list[dict]) -> tuple[dict, list[dict], list[dict]]:
         "manifest downloads are outside the GitHub API budget."
     )
     return manifests, considered, errors
+
+
+def manifest_problem(manifest: object) -> str | None:
+    """Say why a downloaded manifest cannot be read by this checker, if it cannot.
+
+    Only the shapes in SUPPORTED_MANIFEST_VERSIONS are read. A manifest with no
+    `schema_version` is v1, whose paths follow the old snt_development layout; a newer one may
+    change what a key means. Either is refused rather than half-read (ADR 0042).
+
+    Returns
+    -------
+    str | None
+        A clause for the warning, or None when the manifest is readable.
+    """
+    if not isinstance(manifest, dict):
+        return "its manifest is not a JSON object"
+    version = manifest.get("schema_version")
+    if version is None:
+        return "its manifest has no schema_version (a v1 manifest, from the old snt_development layout)"
+    if version not in SUPPORTED_MANIFEST_VERSIONS:
+        readable = ", ".join(str(v) for v in SUPPORTED_MANIFEST_VERSIONS)
+        return f"its manifest has schema_version {version!r}, and this checker reads only {readable}"
+    return None
 
 
 def github_rate_limit_remaining() -> str | None:
@@ -629,11 +660,16 @@ class ReleaseIndex:
         Every release's tag in `published_at` order, including releases with no usable
         manifest - which is what lets such a release break an attribution span.
     paths : dict
-        {repository path: {tag: sha256}} across every usable manifest.
+        {repository path: {tag: sha256}} across every usable manifest, both routes together.
     pipeline_codes : dict
-        {pipeline directory: OpenHEXA code} across every usable manifest.
+        {pipeline name: OpenHEXA code} across every usable manifest.
     manifests : dict
         {tag: manifest}.
+    pipeline_paths : dict
+        {pipeline name: its folder, the manifest's `path` (pipelines/<name>)}.
+    filesystem_paths : set
+        Every path any usable manifest lists in `filesystem_files`. A known path outside it is
+        shipped only inside a pipeline zip.
     """
 
     target_tag: str | None
@@ -643,6 +679,8 @@ class ReleaseIndex:
     paths: dict
     pipeline_codes: dict
     manifests: dict
+    pipeline_paths: dict
+    filesystem_paths: set
 
     @property
     def target_files(self) -> dict:
@@ -651,9 +689,20 @@ class ReleaseIndex:
         Returns
         -------
         dict
-            The target's tracked files.
+            The target's tracked files, both routes together.
         """
         return self.manifests[self.target_tag]["files"] if self.target_tag else {}
+
+    @property
+    def target_filesystem_files(self) -> list:
+        """The target manifest's `filesystem_files`; empty with no target.
+
+        Returns
+        -------
+        list
+            The repository paths the target copies into the workspace filesystem.
+        """
+        return self.manifests[self.target_tag]["filesystem_files"] if self.target_tag else []
 
     @property
     def target_pipelines(self) -> dict:
@@ -662,9 +711,19 @@ class ReleaseIndex:
         Returns
         -------
         dict
-            {pipeline directory: {"code": ..., "zip_files": [...]}}.
+            {pipeline name: {"path": ..., "kind": ..., "code": ..., "zip_files": [...]}}.
         """
         return self.manifests[self.target_tag]["pipelines"] if self.target_tag else {}
+
+    def zip_path(self, name: str, member: str) -> str:
+        """Turn a member of a pipeline's zip into its repository path, the key into `paths`.
+
+        Returns
+        -------
+        str
+            `<pipeline path>/<member>`, e.g. pipelines/snt_map_extracts/pipeline.py.
+        """
+        return f"{self.pipeline_paths[name]}/{member}"
 
     def releases_holding(self, rel_path: str, observed: str | None) -> list[str]:
         """List the releases whose manifest holds exactly these bytes at this path.
@@ -695,11 +754,15 @@ def build_index(manifests: dict, releases: list[dict], target_tag: str | None) -
 
     paths: dict[str, dict[str, str]] = {}
     pipeline_codes: dict[str, str] = {}
+    pipeline_paths: dict[str, str] = {}
+    filesystem_paths: set[str] = set()
     for tag in ordered_tags:
         for rel_path, checksum in manifests[tag]["files"].items():
             paths.setdefault(rel_path, {})[tag] = checksum
-        for dir_name, spec in manifests[tag]["pipelines"].items():
-            pipeline_codes[dir_name] = spec["code"]
+        for name, spec in manifests[tag]["pipelines"].items():
+            pipeline_codes[name] = spec["code"]
+            pipeline_paths[name] = spec["path"]
+        filesystem_paths.update(manifests[tag]["filesystem_files"])
 
     return ReleaseIndex(
         target_tag=target_tag,
@@ -709,6 +772,8 @@ def build_index(manifests: dict, releases: list[dict], target_tag: str | None) -
         paths=paths,
         pipeline_codes=pipeline_codes,
         manifests=manifests,
+        pipeline_paths=pipeline_paths,
+        filesystem_paths=filesystem_paths,
     )
 
 
@@ -946,27 +1011,27 @@ def walk_workspace(snt_root_path: Path) -> list[str]:
 
 
 def check_filesystem(snt_root_path: Path, index: ReleaseIndex) -> tuple[list[dict], list[str]]:
-    """Walk the workspace filesystem and classify every file outside a pipeline directory.
+    """Walk the workspace filesystem and classify every file found there.
 
     Files at paths no release ever shipped are reported `untracked` without being read -
-    the content question is never asked for them. Files inside a pipeline directory never
-    execute, so they are returned separately as inert copies and not classified. Tracked
-    target paths the walk did not see are then checked directly, so a file the exclusions
-    happened to hide is still found rather than reported `missing`. With no target there are
-    no target paths, and absence means nothing, so that second pass is skipped.
+    the content question is never asked for them. A file at a path releases ship only inside
+    a pipeline zip (pipeline.py, requirements.txt, ...) never executes from the filesystem, so
+    it is returned separately as an inert copy and not classified. Target filesystem paths the
+    walk did not see are then checked directly, so a file the exclusions happened to hide is
+    still found rather than reported `missing`. With no target there are no target paths, and
+    absence means nothing, so that second pass is skipped.
 
     Returns
     -------
     tuple[list[dict], list[str]]
-        (report entries, inert copies found inside pipeline directories).
+        (report entries, inert copies of zip-only files).
     """
-    pipeline_dirs = set(index.pipeline_codes)
     entries: list[dict] = []
     inert_copies: list[str] = []
     seen: set[str] = set()
 
     for rel_path in walk_workspace(snt_root_path):
-        if PurePosixPath(rel_path).parts[0] in pipeline_dirs:
+        if rel_path in index.paths and rel_path not in index.filesystem_paths:
             inert_copies.append(rel_path)
             continue
         seen.add(rel_path)
@@ -975,8 +1040,8 @@ def check_filesystem(snt_root_path: Path, index: ReleaseIndex) -> tuple[list[dic
     if index.target_tag is None:
         return entries, inert_copies
 
-    for rel_path in sorted(index.target_files):
-        if rel_path in seen or PurePosixPath(rel_path).parts[0] in pipeline_dirs:
+    for rel_path in sorted(index.target_filesystem_files):
+        if rel_path in seen:
             continue
         file_path = snt_root_path / rel_path
         if file_path.is_file():
@@ -1048,10 +1113,11 @@ def check_pipeline_versions(index: ReleaseIndex, token: str) -> tuple[list[dict]
             current_run.log_error(f"[ERROR] {message}")
             errors.append({"scope": f"pipeline_version:{code}", "message": message})
             for member in sorted(expected_members):
-                target_sha = index.target_files.get(f"{dir_name}/{member}")
+                rel_path = index.zip_path(dir_name, member)
+                target_sha = index.target_files.get(rel_path)
                 entries.append(
                     make_entry(
-                        f"{dir_name}/{member}",
+                        rel_path,
                         "pipeline_version",
                         dir_name,
                         None,
@@ -1116,7 +1182,7 @@ def classify_zip_member(dir_name: str, member: str, observed: str | None, index:
     dict
         One report entry, sourced from `pipeline_version`.
     """
-    rel_path = f"{dir_name}/{member}"
+    rel_path = index.zip_path(dir_name, member)
     result = classify(rel_path, observed, index)
     if result["status"] == "untracked" and not zip_rule_covers(member):
         result = verdict("not_covered")
@@ -1161,8 +1227,9 @@ def list_unknown_pipelines(
 ) -> tuple[list[dict], dict | None]:
     """Name the pipelines deployed in this workspace that no release describes.
 
-    Their contents are not read: they are not the release's business. Before the checker
-    ships in a release, it appears here itself (docs/checker.md section 6.2). A failure is an
+    Their contents are not read: they are not the release's business. The bootstrap pipelines,
+    this checker included, are in the manifest like any other (ADR 0042), so they are checked by
+    code above and never land here. A failure is an
     error that makes the report incomplete, but does not stop the run - every pipeline a
     release describes has already been checked by code. `in_target` is False when there is a
     target (no release describes them, so the target does not either) and None when there is
@@ -1291,7 +1358,7 @@ def name_matches_content(dir_name: str, version_name: str, members: dict, index:
     spec = manifest["pipelines"].get(dir_name)
     if spec is None:
         return False  # named after a release that does not ship this pipeline at all
-    expected = {member: manifest["files"].get(f"{dir_name}/{member}") for member in spec["zip_files"]}
+    expected = {member: manifest["files"].get(f"{spec['path']}/{member}") for member in spec["zip_files"]}
     return members == expected
 
 
@@ -1361,6 +1428,10 @@ def attribution_summary(entries: list[dict], index: ReleaseIndex, releases_consi
     all are also reported on their own. Scores come from the observed bytes, not from each
     entry's status, so they mean the same thing in both modes.
 
+    What a release ships is counted in copies (`shipped_copies()`): a notebook it copies to the
+    filesystem and also zips with its pipeline is two copies, matched by source and path, so
+    `present` can never exceed `shipped`.
+
     Returns
     -------
     dict
@@ -1394,16 +1465,18 @@ def attribution_summary(entries: list[dict], index: ReleaseIndex, releases_consi
             "completeness": None,
         }
         if release["manifest_available"]:
-            files = index.manifests[release["tag"]]["files"]
-            at_shipped = [entry for entry in counted if entry["path"] in files]
+            manifest = index.manifests[release["tag"]]
+            files = manifest["files"]
+            copies = shipped_copies(manifest)
+            at_shipped = [entry for entry in counted if (entry["source"], entry["path"]) in copies]
             agreeing = sum(1 for entry in at_shipped if entry["observed_sha256"] == files[entry["path"]])
             row.update(
-                shipped=len(files),
+                shipped=len(copies),
                 present=len(at_shipped),
                 agreeing=agreeing,
                 extra=total - len(at_shipped),
                 agreement=ratio(agreeing, len(at_shipped)),
-                completeness=ratio(len(at_shipped), len(files)),
+                completeness=ratio(len(at_shipped), len(copies)),
             )
         by_release.append(row)
 
@@ -1422,9 +1495,10 @@ def attribution_summary(entries: list[dict], index: ReleaseIndex, releases_consi
             "paths; agreeing = those whose bytes are exactly the release's; extra = files found here "
             "at paths it does not ship. agreement = agreeing / present; completeness = present / "
             "shipped. Files are every entry for a file present in the workspace, filesystem and "
-            "pipeline versions together, except `untracked` and `missing`. A file unchanged across "
-            "releases agrees with each of them, so no column adds up to 1. Best fit: highest "
-            "agreement, then highest completeness, then newest."
+            "pipeline versions together, except `untracked` and `missing`; shipped counts copies, so "
+            "a notebook the release puts both on the filesystem and in its pipeline's zip counts "
+            "twice. A file unchanged across releases agrees with each of them, so no column adds up "
+            "to 1. Best fit: highest agreement, then highest completeness, then newest."
         ),
         "by_release": by_release,
         "best_fit": (
@@ -1435,6 +1509,24 @@ def attribution_summary(entries: list[dict], index: ReleaseIndex, releases_consi
         "matches_no_release": {"count": matches_none, "share": ratio(matches_none, total)},
         "unreadable": {"count": unreadable, "share": ratio(unreadable, total)},
     }
+
+
+def shipped_copies(manifest: dict) -> set[tuple[str, str]]:
+    """List every copy a release puts in a workspace, as (source, repository path).
+
+    A path can be shipped by both routes - a notebook is copied to the filesystem and zipped
+    with its pipeline - and the workspace then holds two copies, each with its own entry.
+
+    Returns
+    -------
+    set[tuple[str, str]]
+        ("filesystem", path) for each of `filesystem_files`, and ("pipeline_version", path) for
+        each zip member, at `<pipeline path>/<member>`.
+    """
+    copies = {("filesystem", path) for path in manifest["filesystem_files"]}
+    for spec in manifest["pipelines"].values():
+        copies.update(("pipeline_version", f"{spec['path']}/{member}") for member in spec["zip_files"])
+    return copies
 
 
 def build_report(

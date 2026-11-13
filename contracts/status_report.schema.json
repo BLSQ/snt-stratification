@@ -116,7 +116,7 @@
     },
     "inert_filesystem_copies": {
       "type": "array",
-      "description": "Repository-relative paths of files on the filesystem inside a pipeline directory. They never execute and are not classified.",
+      "description": "Repository-relative paths of files found on the filesystem at a path releases ship only inside a pipeline zip (in files, never in filesystem_files: pipeline.py, requirements.txt, ...). They never execute and are not classified.",
       "items": { "type": "string" }
     },
     "scan_exclusions": {
@@ -320,7 +320,7 @@
         "tag": { "type": "string" },
         "published_at": { "type": ["string", "null"], "format": "date-time" },
         "manifest_available": { "type": "boolean" },
-        "shipped": { "type": ["integer", "null"], "minimum": 0, "description": "Files the release ships." },
+        "shipped": { "type": ["integer", "null"], "minimum": 0, "description": "File copies the release ships: one per filesystem file and one per pipeline zip member, so a notebook shipped by both routes counts twice. With one route per path, as in every v1 manifest, this is the number of files." },
         "present": { "type": ["integer", "null"], "minimum": 0, "description": "Of those, how many are found in the workspace." },
         "agreeing": { "type": ["integer", "null"], "minimum": 0, "description": "Of those present, how many have exactly the release's bytes." },
         "extra": { "type": ["integer", "null"], "minimum": 0, "description": "Files found in the workspace at paths the release does not ship. They count neither for nor against it." },

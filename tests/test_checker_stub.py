@@ -21,45 +21,69 @@ H = {
 }
 
 
-def manifest(files, pipelines):
-    return {"files": {p: H[v] for p, v in files.items()}, "pipelines": pipelines}
+def manifest(fs, pipes):
+    """Build a v2 manifest: fs = {path: hash key} copied to the filesystem; pipes = {name: {member: key}}.
+
+    A member's repository path is pipelines/<name>/<member>; a path in both (a notebook helper)
+    takes both routes, as in a real release.
+
+    Returns
+    -------
+    dict
+        The manifest, schema_version 2.
+    """
+    files = {p: H[v] for p, v in fs.items()}
+    pipelines = {}
+    for name, members in pipes.items():
+        path = f"pipelines/{name}"
+        files.update({f"{path}/{m}": H[v] for m, v in members.items()})
+        pipelines[name] = {
+            "path": path,
+            "kind": "snt",
+            "code": name.replace("_", "-"),
+            "zip_files": sorted(members),
+        }
+    return {
+        "schema_version": 2,
+        "version": "stub",
+        "repo": "o/r",
+        "files": files,
+        "filesystem_files": sorted(fs),
+        "pipelines": pipelines,
+    }
 
 
-inc = {"code": "snt-dhis2-incidence", "zip_files": ["pipeline.py", "fixture_reverted.py"]}
-rem = {"code": "snt-fixture-pipeline-removed", "zip_files": ["pipeline.py"]}
-add = {"code": "snt-fixture-pipeline-added", "zip_files": ["pipeline.py"]}
-base = {"code/edited.r": "E", "code/fixture_stable.r": "S", "snt_dhis2_incidence/pipeline.py": "P"}
+ADDED_R = "pipelines/snt_dhis2_incidence/utils/fixture_added.r"  # filesystem AND incidence zip
+base = {"shared/r/edited.r": "E", "shared/r/fixture_stable.r": "S"}
 
 v010 = manifest(
+    {**base, "shared/r/fixture_changing.r": "A", "shared/r/fixture_removed.r": "R"},
     {
-        **base,
-        "code/fixture_changing.r": "A",
-        "code/fixture_removed.r": "R",
-        "snt_dhis2_incidence/fixture_reverted.py": "Ar",
-        "snt_fixture_pipeline_removed/pipeline.py": "X",
+        "snt_dhis2_incidence": {"pipeline.py": "P", "fixture_reverted.py": "Ar"},
+        "snt_fixture_pipeline_removed": {"pipeline.py": "X"},
     },
-    {"snt_dhis2_incidence": inc, "snt_fixture_pipeline_removed": rem},
 )
 v021 = manifest(
+    {**base, "shared/r/fixture_changing.r": "B", ADDED_R: "F"},
     {
-        **base,
-        "code/fixture_changing.r": "B",
-        "pipelines/snt_dhis2_incidence/utils/fixture_added.r": "F",
-        "snt_dhis2_incidence/fixture_reverted.py": "Br",
-        "snt_fixture_pipeline_added/pipeline.py": "Y",
+        "snt_dhis2_incidence": {
+            "pipeline.py": "P",
+            "fixture_reverted.py": "Br",
+            "utils/fixture_added.r": "F",
+        },
+        "snt_fixture_pipeline_added": {"pipeline.py": "Y"},
     },
-    {"snt_dhis2_incidence": inc, "snt_fixture_pipeline_added": add},
 )
 v030 = manifest(
+    {**base, "shared/r/fixture_changing.r": "C", ADDED_R: "F", "shared/r/fixture_future.r": "N"},
     {
-        **base,
-        "code/fixture_changing.r": "C",
-        "pipelines/snt_dhis2_incidence/utils/fixture_added.r": "F",
-        "snt_dhis2_incidence/fixture_reverted.py": "Ar",
-        "snt_fixture_pipeline_added/pipeline.py": "Y",
-        "code/fixture_future.r": "N",
+        "snt_dhis2_incidence": {
+            "pipeline.py": "P",
+            "fixture_reverted.py": "Ar",
+            "utils/fixture_added.r": "F",
+        },
+        "snt_fixture_pipeline_added": {"pipeline.py": "Y"},
     },
-    {"snt_dhis2_incidence": inc, "snt_fixture_pipeline_added": add},
 )
 releases = [
     {"tag_name": "v0.1.0-test", "published_at": "2026-09-21T15:20:00Z"},
@@ -73,11 +97,12 @@ index = chk.build_index(manifests, releases, "v0.2.1-test")
 # ---- filesystem: workspace deployed at v0.1.0-test, plus hand-made cases
 root = Path(tempfile.mkdtemp())
 files = {
-    "code/edited.r": "E2",  # hand edit -> unknown_content
-    "code/fixture_stable.r": "S",
-    "code/fixture_changing.r": "A",
-    "code/fixture_removed.r": "R",
-    "code/fixture_future.r": "N",  # only in v0.3.0 -> added_after_target
+    "shared/r/edited.r": "E2",  # hand edit -> unknown_content
+    "shared/r/fixture_stable.r": "S",
+    "shared/r/fixture_changing.r": "A",
+    "shared/r/fixture_removed.r": "R",
+    "shared/r/fixture_future.r": "N",  # only in v0.3.0 -> added_after_target
+    "code/fixture_stable.r": "S",  # the old snt_development layout: no release here ships code/
     "scratch_notes.ipynb": "junk",
     "pipelines/x/code/.ipynb_checkpoints/n-checkpoint.ipynb": "junk",
     "pipelines/x/reporting/outputs/r.html": "junk",
@@ -85,7 +110,7 @@ files = {
     "data/x.csv": "junk",
     "snt_status/status_latest.json": "{}",
     ".snt_release": "{}",
-    "snt_dhis2_incidence/pipeline.py": "P",  # inert copy
+    "pipelines/snt_dhis2_incidence/pipeline.py": "P",  # zip-only path on the filesystem: inert copy
 }
 for rel, content in files.items():
     p = root / rel
@@ -95,32 +120,35 @@ for rel, content in files.items():
 fs_entries, inert = chk.check_filesystem(root, index)
 got = {e["path"]: (e["status"], e["matching_releases"], e["position"]) for e in fs_entries}
 expected = {
-    "code/edited.r": ("unknown_content", None, None),
-    "code/fixture_stable.r": ("match", None, None),
-    "code/fixture_changing.r": (
+    "shared/r/edited.r": ("unknown_content", None, None),
+    "shared/r/fixture_stable.r": ("match", None, None),
+    "shared/r/fixture_changing.r": (
         "mismatch_known",
         [{"from": "v0.1.0-test", "to": "v0.2.0-test", "count": 2}],
         "older",
     ),
-    "code/fixture_removed.r": (
+    "shared/r/fixture_removed.r": (
         "removed_in_target",
         [{"from": "v0.1.0-test", "to": "v0.2.0-test", "count": 2}],
         "older",
     ),
-    "code/fixture_future.r": (
+    "shared/r/fixture_future.r": (
         "added_after_target",
         [{"from": "v0.3.0-test", "to": "v0.3.0-test", "count": 1}],
         "newer",
     ),
+    "code/fixture_stable.r": ("untracked", None, None),
     "scratch_notes.ipynb": ("untracked", None, None),
-    "pipelines/snt_dhis2_incidence/utils/fixture_added.r": ("missing", None, None),
+    ADDED_R: ("missing", None, None),  # the filesystem copy; the zip copy is checked on the zip side
 }
 assert got == expected, got
-assert inert == ["snt_dhis2_incidence/pipeline.py"], inert
+assert inert == ["pipelines/snt_dhis2_incidence/pipeline.py"], inert
+assert all(e["source"] == "filesystem" for e in fs_entries)
 print("filesystem OK")
 
-# ---- zip side
+# ---- zip side: members are keyed under pipelines.<name>.path
 e = chk.classify_zip_member("snt_dhis2_incidence", "fixture_reverted.py", H["Ar"], index)
+assert e["path"] == "pipelines/snt_dhis2_incidence/fixture_reverted.py", e
 assert (e["status"], e["position"]) == ("mismatch_known", "both"), e
 assert e["matching_releases"] == [
     {"from": "v0.1.0-test", "to": "v0.2.0-test", "count": 2},
@@ -136,6 +164,8 @@ e = chk.classify_zip_member("snt_fixture_pipeline_removed", "pipeline.py", H["X"
 assert e["status"] == "removed_in_target" and "Redeploy" in e["remediation"], e
 e = chk.classify_zip_member("snt_fixture_pipeline_added", "pipeline.py", None, index)
 assert e["status"] == "missing", e
+e = chk.classify_zip_member("snt_dhis2_incidence", "utils/fixture_added.r", H["F"], index)
+assert (e["path"], e["status"], e["source"]) == (ADDED_R, "match", "pipeline_version"), e
 print("zip OK")
 
 # ---- version name vs content
@@ -153,12 +183,12 @@ print("names OK")
 
 # ---- unordered: a release with no timestamp
 releases_u = [*releases, {"tag_name": "v9-nodate", "published_at": None}]
-manifests_u = {**manifests, "v9-nodate": manifest({**base, "code/fixture_changing.r": "C"}, {})}
+manifests_u = {**manifests, "v9-nodate": manifest({**base, "shared/r/fixture_changing.r": "C"}, {})}
 index_u = chk.build_index(manifests_u, sorted(releases_u, key=chk.release_sort_key), "v0.2.1-test")
 assert index_u.ordered_tags[-1] == "v9-nodate"
-r = chk.classify("code/fixture_changing.r", H["C"], index_u)
+r = chk.classify("shared/r/fixture_changing.r", H["C"], index_u)
 assert (r["status"], r["position"]) == ("mismatch_known", "unordered"), r
-r = chk.classify("code/fixture_changing.r", H["A"], index_u)
+r = chk.classify("shared/r/fixture_changing.r", H["A"], index_u)
 assert r["position"] == "older", r
 print("unordered OK")
 # a manifest-less release breaks a span (D14)
@@ -168,7 +198,7 @@ rel_hole = [
     *releases[1:],
 ]
 idx_h = chk.build_index(manifests, rel_hole, "v0.2.1-test")
-r = chk.classify("code/fixture_changing.r", H["A"], idx_h)
+r = chk.classify("shared/r/fixture_changing.r", H["A"], idx_h)
 assert [s["count"] for s in r["matching_releases"]] == [1, 1], r
 print("spans OK")
 # pre-releases are left out unless one is the target (D27); with them out, the span is unbroken
@@ -185,9 +215,16 @@ assert [r["tag_name"] for r in kept] == [*(r["tag_name"] for r in releases), "pr
 assert skipped == ["pr1_staging"], skipped
 kept, skipped = chk.drop_prereleases(rel_pre, None)
 assert kept == releases and len(skipped) == 2, (kept, skipped)
-r = chk.classify("code/fixture_changing.r", H["A"], chk.build_index(manifests, kept, "v0.2.1-test"))
+r = chk.classify("shared/r/fixture_changing.r", H["A"], chk.build_index(manifests, kept, "v0.2.1-test"))
 assert [s["count"] for s in r["matching_releases"]] == [2], r
 print("pre-releases OK")
+
+# ---- which manifests the checker reads (Phase 4): v2 only, anything else is skipped with a reason
+assert chk.manifest_problem(v010) is None
+assert "v1 manifest" in chk.manifest_problem({"files": {}, "pipelines": {}})
+assert "schema_version 3" in chk.manifest_problem({**v010, "schema_version": 3})
+assert "not a JSON object" in chk.manifest_problem(["v0.1.0"])
+print("manifest versions OK")
 
 
 # ============================================================================================
@@ -238,8 +275,9 @@ print("marker OK")
 
 # ---- verification mode also carries the per-release scores (section 4.2), from the phase-2 fs run.
 # 5 files scored: edited(E2), stable, changing(A), removed(R), future(N); untracked scratch_notes
-# and missing fixture_added are left out. Columns: shipped, present, agreeing, extra, agreement,
-# completeness.
+# and code/fixture_stable.r, and missing fixture_added, are left out. Columns: shipped, present,
+# agreeing, extra, agreement, completeness. shipped counts copies: v0.2.1 and v0.3.0 ship
+# fixture_added.r twice (filesystem + incidence zip), so 4 fs + 3 + 1 zip = 8, and 5 + 3 + 1 = 9.
 def scores(summary):
     return [
         (r["tag"], r["shipped"], r["present"], r["agreeing"], r["extra"], r["agreement"], r["completeness"])
@@ -252,8 +290,8 @@ assert s["files_scored"] == 5, s
 assert scores(s) == [
     ("v0.1.0-test", 7, 4, 3, 1, 0.75, 0.5714),  # future.r is extra; edited.r disagrees
     ("v0.2.0-test", 7, 4, 3, 1, 0.75, 0.5714),
-    ("v0.2.1-test", 7, 3, 1, 2, 0.3333, 0.4286),  # removed.r and future.r are extra
-    ("v0.3.0-test", 8, 4, 2, 1, 0.5, 0.5),
+    ("v0.2.1-test", 8, 3, 1, 2, 0.3333, 0.375),  # removed.r and future.r are extra
+    ("v0.3.0-test", 9, 4, 2, 1, 0.5, 0.4444),
 ], scores(s)
 # v0.1.0 and v0.2.0 tie on agreement AND completeness -> the newest
 assert s["best_fit"] == {"tag": "v0.2.0-test", "agreement": 0.75, "completeness": 0.5714}, s
@@ -269,13 +307,13 @@ assert index_a.target_files == {} and index_a.target_pipelines == {}
 
 root_a = Path(tempfile.mkdtemp())
 files_a = {
-    "code/edited.r": "E2",
-    "code/fixture_stable.r": "S",
-    "code/fixture_changing.r": "C",
-    "code/fixture_removed.r": "R",
-    "pipelines/snt_dhis2_incidence/utils/fixture_added.r": "F",
+    "shared/r/edited.r": "E2",
+    "shared/r/fixture_stable.r": "S",
+    "shared/r/fixture_changing.r": "C",
+    "shared/r/fixture_removed.r": "R",
+    ADDED_R: "F",
     "scratch_notes.ipynb": "junk",
-    "snt_dhis2_incidence/pipeline.py": "P",  # inert copy
+    "pipelines/snt_dhis2_incidence/pipeline.py": "P",  # inert copy
 }
 for rel, content in files_a.items():
     p = root_a / rel
@@ -291,21 +329,16 @@ def span(a, b, n):
 
 
 expected = {
-    "code/edited.r": ("unknown_content", None, None, None),
+    "shared/r/edited.r": ("unknown_content", None, None, None),
     # one span of 4: v0.4.0 has no manifest, but it is last, so it ends the span without breaking it
-    "code/fixture_stable.r": ("attributed", [span("v0.1.0-test", "v0.3.0-test", 4)], None, None),
-    "code/fixture_changing.r": ("attributed", [span("v0.3.0-test", "v0.3.0-test", 1)], None, None),
-    "code/fixture_removed.r": ("attributed", [span("v0.1.0-test", "v0.2.0-test", 2)], None, None),
-    "pipelines/snt_dhis2_incidence/utils/fixture_added.r": (
-        "attributed",
-        [span("v0.2.1-test", "v0.3.0-test", 2)],
-        None,
-        None,
-    ),
+    "shared/r/fixture_stable.r": ("attributed", [span("v0.1.0-test", "v0.3.0-test", 4)], None, None),
+    "shared/r/fixture_changing.r": ("attributed", [span("v0.3.0-test", "v0.3.0-test", 1)], None, None),
+    "shared/r/fixture_removed.r": ("attributed", [span("v0.1.0-test", "v0.2.0-test", 2)], None, None),
+    ADDED_R: ("attributed", [span("v0.2.1-test", "v0.3.0-test", 2)], None, None),
     "scratch_notes.ipynb": ("untracked", None, None, None),
 }
 assert got == expected, got  # and no `missing` pass: nothing else appears
-assert inert_a == ["snt_dhis2_incidence/pipeline.py"], inert_a
+assert inert_a == ["pipelines/snt_dhis2_incidence/pipeline.py"], inert_a
 assert all(e["remediation"] is None for e in fs_a if e["status"] == "attributed")
 print("attribution filesystem OK")
 
@@ -346,12 +379,15 @@ zip_a, pipes_a, errs_a = chk.check_pipeline_versions(index_a, "token")
 assert errs_a == [] and unknown_calls == [False], (errs_a, unknown_calls)
 got = {e["path"]: (e["status"], e["matching_releases"]) for e in zip_a}
 assert got == {
-    "snt_dhis2_incidence/pipeline.py": ("attributed", [span("v0.1.0-test", "v0.3.0-test", 4)]),
-    "snt_dhis2_incidence/fixture_reverted.py": (
+    "pipelines/snt_dhis2_incidence/pipeline.py": ("attributed", [span("v0.1.0-test", "v0.3.0-test", 4)]),
+    "pipelines/snt_dhis2_incidence/fixture_reverted.py": (
         "attributed",
         [span("v0.1.0-test", "v0.2.0-test", 2), span("v0.3.0-test", "v0.3.0-test", 1)],
     ),
-    "snt_fixture_pipeline_removed/pipeline.py": ("attributed", [span("v0.1.0-test", "v0.2.0-test", 2)]),
+    "pipelines/snt_fixture_pipeline_removed/pipeline.py": (
+        "attributed",
+        [span("v0.1.0-test", "v0.2.0-test", 2)],
+    ),
 }, got
 blocks = {b["code"]: b for b in pipes_a}
 assert set(blocks) == {"snt-dhis2-incidence", "snt-fixture-pipeline-removed", "snt-workspace-checker"}, blocks
@@ -366,17 +402,19 @@ print("attribution pipelines OK")
 # 8 files scored: edited(E2), stable, changing(C), removed(R), added(F), incidence pipeline.py,
 # reverted(A), removed-pipeline(X). The leftovers removed.r and X are what the first D15 counted
 # against v0.3.0, producing a three-way tie; judged on shipped paths only, they are extra for it,
-# and v0.3.0 wins outright - the sandbox finding of 2026-09-29, in miniature.
+# and v0.3.0 wins outright - the sandbox finding of 2026-09-29, in miniature. The zips are still at
+# v0.1.0, so the zip copy of added.r that v0.2.1 and v0.3.0 ship is absent: it lowers their
+# completeness, never their agreement.
 s = chk.attribution_summary(fs_a + zip_a, index_a, considered(releases_a, manifests))
 assert s["files_scored"] == 8, s
 assert scores(s) == [
     ("v0.1.0-test", 7, 7, 5, 1, 0.7143, 1.0),  # added.r extra; edited, changing(C) disagree
     ("v0.2.0-test", 7, 7, 5, 1, 0.7143, 1.0),
-    ("v0.2.1-test", 7, 6, 3, 2, 0.5, 0.8571),  # removed.r, X extra; added pipeline not deployed
-    ("v0.3.0-test", 8, 6, 5, 2, 0.8333, 0.75),  # only edited.r disagrees
+    ("v0.2.1-test", 8, 6, 3, 2, 0.5, 0.75),  # removed.r, X extra; added pipeline, zip added.r absent
+    ("v0.3.0-test", 9, 6, 5, 2, 0.8333, 0.6667),  # only edited.r disagrees
     ("v0.4.0-test", None, None, None, None, None, None),
 ], scores(s)
-assert s["best_fit"] == {"tag": "v0.3.0-test", "agreement": 0.8333, "completeness": 0.75}, s
+assert s["best_fit"] == {"tag": "v0.3.0-test", "agreement": 0.8333, "completeness": 0.6667}, s
 assert s["matches_no_release"] == {"count": 1, "share": 0.125}, s
 assert s["unreadable"] == {"count": 0, "share": 0.0}, s
 # an empty workspace: nothing to score, no best fit, no division by zero
@@ -396,13 +434,15 @@ idx_t = chk.ReleaseIndex(
     {"a": {"old": H["A"], "new": H["A"]}, "b": {"old": H["B"]}},
     {},
     {
-        "old": {"files": {"a": H["A"], "b": H["B"]}, "pipelines": {}},
-        "new": {"files": {"a": H["A"], "c": H["C"]}, "pipelines": {}},
+        "old": {"files": {"a": H["A"], "b": H["B"]}, "filesystem_files": ["a", "b"], "pipelines": {}},
+        "new": {"files": {"a": H["A"], "c": H["C"]}, "filesystem_files": ["a", "c"], "pipelines": {}},
     },
+    {},
+    {"a", "b", "c"},
 )
 ents = [
-    {"path": "a", "status": "attributed", "observed_sha256": H["A"]},
-    {"path": "b", "status": "attributed", "observed_sha256": H["B"]},
+    {"path": "a", "source": "filesystem", "status": "attributed", "observed_sha256": H["A"]},
+    {"path": "b", "source": "filesystem", "status": "attributed", "observed_sha256": H["B"]},
 ]
 t = chk.attribution_summary(ents, idx_t, [row_old, row_new])
 assert t["best_fit"] == {"tag": "old", "agreement": 1.0, "completeness": 1.0}, t  # new: 1.0 / 0.5
@@ -483,6 +523,43 @@ assert_conforms(rep_v, "verification")
 assert_conforms(json.loads(json.dumps(rep_v)), "verification, round-tripped")
 print("schema conformance OK")
 print("ALL PASS (phase 4)")
+
+
+# ============================================================================================
+# Migration Phase 4: bootstrap pipelines are attributed through the manifest like any other
+# ============================================================================================
+import importlib.util  # ruff: ignore[module-import-not-at-top-of-file]
+
+# A fresh copy: the stubs above replaced fetch_current_version and list_unknown_pipelines.
+_spec = importlib.util.spec_from_file_location("checker_fresh", chk.__file__)
+fresh = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(fresh)
+fresh.current_run = Log()
+fresh.workspace = SimpleNamespace(slug="stub-workspace")
+
+example = json.loads(
+    (Path(__file__).resolve().parent / "fixtures/release_manifest_v2_example.json").read_text()
+)
+index_b = fresh.build_index({"v0.1.0": example}, [{"tag_name": "v0.1.0", "published_at": None}], None)
+assert index_b.pipeline_codes["snt_workspace_checker"] == "snt-workspace-checker"
+fresh.fetch_current_version = lambda token, code: (
+    {"versionName": "v1", "zipfile": zipped({"pipeline.py": "x"})}
+    if code == "snt-workspace-checker"
+    else None
+)
+listing = {
+    "pipelines": {"totalPages": 1, "items": [{"code": "snt-workspace-checker", "currentVersion": None}]}
+}
+fresh.call_graphql = lambda token, operation, variables: listing
+_, pipes_b, errs_b = fresh.check_pipeline_versions(index_b, "token")
+assert errs_b == [], errs_b
+[block] = pipes_b  # the checker, once: not repeated as a pipeline no release describes
+assert (block["code"], block["pipeline"], block["in_any_release"]) == (
+    "snt-workspace-checker",
+    "snt_workspace_checker",
+    True,
+), block
+print("bootstrap attribution OK")
 
 
 def test_stub_assertions_hold() -> None:
