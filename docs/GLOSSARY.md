@@ -150,7 +150,7 @@ data. Rates return `NA` rather than zero when the denominator is zero.
 ## 2. DHIS2 indicator codes
 
 The keys of `DHIS2_DATA_DEFINITIONS.DHIS2_INDICATOR_DEFINITIONS` in
-`SNT_config.json` (structure: `contracts/snt_config_json/SNT_config.skeleton.json`). Each maps a short SNT code to a **list of DHIS2 data-element
+`SNT_config.json` (structure: `contracts/snt_config/SNT_config.skeleton.json`). Each maps a short SNT code to a **list of DHIS2 data-element
 UIDs for that country** — the mapping is per-country, and an empty list means the country does not
 report that indicator. The codes then become the `INDICATOR` values (long form) or column names
 (wide form) throughout the routine data.

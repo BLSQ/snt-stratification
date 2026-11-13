@@ -130,7 +130,9 @@ Sourced from `config_analysis_notes.md` §1.3 — the app reimplements `validate
 the user sees the error here instead of in a workspace run log three days later.
 
 > This reimplementation is the app's most important — and most fragile — dependency on the SNT
-> codebase. **Read §12.2 before changing anything in this subsection.**
+> codebase. **Read §12.2 before changing anything in this subsection.** Rules 1–7 were checked
+> against `snt_lib` `v1.0.2` on 2026-11-12, through the conformance fixtures
+> ([`contracts/snt_config/README.md`](../../../contracts/snt_config/README.md#conformance-fixtures--fixtures)).
 
 1. `SNT_CONFIG.COUNTRY_CODE` non-empty after trim. Additionally: ISO3, uppercase, 3 letters.
 2. `SNT_CONFIG.DHIS2_ADMINISTRATION_1` non-empty.
@@ -724,7 +726,7 @@ section exists so that risk is managed rather than discovered.
 
 | Upstream component | Where it lives | How this app uses it | What breaks here if it changes |
 |---|---|---|---|
-| **`snt_lib.validate_config()`** | `github.com/BLSQ/snt_utils` → `snt_pipeline_utils`. **Unpinned** (`git+https://…`, no ref) | **Reimplemented in JavaScript** as spec §5.1 rules 1–7. The single most important reuse. | The app declares a file valid that the pipelines reject, or blocks a file they would accept. **Silent** — nothing tells us. See §12.2 |
+| **`snt_lib.validate_config()`** | `github.com/BLSQ/snt_utils` → `snt_pipeline_utils`. The pipelines install the **moving branch** `@release-v1` (DEP-1); the conformance test pins tag `v1.0.2` | **Reimplemented in JavaScript** as spec §5.1 rules 1–7. The single most important reuse. | The app declares a file valid that the pipelines reject, or blocks a file they would accept. **Silent** — nothing tells us. See §12.2 |
 | **`validate_required_config_keys()`** (R side) | SNT pipelines repo, R helpers | Assumed equivalent to the Python gate. **Unverified** — the analysis docs treat them as the same contract | If the R gate is stricter, R pipelines reject files this app calls valid |
 | **`load_configuration_snt()`** | SNT pipelines repo | Defines the path contract: exactly `<workspace>/configuration/SNT_config.json`. This is why §6.1 exists and why history goes in a subfolder | If it starts globbing, or reads a different path, the whole draft-isolation design needs revisiting |
 | **`SNT_config.skeleton.json`** | [`docs/`](../../../contracts/snt_config/SNT_config.skeleton.json) in *this* repo | Drives the form: section order, key order, key sets, placeholder conventions. Acceptance criterion §10.2 compares against it | It is a **derived artefact** — see §12.3 |
@@ -748,7 +750,10 @@ The failure is silent in both directions. The worse one: upstream adds a require
 keeps exporting files without it, and every country the app touched produces a config that no
 pipeline will start.
 
-Options, cheapest first — **a decision is needed, this is not resolved:**
+**Settled: option 2** (migration plan, Phase 3). The fixtures are in
+[`contracts/snt_config/fixtures/`](../../../contracts/snt_config/README.md#conformance-fixtures--fixtures);
+the Python side runs them in CI against a pinned `snt_lib`, and this app's JS validator must run the
+same folder when it is built. The options as they were weighed, cheapest first:
 
 1. **Do nothing; re-check manually when `snt_utils` moves.** What §6 of the analysis notes already
    recommends. Zero cost, relies entirely on someone remembering.

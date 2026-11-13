@@ -176,7 +176,7 @@ could not verify. Their docs are in [`../docs/bootstrap/`](../docs/bootstrap/); 
 |---|---|
 | [`deployer.md`](../docs/bootstrap/deployer.md), then [`openhexa_deployment.md`](../docs/bootstrap/openhexa_deployment.md) | Changing either deployer, or anything about deployment and tokens |
 | [`checker.md`](../docs/bootstrap/checker.md) + [`status_report.schema.json`](../contracts/status_report.schema.json) | Changing the checker or its report (the schema wins over `checker.md` §5.5) |
-| [`release_manifest.schema.json`](../contracts/release_manifest.schema.json) + [`release_manifest.md`](../contracts/release_manifest.md) | Changing how the manifest is read or written (R22) |
+| [`release_manifest.v1.schema.json`](../contracts/release_manifest.v1.schema.json) (read today), [`release_manifest.schema.json`](../contracts/release_manifest.schema.json) (v2, from Phase 4) + [`release_manifest.md`](../contracts/release_manifest.md) | Changing how the manifest is read or written (R22) |
 | [`snt_release_marker.md`](../contracts/snt_release_marker.md) | Reading or writing `.snt_release` |
 | [`context/snt_development.md`](../docs/bootstrap/context/snt_development.md) | What an old-repo release contains |
 | [`release_strategy.md`](../docs/bootstrap/release_strategy.md), [`roadmap.md`](../docs/bootstrap/roadmap.md) | Big-picture questions, testing a PR, planning ahead |

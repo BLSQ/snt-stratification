@@ -1,0 +1,110 @@
+# Builds what a GitHub release of this repo carries. Deploys nothing to any workspace by itself
+# (root CLAUDE.md, rule 2): the deployer reads these assets when someone runs it (Phase 4 of
+# docs/MIGRATION_PLAN.md).
+#
+# assets:              on every published release, pre-releases included. Builds release_manifest.json
+#                      (tools/build_manifest.py), the slim tarball <repo name>-<tag>.tar.gz and one
+#                      webapp-<name>-<tag>.zip per webapp with a stamped version.json
+#                      (tools/build_release_assets.py; contract: contracts/release_manifest.md), and
+#                      attaches them to the release. A manual run ("Run workflow", only offered once
+#                      this file is on main) builds the same files under a test version name and keeps
+#                      them as a download on the run's page; it creates and changes no release.
+# bootstrap-templates: on full releases only ("released" skips pre-releases). Pushes each registry
+#                      kind: bootstrap pipeline to the new templates publishing workspace, which
+#                      publishes their template versions (ADR 0042). DISABLED until that workspace
+#                      exists (ADR 0041); until then maintainers push by hand.
+#
+# A full release created directly fires both "published" and "released": two runs, one job each.
+name: release
+
+on:
+  release:
+    types: [published, released]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version name for the test build (no release is created or changed)
+        required: true
+        default: v0.0.0-test
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.event.release.tag_name || inputs.version }}-${{ github.event.action || 'manual' }}
+  cancel-in-progress: false
+
+env:
+  # As in ci.yaml.
+  PYTHON_VERSION: "3.13"
+  # Read through the environment, never pasted into a script, so a tag or input cannot inject shell.
+  VERSION: ${{ github.event.release.tag_name || inputs.version }}
+
+jobs:
+  assets:
+    if: github.event_name == 'workflow_dispatch' || github.event.action == 'published'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # gh release upload
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.release.tag_name || github.ref }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install jsonschema
+        run: pip install jsonschema
+
+      - name: Build release_manifest.json
+        run: >-
+          mkdir -p dist &&
+          python tools/build_manifest.py --version "$VERSION" --repo "$GITHUB_REPOSITORY"
+          --output dist/release_manifest.json
+      - name: Build the slim tarball and the webapp zips
+        run: >-
+          python tools/build_release_assets.py --manifest dist/release_manifest.json
+          --commit "$(git rev-parse HEAD)"
+
+      - name: Attach the assets to the release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # --clobber: a re-run replaces the assets instead of failing on the existing names.
+        run: gh release upload "$VERSION" dist/* --clobber --repo "$GITHUB_REPOSITORY"
+      - name: Keep the assets on the run page (manual run)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v6
+        with:
+          name: release-assets-${{ env.VERSION }}
+          path: dist/
+          retention-days: 7
+
+  bootstrap-templates:
+    # To enable, once the publishing workspace exists: set the repository variable
+    # OH_TEMPLATES_WORKSPACE (its slug) and the secret OH_TEMPLATES_TOKEN (a token for it), then
+    # remove "false &&". Read R5 first: every push from that workspace publishes a template version.
+    if: false && github.event.action == 'released'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.release.tag_name }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Configure the OpenHEXA CLI
+        uses: blsq/openhexa-cli-action@v1
+        with:
+          workspace: ${{ vars.OH_TEMPLATES_WORKSPACE }}
+          token: ${{ secrets.OH_TEMPLATES_TOKEN }}
+      - name: Push each bootstrap pipeline (publishes its template version)
+        env:
+          RELEASE_URL: ${{ github.event.release.html_url }}
+        # The version is named after the tag, as the deployer names the versions it registers.
+        run: |
+          for name in $(jq -r '.pipelines | to_entries[] | select(.value.kind == "bootstrap") | .key' \
+              pipelines/registry.json); do
+            openhexa pipelines push "pipelines/$name" --code "${name//_/-}" --name "$VERSION" \
+              --description "Release $VERSION" --link "$RELEASE_URL" --yes
+          done

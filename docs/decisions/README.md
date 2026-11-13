@@ -51,7 +51,7 @@ who made it move on. Format after Michael Nygard's
 | [0026](0026-checker-and-deployer-are-separate-pipelines.md) | Checking and fixing a workspace are separate pipelines; the checker is read-only | Accepted | 2026-09-18 |
 | [0027](0027-checker-report-is-a-workspace-file.md) | The checker's report is a workspace file, not a dataset or a DB table | Accepted | 2026-09-18 |
 | [0028](0028-hash-raw-bytes-no-notebook-normalisation.md) | Hash notebooks as raw bytes; no normalisation | Accepted | 2026-09-29 |
-| [0029](0029-no-deployment-workflow-for-bootstrap-pipelines.md) | No deployment workflow for the bootstrap pipelines | Accepted | 2026-09-30 |
+| [0029](0029-no-deployment-workflow-for-bootstrap-pipelines.md) | No deployment workflow for the bootstrap pipelines | Superseded by 0042 | 2026-09-30 |
 | [0030](0030-template-mechanism-being-retired.md) | The pipeline template mechanism is being retired | Superseded by 0040 | 2026-09-30 |
 | [0031](0031-deployer-deploys-the-whole-release.md) | The workspace deployer always deploys the whole release | Accepted | 2026-09-30 |
 | [0032](0032-one-workspace-per-release.md) | One workspace per release is the expected usage | Accepted | 2026-10-01 |
@@ -62,8 +62,9 @@ who made it move on. Format after Michael Nygard's
 | [0037](0037-one-release-train.md) | One release train for pipelines, webapps and bootstrap | Accepted | 2026-11-02 |
 | [0038](0038-repo-path-is-workspace-path.md) | Repo path = workspace path; flat `pipelines/`, R half co-located | Accepted | 2026-11-02 |
 | [0039](0039-docs-placement-rule.md) | Where docs live, and how agent instructions are split | Accepted | 2026-11-02 |
-| [0040](0040-templates-kept-alongside-the-deployer.md) | Templates stay as a deploy route, alongside the deployer | Accepted | 2026-11-02 |
+| [0040](0040-templates-kept-alongside-the-deployer.md) | Templates stay as a deploy route, alongside the deployer | Accepted, amended by 0042 | 2026-11-02 |
 | [0041](0041-new-templates-publishing-workspace.md) | The new templates are published from their own workspace | Accepted | 2026-11-02 |
+| [0042](0042-bootstrap-pipelines-as-templates-on-release.md) | Bootstrap pipelines are published as templates on each full release | Accepted | 2026-11-12 |
 
 ## Imported ADRs: old number → new number
 

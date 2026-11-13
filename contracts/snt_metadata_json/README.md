@@ -251,7 +251,7 @@ The validator is
 (also used by the `add-explorer-layer` skill). It runs the schema, plus the two checks JSON Schema
 cannot express: `SCALE` ordering, and whether every `DATASET.NAME` is a key of
 `SNT_DATASET_IDENTIFIERS` in the config skeleton
-([`contracts/snt_config_json/SNT_config.skeleton.json`](../snt_config/SNT_config.skeleton.json) —
+([`contracts/snt_config/SNT_config.skeleton.json`](../snt_config/SNT_config.skeleton.json) —
 the trusted key set; the archived per-country copies were never verified).
 
 ```bash

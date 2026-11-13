@@ -64,15 +64,6 @@ outputs (rule R2) stops depending on each developer remembering.
 
 **Source:** CLAUDE.md *Suggestions*.
 
-### <a id="tool-2"></a>TOOL-2 · A CI job on pull requests
-
-No check runs on a pull request: the repo has no workflows yet (the old `push_snt_*.yaml` were not
-imported). `ruff check .` and `pytest` run only when someone runs them. Planned as `ci.yaml` in
-[`MIGRATION_PLAN.md`](MIGRATION_PLAN.md) Phase 3, together with [TOOL-5](#tool-5) to
-[TOOL-7](#tool-7). Facts about the old repo's CI: [`DATA_ARCHITECTURE.md` §7.3](DATA_ARCHITECTURE.md#73-ci-coverage).
-
-**Source:** CLAUDE.md *Suggestions*; DATA_ARCHITECTURE §9 #9.
-
 ### <a id="tool-3"></a>TOOL-3 · A `tests/` seed
 
 Pure functions such as `validate_yyyymm`, `validate_period_range`, `get_unique_data_elements`,
@@ -90,43 +81,28 @@ is absent, so the helpers are closer to runnable than they look. Pairs with [DEP
 
 **Source:** CLAUDE.md *Suggestions*.
 
-### <a id="tool-5"></a>TOOL-5 · Commit the docs link checker
+### <a id="tool-6"></a>TOOL-6 · JSON Schemas for the orchestrator contracts
 
-A stdlib-only script that checks every relative link and `#anchor` in the repo's Markdown exists
-only outside the repo (the old repo's git-ignored `ignore/docs-restructure/check_links.py`, and a
-copy used during the migration). Commit it as `tools/check_links.py` and run it in `ci.yaml`
-([TOOL-2](#tool-2)).
-
-**Owner:** Giulia. **Source:** docs restructure plan, 2026-10; Phase 2 sweep, 2026-11.
-
-### <a id="tool-6"></a>TOOL-6 · Dependency-free check script
-
-Validate the JSON files against `contracts/`, check map node ids == description keys, and check
-that relative links in every `.md` resolve.
-
-The link-check part of it is [TOOL-5](#tool-5).
+The three files in [`contracts/orchestrator/`](../contracts/orchestrator/) are prose references
+(`_description`, `_generation_instructions`), not JSON Schema, so nothing validates
+`pipeline_map.json` and `pipeline_descriptions.json` against them, or a workspace's
+`pipeline_cards.json`. `pytest` checks only that map node ids equal description keys
+(`tests/test_contracts.py`). Write them as JSON Schema (keeping the prose), then validate the two
+bundle files in `pytest` like the other contracts.
 
 **Source:** `snt_webapp_orchestrator` BACKLOG. **Old ID:** orchestrator `TOOL-1`.
-
-### <a id="tool-7"></a>TOOL-7 · CI check for country data and notebook outputs (R1, R2)
-
-Nothing stops a PR that adds a `.csv`/`.xlsx`/`.parquet`/`.rds`/`.geojson` file or a notebook with
-outputs. `.gitignore` covers most data files, but `git add -f` gets past it, and the `nbstripout`
-filter ([TOOL-1](#tool-1)) lives in each developer's `.git/config`, so a clone without it commits
-outputs silently. Add both checks to `ci.yaml` ([TOOL-2](#tool-2)). Test notebooks by reading their
-`outputs` directly, not with `nbstripout --verify` (the handover skill explains why).
-
-**Source:** Giulia's git-practices notes (local), 2026-10; Phase 2 sweep, 2026-11.
 
 ### <a id="tool-8"></a>TOOL-8 · Merge policy for pull requests
 
 Decide which GitHub merge buttons stay enabled. Proposal: squash-only, with the PR title and
-description as the commit message, and branches required to be up to date. Why it matters here: the
-template-push workflow stamps the head commit's message into each published OpenHEXA version
-description ([ADR 0004](decisions/0004-publish-only-from-snt-development.md)), so a merge commit
-publishes "Merge pull request #N …" as the version's description. The migration PRs use merge
-commits on purpose, to keep the import commit separate. Decide together with `push_templates.yaml`
-([`MIGRATION_PLAN.md`](MIGRATION_PLAN.md) Phase 3), then set it in the `main` ruleset.
+description as the commit message, and branches required to be up to date. It no longer reaches
+OpenHEXA from this repo: its template pushes (`release.yaml`'s bootstrap-templates job,
+[`push_templates.yaml`](../.github/workflows/push_templates.yaml)) run on full releases and describe
+each version "Release `<tag>`". It still does in the old repo, whose template-push workflows stamp
+the head commit's message into each published version
+([ADR 0004](decisions/0004-publish-only-from-snt-development.md)), so a merge commit publishes
+"Merge pull request #N …". The migration PRs use merge commits on purpose, to keep the import commit
+separate. Decide, then set it in the `main` ruleset.
 
 **Owner:** Giulia. **Source:** Giulia's git-practices notes (local), 2026-10; Phase 2, 2026-11.
 
@@ -148,9 +124,11 @@ commit SHA. Upgrades then become a reviewable, revertible one-line PR. The cost 
 to bump the refs. Tags are the usual compromise.
 
 **Current repo state (checked 2026-10-16), which the reference docs do not yet reflect:** all 20
-files reference `snt_utils.git@release-v1`. Whether `release-v1` is a tag or a branch was **not
-verified**. If it is a branch, the problem above is unchanged. `openhexa.toolbox @main` remains in 13
-files. See [DOC-3](#doc-3).
+files reference `snt_utils.git@release-v1`. **`release-v1` is a branch** (checked 2026-11-12 in a
+local clone), so the problem above is unchanged. A real tag exists for its head that day:
+annotated tag `v1.0.2` → `23b8340`, which the config conformance test already pins
+(`tests/requirements-conformance.txt`); `v1.0.0` and `v1.0.1` are older. `openhexa.toolbox @main`
+remains in 13 files. See [DOC-3](#doc-3).
 
 Related: the workspace image pins `openhexa.toolbox=2.11.3`, which `@main` overrides at pipeline
 run time, so a notebook run interactively and the same notebook run by the pipeline can see
@@ -200,7 +178,7 @@ silently fails to load. That already happened: six of the seven entries in the 2
 
 Two parts, separable: (a) agree one convention and apply it; (b) decide whether the key should
 simply *equal* the OpenHEXA dataset name, which removes the trap. Migration cost: every
-`pipeline.py` reads these keys, they appear in `contracts/snt_config_json/SNT_config.skeleton.json`
+`pipeline.py` reads these keys, they appear in `contracts/snt_config/SNT_config.skeleton.json`
 and in the archived `deprecated/configuration/SNT_config_<CC>.json` copies, and the country
 workspaces' live configs must change in step. It is a coordinated change, not a rename. Resolve at
 the same time that the key set is **not** identical across countries (NER's config has
@@ -217,16 +195,16 @@ extraction: no such use is visible in this repo, but if it exists it is probably
 (external, unpinned). A search of this repo cannot settle it, so "no usage found" is not proof that
 the value is unused.
 
-**Source:** `contracts/snt_config_json/README.md` (formerly `configuration/README.md`).
+**Source:** the `snt_development` version of [`contracts/snt_config/README.md`](../contracts/snt_config/README.md) (formerly `configuration/README.md`).
 
 ### <a id="cfg-3"></a>CFG-3 · Write `snt_config.schema.json`
 
 The skeleton records *where* country-specific values go, not *how* to fill them in. That belongs in
-a JSON Schema on the model of `contracts/snt_metadata_json/`. Not created yet. Note that the config
-editor webapp repo documents the values in more depth, and the two skeletons are to be reconciled
-there ([`contracts/snt_config_json/README.md`](../contracts/snt_config/README.md)).
+a JSON Schema on the model of `contracts/snt_metadata_json/`. Not created yet. Until then, the
+per-field rules are in
+[`contracts/snt_config/config_analysis_notes.md`](../contracts/snt_config/config_analysis_notes.md).
 
-**Owner:** Giulia. **Source:** `contracts/snt_config_json/README.md`.
+**Owner:** Giulia. **Source:** the `snt_development` version of [`contracts/snt_config/README.md`](../contracts/snt_config/README.md).
 
 ### <a id="cfg-4"></a>CFG-4 · `SNT_CONFIGURATION` dataset and an editing webapp
 

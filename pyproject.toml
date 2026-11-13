@@ -95,6 +95,8 @@ suppress-none-returning = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# Lets tests import the scripts in tools/ by name (import build_manifest).
+pythonpath = ["tools"]
 
 [dependency-groups]
 dev = [

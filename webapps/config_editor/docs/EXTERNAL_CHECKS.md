@@ -149,8 +149,9 @@ it is a schema change, and those are not this repo's to make.
 
 Not external — listed here only so the two sets are not confused:
 
-- **§12.2 — how to keep the JS and Python `validate_config()` in agreement.** Four options, none
-  chosen. A decision, not a lookup.
+- **§12.2 — how to keep the JS and Python `validate_config()` in agreement.** Settled: option 2,
+  the conformance fixtures in `contracts/snt_config/fixtures/`. The Python side runs; the JS side
+  runs them when the validator is built.
 - **§11 open question 1 — `REPORTING_RATE_PRODUCT_UID` semantics.** Needs the SNT team, but it is a
   question about intent, not about code that can be read.
 - **§11 open questions 2, 3, 5** — import/normalisation, `COUNTRY_NAME` casing, dataset registration.

@@ -1,7 +1,7 @@
 # 0040. Templates stay as a deploy route, alongside the deployer
 
 Date: 2026-11-02
-Status: Accepted (supersedes [0030](0030-template-mechanism-being-retired.md))
+Status: Accepted (supersedes [0030](0030-template-mechanism-being-retired.md); amended by [0042](0042-bootstrap-pipelines-as-templates-on-release.md): the one-route rule covers `snt` and `support` pipelines)
 
 ## Context
 

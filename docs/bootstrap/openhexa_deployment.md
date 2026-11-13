@@ -206,20 +206,26 @@ into `snt-development-sandbox`, with correct pipeline codes, parameters round-tr
    there is a working checker and deployer to demonstrate. §7.3b.
 3. ~~**Establish whether *reading* a pipeline version needs the `oh` token too.**~~ **Closed
    2026-09-22: it does not.** See Authentication above and [`HISTORY.md`](HISTORY.md) §2.4.
-4. ~~**Add a `push_snt_workspace_deployer.yaml` workflow.**~~ **Closed 2026-09-30 (D19): no deployment
-   workflow for the deployer or the checker.**
+4. ~~**Add a `push_snt_workspace_deployer.yaml` workflow.**~~ **Closed: no workflow per merge.** The
+   bootstrap pipelines are published as templates by `release.yaml` on each full release
+   ([ADR 0042](../decisions/0042-bootstrap-pipelines-as-templates-on-release.md), 2026-11-12).
 
 ### R5 and the Template mechanism
 
 This approach pushes pipeline **versions directly into each country workspace**, bypassing
-OpenHEXA's Template system. Retiring templates altogether is the aim of this work (D20,
-§7.7), so the mechanism is documented here because it is still in place, not
-because anything new should be built around it.
+OpenHEXA's Template system. Templates are not being retired: they stay a deploy route alongside the
+deployer ([ADR 0040](../decisions/0040-templates-kept-alongside-the-deployer.md)), and the bootstrap
+pipelines themselves are published as templates on each full release
+([ADR 0042](../decisions/0042-bootstrap-pipelines-as-templates-on-release.md)).
 
-`snt_development`'s CLAUDE.md **R5** ("Always publish from `snt-development`") exists because pushing *a template* from
-the wrong workspace creates a competing duplicate template. Pushing a *pipeline version into the
-workspace that will run it* is a different operation and creates no template. R5 is **left as it
-is** and is not being reworded for this work: it stays true for as long as templates exist.
+**R5** ([`CLAUDE.md`](../../CLAUDE.md#register)) exists because pushing *a template* from the wrong
+workspace creates a competing duplicate template, so each template set is published from exactly
+one workspace ([ADR 0041](../decisions/0041-new-templates-publishing-workspace.md)). Pushing a
+*pipeline version into the workspace that will run it* is a different operation and creates no
+template, so R5 does not bind the deployer. That holds even for a pipeline installed from a
+template: the push is accepted and the template link is kept (spike S6,
+[`MIGRATION_PLAN.md`](../MIGRATION_PLAN.md#phase-3-findings)). A push to a template's **source**
+pipeline is different again: it also publishes a template version.
 
 ## Python deployment — done
 
@@ -262,11 +268,9 @@ Deliberately **not** being solved now: the goal is a working checker and deploye
 this is the kind of thing to take to the OpenHEXA devs once there is something to show. Revisit
 before real production rollout, not before.
 
-## 7.7 ~~R5~~ and the Template mechanism — **closed 2026-09-30 (D19, D20)**
+## 7.7 R5 and the Template mechanism
 
-`snt_development`'s `CLAUDE.md` **R5** ("always publish from `snt-development`") was written about *template*
-publication. This work, `snt_workspace_deployer` above all, exists to **get rid of pipeline
-templates altogether** (D20). The mechanism is still in place and must be understood, but nothing
-new is built around it, and R5 is **not** being reworded for this work: it stays as it is for as
-long as the templates it protects exist. Pushing a pipeline version into the workspace that runs it
-creates no template and is a different operation; see `openhexa_deployment.md`.
+Templates are a deploy route alongside the deployer
+([ADR 0040](../decisions/0040-templates-kept-alongside-the-deployer.md)), and R5 covers every
+template set ([ADR 0041](../decisions/0041-new-templates-publishing-workspace.md)). What R5 binds and
+what it does not: [R5 and the Template mechanism](#r5-and-the-template-mechanism) above.

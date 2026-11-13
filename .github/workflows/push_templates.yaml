@@ -1,0 +1,87 @@
+# Publishes the new SNT template set (ADRs 0040, 0041). Pushes each registry kind: snt and
+# kind: support pipeline to the new templates publishing workspace, where every push to a template's
+# source pipeline publishes a template version (spike S6, docs/MIGRATION_PLAN.md "Phase 3
+# findings"). Subscribed workspaces with auto-update on then receive it.
+#
+# On full releases only ("released" skips pre-releases), like release.yaml's bootstrap-templates
+# job, so every template version matches a tag and is described "Release <tag>". Every pipeline is
+# pushed on every full release, changed or not (decided 2026-11-13): OpenHEXA does not compare
+# contents, so an unchanged pipeline gets a new template version too.
+#
+# pipelines: lists the pipelines from pipelines/registry.json, so no hand-written per-pipeline list
+#            or path filter can go stale.
+# push:      one matrix job per pipeline; one failed push does not stop the others and can be
+#            re-run alone ("Re-run failed jobs").
+#
+# DISABLED until Phase 6 (docs/MIGRATION_PLAN.md). Deploys nothing until then (root CLAUDE.md,
+# rule 2); the old repo's push_snt_*.yaml keep publishing the old templates from snt-development.
+name: push_templates
+
+on:
+  release:
+    types: [released]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: push-templates-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+
+env:
+  # As in ci.yaml.
+  PYTHON_VERSION: "3.13"
+  # Read through the environment, never pasted into a script, so a tag cannot inject shell.
+  VERSION: ${{ github.event.release.tag_name }}
+
+jobs:
+  pipelines:
+    # To enable, in Phase 6: create the publishing workspace, set the repository variable
+    # OH_TEMPLATES_WORKSPACE (its slug) and the secret OH_TEMPLATES_TOKEN (a token for it), as for
+    # release.yaml's bootstrap-templates job, then remove "false". The push job follows, since it
+    # needs this one. Read R5 first: every push from that workspace publishes a template version.
+    if: false
+    runs-on: ubuntu-latest
+    outputs:
+      names: ${{ steps.list.outputs.names }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.release.tag_name }}
+      - name: List the registry's snt and support pipelines
+        id: list
+        run: >-
+          echo "names=$(jq -c '[.pipelines | to_entries[]
+          | select(.value.kind == "snt" or .value.kind == "support") | .key]'
+          pipelines/registry.json)" >> "$GITHUB_OUTPUT"
+
+  push:
+    needs: pipelines
+    name: push ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        name: ${{ fromJSON(needs.pipelines.outputs.names) }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.release.tag_name }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Configure the OpenHEXA CLI
+        uses: blsq/openhexa-cli-action@v1
+        with:
+          workspace: ${{ vars.OH_TEMPLATES_WORKSPACE }}
+          token: ${{ secrets.OH_TEMPLATES_TOKEN }}
+      - name: Push the pipeline (publishes its template version)
+        env:
+          NAME: ${{ matrix.name }}
+          RELEASE_URL: ${{ github.event.release.html_url }}
+        # --code sets the code on the first push only, and template-created pipelines take it from
+        # here (spike S3): snt-<name> for the snt_* pipelines, as tools/build_manifest.py writes it.
+        # The version is named after the tag, as the deployer names the versions it registers.
+        run: >-
+          openhexa pipelines push "pipelines/$NAME" --code "${NAME//_/-}" --name "$VERSION"
+          --description "Release $VERSION" --link "$RELEASE_URL" --yes
