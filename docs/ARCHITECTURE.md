@@ -113,8 +113,8 @@ first production release. A webapp-only fix is a patch release.
 
 *([`release.yaml`](../.github/workflows/release.yaml) builds manifest v2, a slim tarball and the
 stamped webapp zips on each published release ([assets](../contracts/release_manifest.md#release-assets-beside-the-manifest)).
-No release exists yet; the deployer and checker read them from Phase 4, the orchestrator shows the
-stamp from Phase 7.)*
+No release exists yet; the deployers read the manifest and the slim tarball, the checker the
+manifest, and the orchestrator shows the stamp from Phase 7.)*
 
 ### 1.5 Where docs live
 

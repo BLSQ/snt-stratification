@@ -1,7 +1,7 @@
 """Fixtures validate against the contracts in contracts/; the orchestrator bundle's two files agree.
 
-The status reports and v1 manifests are real sandbox artefacts. The v2 manifest example is
-synthetic until the first release of this repo produces a real one.
+The status report is a real sandbox artefact. The v2 manifest example is synthetic until the first
+release of this repo produces a real one.
 """
 
 import json
@@ -51,25 +51,14 @@ def test_status_report_fixture_conforms(name: str) -> None:
     assert not errors
 
 
-V1_MANIFESTS = sorted(
-    p.name for p in FIXTURES.glob("release_manifest_*.json") if "schema_version" not in load(p)
-)
 V2_MANIFESTS = sorted(
     p.name for p in FIXTURES.glob("release_manifest_*.json") if load(p).get("schema_version") == 2
 )
 
 
-@pytest.mark.parametrize("name", V1_MANIFESTS)
-def test_release_manifest_v1_fixture_conforms(name: str) -> None:
-    """A v1 manifest the old generator attached to a sandbox release validates, invariants included."""
-    manifest = load(FIXTURES / name)
-    errors = [e.message for e in validator("release_manifest.v1.schema.json").iter_errors(manifest)]
-    assert not errors
-    # The two invariants the schema states but JSON Schema cannot express.
-    for directory, spec in manifest["pipelines"].items():
-        assert "pipeline.py" in spec["zip_files"], directory
-        unknown = [m for m in spec["zip_files"] if f"{directory}/{m}" not in manifest["files"]]
-        assert not unknown, (directory, unknown)
+def test_every_manifest_fixture_is_v2() -> None:
+    """No manifest fixture of another shape lingers unchecked (v1 was deleted in Phase 4)."""
+    assert sorted(p.name for p in FIXTURES.glob("release_manifest_*.json")) == V2_MANIFESTS
 
 
 @pytest.mark.parametrize("name", V2_MANIFESTS)

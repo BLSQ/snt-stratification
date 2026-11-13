@@ -106,9 +106,9 @@ Also for the devs, already written up elsewhere: deleting or archiving a pipelin
 The move plan's other Session 5 items. They are listed here so the roadmap is complete, and each
 is described in its own file:
 
-* Switch the `github_repo` defaults from `BLSQ/snt_development_sandbox` to
-  `BLSQ/snt-stratification` ([`MIGRATION_PLAN.md`](../MIGRATION_PLAN.md) Phase 4).
+* ~~Switch the `github_repo` defaults from `BLSQ/snt_development_sandbox` to
+  `BLSQ/snt-stratification`~~ Done in Phase 4 of [`MIGRATION_PLAN.md`](../MIGRATION_PLAN.md).
 * Finish the deployer's test plan, D21–D24 and `backup_existing` ([`deployer.md`](deployer.md)
-  §6.7). Run by hand in the sandbox.
+  §6.7). Run by hand in a test workspace, against pre-releases of this repo (D-18).
 * ~~Delete the pre-phase-0 fallback in `split_manifest()`~~ Deleted 2026-10-02 (D26,
   [`release_manifest.md`](../../contracts/release_manifest.md) §2.1).

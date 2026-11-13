@@ -8,8 +8,9 @@
 
 ## Workspace Deployer — built, **changed 2026-09-30 and not yet fully tested**
 
-[`snt_workspace_deployer/`](../../pipelines/snt_workspace_deployer/), an OpenHEXA pipeline running in
-`snt-development-sandbox`. Parameters: `github_repo`, `release_tag`, `api_connection`,
+[`snt_workspace_deployer/`](../../pipelines/snt_workspace_deployer/), an OpenHEXA pipeline that
+reads the releases of this repository, `BLSQ/snt-stratification` (manifest v2). Parameters:
+`github_repo` (default `BLSQ/snt-stratification`), `release_tag`, `api_connection`,
 `backup_existing`, `dry_run`. `release_tag` is optional: empty deploys the repository's latest
 release (D23), and the resolved tag is what names everything downstream. It always deploys the **whole** release, both halves together
 (decision D21): there is no option to sync only the analytics, deploy only the pipelines, restrict to
@@ -17,17 +18,30 @@ some pipelines, or skip creating missing ones. It:
 
 1. resolves the release via the GitHub API — by tag, or `/releases/latest` when no tag is given —
    and downloads `release_manifest.json` from its assets;
-2. downloads the release **source tarball** and extracts it;
-3. copies every manifest-tracked R/notebook file into `workspace.files_path`, archiving any
-   existing copy under `archive/<release_tag>/` first;
-4. deploys each pipeline through the OpenHEXA API (see below), creating any that is missing;
-5. writes `.snt_release`.
+2. downloads the release's **slim tarball** asset, `<repo name>-<tag>.tar.gz`, which holds exactly
+   the manifest's files ([`release_manifest.md`](../../contracts/release_manifest.md#release-assets-beside-the-manifest)),
+   and extracts it. A release without that asset stops the run with an `[ERROR]`;
+3. copies exactly the manifest's `filesystem_files` into `workspace.files_path`, at their repository
+   paths, archiving any existing copy under `archive/<release_tag>/` first;
+4. deploys each pipeline through the OpenHEXA API (see below), zipping `pipelines.<name>.path` and
+   creating any pipeline that is missing. Bootstrap pipelines only from a recent enough release (see
+   below);
+5. writes `.snt_release`, naming the tag and the repository
+   ([`snt_release_marker.md`](../../contracts/snt_release_marker.md)).
 
-`split_manifest()` decides which manifest entries are filesystem analytics and which are deployed
-inside a zip. It splits by *directory*, reading the manifest's `pipelines` block.
-`download_manifest()` refuses a manifest with no such block (pre-phase-0) with
-`[ERROR] Cannot deploy: …` before anything is written; legacy manifests are not supported
-([`release_manifest.md`](../../contracts/release_manifest.md) §2.1, D26).
+`split_manifest()` takes the filesystem files from `filesystem_files` and the pipelines from the
+`pipelines` block; it derives no route from a path, because a notebook ships both in its pipeline's
+zip and to the filesystem. `download_manifest()` refuses, with `[ERROR] Cannot deploy: …` before
+anything is written, a manifest whose `schema_version` it cannot read: one without the key (a v1
+manifest from the old `snt_development` repository) or a newer one
+([`release_manifest.md`](../../contracts/release_manifest.md) §2.1).
+
+**Bootstrap guard ([ADR 0042](../decisions/0042-bootstrap-pipelines-as-templates-on-release.md)).**
+A deployer must never replace itself, or another bootstrap pipeline (`kind: bootstrap`), with an
+older copy. It deploys them only when the release is GitHub's latest full release or was published
+at the same time or after it (`published_at`, the checker's order); with no full release yet, every
+release counts as the newest. From an older release they are skipped with an `[INFO]`, and the run
+deploys the other pipelines and succeeds.
 
 **Version naming on deploy (2026-09-30, D22).** OpenHEXA refuses two versions of one pipeline with
 the same name (`DUPLICATE_PIPELINE_VERSION_NAME`), and the deployer names each version after the
@@ -46,9 +60,8 @@ now reads the pipeline's current version and compares its **contents** with the 
 
 So a full run leaves every pipeline's current version named after the tag, at the price of one extra
 version per unchanged pipeline per release. `+` in a version name is accepted by OpenHEXA (Giulia,
-2026-09-30). The checker strips only the `[vN]` suffix, so it reads a `+redeploy-` name as claiming no
-release (`version_name_matches_content: null`); teaching `claimed_release_tag` to strip it is a
-one-line change, **not yet made**.
+2026-09-30). The checker reads `<tag>+redeploy-<date>` as claiming `<tag>`, so it compares such a
+version with that release's files like any other.
 
 **Failures reach the run's Messages (2026-10-01, D24).** OpenHEXA shows a raised exception only in
 the run's logs, so a run could stop with an `INFO` line as the last message and no reason given
@@ -76,6 +89,9 @@ published release, only pre-releases, or unknown tag.
 `deploy_new_version()` (seven cases). **They have not been run in a workspace.** The full test plan
 is §6.7. Still unverified from before: **`backup_existing`**, since every verified
 run so far was against an empty workspace. Past verification runs: [`HISTORY.md`](HISTORY.md) §4.2.
+Every workspace run so far read manifest v1 from the old repository's releases; the v2 code (slim
+tarball, `filesystem_files`, bootstrap guard, marker `repo`) is covered only by the `pytest` stubs
+until `v0.1.0` is verified in a test workspace (Phase 4 of [`MIGRATION_PLAN.md`](../MIGRATION_PLAN.md)).
 
 ## Single-pipeline deployer — built 2026-10-30, **not yet tested in a workspace**
 
@@ -95,20 +111,22 @@ What it does differently from the deployer:
 | Step | `snt_workspace_deployer` | `snt_pipeline_deployer` |
 |---|---|---|
 | Pipeline versions | Every pipeline of the release | The one named. Same D22 naming, same create-if-missing |
-| `pipelines/<name>/**` (notebooks, `utils/*.r`) | Every pipeline's | Only this pipeline's, and only with `pull_r_scripts` on |
-| `code/**` (R scripts shared by all pipelines) | Copied | **Never copied.** Compared with the release, and each file that differs is named in a `[WARNING]` |
+| Bootstrap pipeline from a release older than the latest full one | Skipped with an `[INFO]` | **Refused** with an `[ERROR]`: it is the one pipeline asked for (ADR 0042) |
+| Its `filesystem_files` under `pipelines/<name>/` (notebooks, `utils/*.r`) | Every pipeline's | Only this pipeline's, and only with `pull_r_scripts` on |
+| `shared/r/**` (the R library shared by all pipelines) | Copied | **Never copied.** Compared with the release, and each file that differs is named in a `[WARNING]` |
 | `.snt_release` | Written | **Not written**: the workspace is not at the release |
 | Version description | `Deployed by snt_workspace_deployer …` | `Deployed by snt_pipeline_deployer …` |
 
-**The R scripts in `code/`: the risk you accept with a single-pipeline deploy.** Every pipeline's
-notebooks `source()` the R files in `code/`, so those files belong to all pipelines at once. Updating
-them for one pipeline would change the code that every other pipeline runs, which is what this tool
-exists to avoid. So `code/` stays at whatever version the workspace already has, and the pipeline just
-deployed runs its release-`X` notebooks against `code/` scripts from some other release. When the
-two are compatible this works. When release `X` changed a function in `code/` that its notebooks rely
-on (a renamed function, a new argument, a changed return shape), the pipeline fails at run time, or
-worse, runs and produces different results. Nothing in OpenHEXA reports this. The deployer's run
-therefore compares every `code/` file with the release's sha256 and logs one `[WARNING]` naming each
+**The shared R library in `shared/r/`: the risk you accept with a single-pipeline deploy.** Every
+pipeline's notebooks `source()` the R files in `shared/r/`, so those files belong to all pipelines at
+once. Updating them for one pipeline would change the code that every other pipeline runs, which is
+what this tool exists to avoid. So `shared/r/` stays at whatever version the workspace already has,
+and the pipeline just deployed runs its release-`X` notebooks against shared scripts from some other
+release. When the two are compatible this works. When release `X` changed a function in `shared/r/`
+that its notebooks rely on (a renamed function, a new argument, a changed return shape), the pipeline
+fails at run time, or worse, runs and produces different results. Nothing in OpenHEXA reports this.
+The deployer's run therefore compares every shared file (a filesystem file under no pipeline's
+folder) with the release's sha256 and logs one `[WARNING]` naming each
 file that differs or is missing. That message tells you there is a difference, not whether it breaks
 anything: check the diff of the files it names between the two releases on GitHub. The way out is to
 deploy the whole release with `snt_workspace_deployer`.
@@ -118,9 +136,9 @@ With `pull_r_scripts` off, the same reasoning extends to the pipeline's own note
 
 **Other limits:**
 
-* Pairing `<name>/pipeline.py` with `pipelines/<name>/` is an `snt_development` convention, not part of
-  the manifest contract. It holds for all 21 pipelines as of 2026-10-30; `snt_metadata_json_trim` has no
-  `pipelines/` folder and so no R scripts of its own.
+* A pipeline's own R scripts are the `filesystem_files` under its `pipelines.<name>.path`. A pipeline
+  with none (`snt_metadata_json_trim`, `create_pipeline_cards`, the bootstrap pipelines) has nothing
+  to sync.
 * An existing `.snt_release` is left as it is, so it still names the last *whole*-release deploy. The
   checker reports a workspace deployed this way as a mix of releases; give it the tag you deployed as
   `release_tag` to check that one pipeline against it. That mixed reading is correct.
@@ -133,23 +151,25 @@ With `pull_r_scripts` off, the same reasoning extends to the pipeline's own note
 
 **Run-time messages specific to it:** the sync line says where replaced files went, e.g.
 `R scripts of <name>: 4/4 file(s) synced; the 4 previous copies moved to archive/<tag>/pipelines/<name>/`,
-or `…; 4 existing file(s) overwritten, no backup (Backup existing files is off)`. The `code/` check reads
-`R scripts in code/ (shared by all pipelines, not updated by this run): all N file(s) match release <tag>.`,
+or `…; 4 existing file(s) overwritten, no backup (Backup existing files is off)`. The shared-library
+check reads
+`Shared R library (shared/r/, used by all pipelines, not updated by this run): all N file(s) match release <tag>.`,
 or the same prefix in a `[WARNING]` listing the files that differ.
 
 **Verified:** `ruff check` clean; `get_pipeline` yields `pipeline_name, github_repo, release_tag,
 api_connection, pull_r_scripts, backup_existing, dry_run`; offline tests of name resolution,
-`pipelines/<name>/` selection, the sync message and the `code/` drift warning, plus the drift test
-against the deployer. Run on a local OpenHEXA instance on 2026-10-30 and reported working; which test
-plan steps that covered is not recorded. The message changes made after that run are not yet run.
+`pipelines/<name>/` selection, the sync message, the shared-library drift warning and the bootstrap
+refusal, plus the drift test against the deployer. Run on a local OpenHEXA instance on 2026-10-30
+(manifest v1) and reported working; which test plan steps that covered is not recorded. Nothing since,
+manifest v2 included, has been run in a workspace.
 
 **Test plan** (run by a human, on the local instance):
 
 1. `dry_run` on, a pipeline that exists. Logs: the R scripts it would sync (only `pipelines/<name>/`),
-   "would register/relabel", the `code/` comparison, "No .snt_release marker written". Nothing changes.
+   "would register/relabel", the shared-library comparison, "No .snt_release marker written". Nothing changes.
 2. A misspelled `pipeline_name`. `[ERROR] Cannot deploy: release … has no pipeline …`, listing them.
 3. The same pipeline for real. One new version; `archive/<tag>/pipelines/<name>/…` holds the replaced
-   files, and the sync line names that folder; other pipelines and `code/` untouched. Ends on
+   files, and the sync line names that folder; other pipelines and `shared/r/` untouched. Ends on
    `Pipeline <name> successfully deployed!`.
 4. Same again. "already up to date, skipped".
 5. `pull_r_scripts` off on another pipeline. A version is registered, no file is written.
@@ -185,7 +205,8 @@ latest release (`v0.4.0-test`), and its missing manifest now stops the run with 
 Messages. **Not verified: the D21/D22 test plan below**, nor the other D24 diagnoses (no release, only
 pre-releases, unknown tag, private repo).
 
-**Test plan for `snt-development-sandbox`** (use tags never before deployed to these pipelines; run
+**Test plan** (a test workspace, against pre-releases of this repository, D-18 in
+[`MIGRATION_PLAN.md`](../MIGRATION_PLAN.md); use tags never before deployed to these pipelines; run
 by a human):
 
 1. Fresh tag `A`. Everything deploys, missing pipelines are created.
@@ -202,12 +223,11 @@ by a human):
 7. Also untested from before: `backup_existing` against a workspace that already holds files.
 8. D24 messages: a misspelled tag, and a public repository with no release. Each should end on an
    `[ERROR] Cannot deploy:` line in Messages naming the cause.
+9. Bootstrap guard: once a full release exists, deploy an older pre-release. The bootstrap pipelines
+   are skipped with an `[INFO]`, the others deploy.
 
 **Known consequences to check or decide:**
 
-* The checker reads `+redeploy-` names as claiming no release (`null`). Decide whether to strip the
-  suffix in `claimed_release_tag` (recommended, one line); if so, extend the stub test and
-  `snt_workspace_checker/readme.md`, and re-validate a report against the schema.
 * Version count grows by about one per unchanged pipeline per release. Watch for an OpenHEXA limit or
   a slow run (21 uploads instead of a few).
 * `+` in a version name is accepted by OpenHEXA, on Giulia's word; confirm in the first test.
