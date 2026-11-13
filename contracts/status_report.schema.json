@@ -8,7 +8,7 @@
   "required": [
     "schema_version",
     "generated_at",
-    "snt_workspace_check_version",
+    "snt_workspace_checker_version",
     "workspace",
     "repo",
     "mode",
@@ -34,7 +34,7 @@
       "format": "date-time",
       "description": "UTC, second precision, ending in Z (e.g. 2026-09-29T13-39-32Z in the filename, 2026-09-29T13:39:32Z here)."
     },
-    "snt_workspace_check_version": {
+    "snt_workspace_checker_version": {
       "type": ["string", "null"],
       "description": "The version of the snt_workspace_checker pipeline that generated this report. A run cannot currently read the name of the pipeline version executing it, so this is null until a source for it is found; the key is frozen regardless."
     },

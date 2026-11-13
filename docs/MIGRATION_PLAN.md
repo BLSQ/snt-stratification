@@ -893,6 +893,7 @@ functions differ.
 | 6 | Checker: `claimed_release_tag` reads a template-delivered `v<N>` as no claim; template-created codes named (legacy `b-2-…` through a mapping table) | `bootstrap: checker names template-created pipelines` |
 | 7 | Delete `release_manifest.v1.schema.json`, its two v1 fixtures and the v1 prose in `release_manifest.md`; current-truth fixes for commits 2–6 and D-18 (`docs/bootstrap/`, the three `readme.md`, `pipelines/CLAUDE.md`) | `contracts: drop release manifest v1` |
 | 7a | This file: hand-off for cutting `v0.1.0`, Session log | `plan: Phase 4 commits 2–7, hand-off for v0.1.0` |
+| 7b | Report key `snt_workspace_check_version` → `snt_workspace_checker_version` (BOOT-4), `schema_version` stays 1 | `bootstrap: rename the checker's report version key` |
 | 8 | Cut `v0.1.0` (pre-release, D-18) and verify it in a fresh test workspace; results recorded here | `plan: Phase 4 results, v0.1.0 verified` |
 | 9 | `release` skill, from what cutting `v0.1.0` taught | `skills: release, cutting and promoting a release` |
 
@@ -919,13 +920,8 @@ first, in its own commit). Start here, in a new session.
    into a test workspace, never into `snt-development`.
 2. **Ask Giulia, one question at a time, before doing anything** (plain words, file links, a
    recommendation each):
-   1. **[BOOT-4](BACKLOG.md#boot-4): rename `snt_workspace_check_version` →
-      `snt_workspace_checker_version` first?** Decided 2026-10-02 for "before the first release";
-      after one it needs `schema_version: 2`. Is the `v0.1.0` pre-release that first release?
-      Recommended: yes, as a commit 7b before cutting (checker, `status_report.schema.json`, stub
-      test, the fixture `tests/fixtures/status_report_attribution_2026-09-30.json`, the checker's
-      `readme.md`, `checker.md` §5.5), keeping `schema_version` 1 because no consumer exists yet
-      (BOOT-2 is not built).
+   1. ~~**BOOT-4: rename `snt_workspace_check_version` → `snt_workspace_checker_version`
+      first?**~~ Yes (decided 2026-11-13): commit 7b, `schema_version` stays 1, BOOT-4 deleted.
    2. **Tag the branch, or merge first?** The table above puts commits 8 and 9 in this PR, so
       `v0.1.0` would be tagged on the branch head; the PR is merged with a merge commit, so that
       commit reaches `main`. §6 says "release from `main` only when `main` is green". Recommended:

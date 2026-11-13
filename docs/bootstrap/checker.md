@@ -291,7 +291,7 @@ A JSON file, written to the workspace filesystem, timestamped **and** latest (de
 <workspace root>/snt_status/status_latest.json             ← byte-identical; the stable path the web app reads
 ```
 
-Top-level keys, all always present: `schema_version`, `generated_at`, `snt_workspace_check_version`,
+Top-level keys, all always present: `schema_version`, `generated_at`, `snt_workspace_checker_version`,
 `workspace`, `repo`, `mode`, `target_release`, `declared_release`, `releases_considered`,
 `incomplete`, `summary` (`by_status`, `attribution`), `pipelines`, `entries`,
 `inert_filesystem_copies`, `scan_exclusions`, `errors`, `blind_spots`. An abridged example (shape
@@ -301,7 +301,7 @@ current; tags, paths and numbers illustrative):
 {
   "schema_version": 1,
   "generated_at": "2026-09-29T13:39:32Z",
-  "snt_workspace_check_version": null,
+  "snt_workspace_checker_version": null,
   "workspace": "<slug>",
   "repo": "BLSQ/snt-stratification",
   "mode": "attribution",
@@ -368,11 +368,13 @@ current; tags, paths and numbers illustrative):
   parse or compare them; their wording may change at any time without a version bump.
 * Every key that could be absent is present with `null`, never omitted.
 
-**`snt_workspace_check_version`** records which version of the `snt_workspace_checker` pipeline
+**`snt_workspace_checker_version`** records which version of the `snt_workspace_checker` pipeline
 generated the report, so a report can be tied to the code that wrote it. **It is `null` today.** A
 run has no way to read the name of the pipeline version executing it, and no source for the value
 has been found; the key is frozen and nullable so that filling it later is not a breaking change.
-It replaces the earlier name `checker_version`, renamed for clarity before the freeze.
+Its earlier names, `checker_version` and then `snt_workspace_check_version`, were both
+retired before the first release (`v0.1.0`), so no released checker writes them; reports saved
+before 2026-11-13 carry the old name and do not validate against the schema.
 
 ## 6. Build phases
 

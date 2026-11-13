@@ -565,16 +565,6 @@ confirm nothing in it is needed. The other sandbox leftovers (probe pipelines in
 
 **Owner:** Giulia. **Blocked on:** the colleague's confirmation. **Source:** Phase 2 sweep, 2026-11.
 
-### <a id="boot-4"></a>BOOT-4 · Rename the report key before the first release
-
-Rename `snt_workspace_check_version` → `snt_workspace_checker_version` in the checker's report and
-in [`contracts/status_report.schema.json`](../contracts/status_report.schema.json). Decided on
-2026-10-02 and deferred to "before the first release": after a release it needs `schema_version: 2`
-and a migration. The first release of this repo is `v0.1.0` ([`MIGRATION_PLAN.md`](MIGRATION_PLAN.md)
-Phase 4).
-
-**Source:** `docs/bootstrap/roadmap.md` §2 (superseded), 2026-10-02.
-
 ### <a id="boot-5"></a>BOOT-5 · Deployers and a suffixed template copy whose plain code was deleted
 
 A pipeline created from a template while its code was taken gets `snt-<name>-<6 hex>`

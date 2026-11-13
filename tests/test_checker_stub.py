@@ -485,7 +485,7 @@ rep_a = chk.build_report(
     "v0.3.0-test",
     "o/r",
 )
-assert rep_a["mode"] == "attribution" and rep_a["snt_workspace_check_version"] is None
+assert rep_a["mode"] == "attribution" and rep_a["snt_workspace_checker_version"] is None
 assert rep_a["declared_release"] == {"tag": "v0.3.0-test", "repo": "o/r", "source": ".snt_release"}
 assert_conforms(rep_a, "attribution")
 
