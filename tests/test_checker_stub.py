@@ -211,6 +211,31 @@ assert chk.resolve_target("v0.2.1-test", "v0.1.0-test") == ("v0.2.1-test", "para
 print("resolve OK")
 
 
+# ---- the .snt_release marker: both shapes, and the repository it names (Phase 4)
+def read_marker(text):
+    with tempfile.TemporaryDirectory() as tmp:
+        if text is not None:
+            (Path(tmp) / ".snt_release").write_text(text)
+        return chk.read_release_marker(Path(tmp))
+
+
+assert read_marker(None) == (None, None)
+assert read_marker('{"snt_release": "v0.3.0-test"}') == ("v0.3.0-test", None)
+assert read_marker('{"snt_release": "v0.1.0", "repo": "BLSQ/snt-stratification"}') == (
+    "v0.1.0",
+    "BLSQ/snt-stratification",
+)
+assert read_marker("not json") == (None, None)
+assert read_marker('["v0.1.0"]') == (None, None)
+
+assert chk.marker_target(None, None, "BLSQ/snt-stratification") is None
+assert chk.marker_target("v0.3.0-test", None, "BLSQ/snt-stratification") == "v0.3.0-test"  # old marker
+assert chk.marker_target("v0.1.0", "BLSQ/snt-stratification", "BLSQ/snt-stratification") == "v0.1.0"
+assert chk.marker_target("v0.1.0", "blsq/SNT-Stratification", "BLSQ/snt-stratification") == "v0.1.0"
+assert chk.marker_target("v0.1.0", "BLSQ/snt_development_sandbox", "BLSQ/snt-stratification") is None
+print("marker OK")
+
+
 # ---- verification mode also carries the per-release scores (section 4.2), from the phase-2 fs run.
 # 5 files scored: edited(E2), stable, changing(A), removed(R), future(N); untracked scratch_notes
 # and missing fixture_added are left out. Columns: shipped, present, agreeing, extra, agreement,
@@ -418,8 +443,10 @@ rep_a = chk.build_report(
     considered(releases_a, manifests),
     "parameter",
     "v0.3.0-test",
+    "o/r",
 )
 assert rep_a["mode"] == "attribution" and rep_a["snt_workspace_check_version"] is None
+assert rep_a["declared_release"] == {"tag": "v0.3.0-test", "repo": "o/r", "source": ".snt_release"}
 assert_conforms(rep_a, "attribution")
 
 # verification mode: target v0.2.1-test, one pipeline unreadable, so `unreadable` and `errors` appear
@@ -445,6 +472,7 @@ rep_v = chk.build_report(
     {"tag_name": "v0.2.1-test", "published_at": "2026-09-21T16:00:00Z"},
     considered(releases, manifests),
     "marker",
+    None,
     None,
 )
 assert rep_v["mode"] == "verification" and rep_v["incomplete"] is True

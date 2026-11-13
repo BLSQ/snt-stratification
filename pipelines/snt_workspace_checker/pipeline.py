@@ -197,16 +197,17 @@ def snt_workspace_checker(github_repo: str, release_tag: str | None) -> None:
     """
     snt_root_path = Path(workspace.files_path)
 
-    declared_tag = read_release_marker(snt_root_path)
-    target_tag, resolved_from = resolve_target(release_tag, declared_tag)
+    declared_tag, declared_repo = read_release_marker(snt_root_path)
+    marker_tag = marker_target(declared_tag, declared_repo, github_repo)
+    target_tag, resolved_from = resolve_target(release_tag, marker_tag)
     if target_tag is None:
         current_run.log_info(
             f"Attribution mode: assessing workspace '{workspace.slug}' against every release of "
             f"{github_repo}, with no target ({describe_no_target(resolved_from)})."
         )
-        if declared_tag:
+        if marker_tag:
             current_run.log_info(
-                f"The workspace declares release '{declared_tag}'; it is not used as a target in "
+                f"The workspace declares release '{marker_tag}'; it is not used as a target in "
                 "this mode, and the coverage summary shows how far the files bear it out."
             )
     else:
@@ -214,9 +215,9 @@ def snt_workspace_checker(github_repo: str, release_tag: str | None) -> None:
             f"Verification mode: checking workspace '{workspace.slug}' against "
             f"{github_repo}@{target_tag} (target resolved from the {resolved_from})."
         )
-        if declared_tag and declared_tag != target_tag:
+        if marker_tag and marker_tag != target_tag:
             current_run.log_warning(
-                f"The workspace declares release '{declared_tag}' but is being checked against "
+                f"[WARNING] The workspace declares release '{marker_tag}' but is being checked against "
                 f"'{target_tag}'. The declaration records intent, not verified fact."
             )
 
@@ -252,6 +253,7 @@ def snt_workspace_checker(github_repo: str, release_tag: str | None) -> None:
         releases_considered=releases_considered,
         resolved_from=resolved_from,
         declared_tag=declared_tag,
+        declared_repo=declared_repo,
     )
     report_path = write_report(snt_root_path, report)
 
@@ -296,36 +298,71 @@ def describe_no_target(resolved_from: str) -> str:
     """
     if resolved_from == "parameter":
         return f"the 'Target release tag' parameter is '{NO_TARGET_TAG}'"
-    return f"the 'Target release tag' parameter is empty and there is no {RELEASE_MARKER_NAME} marker"
+    return (
+        f"the 'Target release tag' parameter is empty and no {RELEASE_MARKER_NAME} marker names a "
+        "release of this repository"
+    )
 
 
-def read_release_marker(snt_root_path: Path) -> str | None:
-    """Read the release tag the last snt_workspace_deployer run claims to have deployed.
+def read_release_marker(snt_root_path: Path) -> tuple[str | None, str | None]:
+    """Read the release the last snt_workspace_deployer run claims to have deployed.
 
     A workspace with no marker is the normal starting state for every country workspace
-    today, so its absence is reported, never treated as an error.
+    today, so its absence is reported, never treated as an error. Two shapes are read
+    (contracts/snt_release_marker.md): `{"snt_release": tag, "repo": owner/name}`, and the
+    older `{"snt_release": tag}`, which names no repository.
 
     Returns
     -------
-    str | None
-        The declared release tag, or None if there is no readable marker.
+    tuple[str | None, str | None]
+        (the declared release tag, the repository the marker names), each None if absent or
+        if there is no readable marker.
     """
     marker_path = snt_root_path / RELEASE_MARKER_NAME
     if not marker_path.exists():
         current_run.log_info(f"No {RELEASE_MARKER_NAME} marker - this workspace declares no release.")
-        return None
+        return None, None
 
     try:
-        declared = json.loads(marker_path.read_text())["snt_release"]
-    except (OSError, ValueError, KeyError) as exception:
+        marker = json.loads(marker_path.read_text())
+        declared = marker["snt_release"]
+        repo = marker.get("repo")
+    except (OSError, ValueError, KeyError, TypeError, AttributeError) as exception:
         current_run.log_warning(
             f"[WARNING] {RELEASE_MARKER_NAME} exists but could not be read: {exception}. "
             "Treating the workspace as declaring no release."
         )
-        return None
+        return None, None
 
-    current_run.log_info(f"Workspace declares release '{declared}' in {RELEASE_MARKER_NAME}.")
-    return declared
+    where = f"{repo}@{declared}" if repo else f"'{declared}' (no repository recorded)"
+    current_run.log_info(f"Workspace declares release {where} in {RELEASE_MARKER_NAME}.")
+    return declared, repo
+
+
+def marker_target(declared_tag: str | None, declared_repo: str | None, github_repo: str) -> str | None:
+    """Say which tag the marker offers as this run's target: its own, unless it names another repository.
+
+    A tag alone is ambiguous across repositories, so a marker that names a repository other than
+    the one being checked offers no target: checking its tag here would compare the workspace with
+    an unrelated release that merely shares the name. Repository names compare without case, as
+    GitHub's do. A marker that names no repository (written before the field existed) is taken to
+    mean the repository being checked, as it always was.
+
+    Returns
+    -------
+    str | None
+        The tag to use as the marker's target, or None.
+    """
+    if declared_tag is None or declared_repo is None:
+        return declared_tag
+    if declared_repo.lower() == github_repo.lower():
+        return declared_tag
+    current_run.log_warning(
+        f"[WARNING] {RELEASE_MARKER_NAME} declares release {declared_repo}@{declared_tag}, not a release "
+        f"of {github_repo}, so it is not used as the target. To check against it, set the 'GitHub "
+        f"repository' parameter to {declared_repo}."
+    )
+    return None
 
 
 def get_run_token() -> str:
@@ -1411,6 +1448,7 @@ def build_report(
     releases_considered: list[dict],
     resolved_from: str,
     declared_tag: str | None,
+    declared_repo: str | None,
 ) -> dict:
     """Assemble the report document from what each source produced.
 
@@ -1447,7 +1485,11 @@ def build_report(
             "resolved_from": resolved_from,
             "published_at": release.get("published_at") if release else None,
         },
-        "declared_release": ({"tag": declared_tag, "source": RELEASE_MARKER_NAME} if declared_tag else None),
+        "declared_release": (
+            {"tag": declared_tag, "repo": declared_repo, "source": RELEASE_MARKER_NAME}
+            if declared_tag
+            else None
+        ),
         "releases_considered": releases_considered,
         "incomplete": incomplete,
         "summary": {

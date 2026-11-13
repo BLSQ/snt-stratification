@@ -392,3 +392,12 @@ def test_describe_replaced_says_where_old_copies_went(
 ) -> None:
     """The sync line names the archive folder when backing up, and says files were overwritten when not."""
     assert dep.describe_replaced(replaced, "snt_x", "v1", backup, dry_run) == expected
+
+
+def test_release_marker_records_tag_and_repository() -> None:
+    """.snt_release holds the tag under its original key, and the repository beside it."""
+    deployer.current_run = Log()
+    with tempfile.TemporaryDirectory() as tmp:
+        deployer.write_release_marker(Path(tmp), "v0.1.0", "BLSQ/snt-stratification")
+        marker = json.loads((Path(tmp) / ".snt_release").read_text())
+    assert marker == {"snt_release": "v0.1.0", "repo": "BLSQ/snt-stratification"}

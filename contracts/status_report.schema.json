@@ -59,7 +59,7 @@
         "tag": { "type": ["string", "null"] },
         "resolved_from": {
           "enum": ["parameter", "marker", "nothing_given"],
-          "description": "parameter: the release_tag parameter (in attribution mode: the reserved value 'none'). marker: the tag in .snt_release. nothing_given: no parameter and no marker."
+          "description": "parameter: the release_tag parameter (in attribution mode: the reserved value 'none'). marker: the tag in .snt_release. nothing_given: no parameter, and no marker naming a release of this repository."
         },
         "published_at": { "type": ["string", "null"], "format": "date-time" }
       }
@@ -73,11 +73,15 @@
           "required": ["tag", "source"],
           "properties": {
             "tag": { "type": "string" },
+            "repo": {
+              "type": ["string", "null"],
+              "description": "The repository the marker names, as owner/name. null for a marker written before the deployer recorded it. Added in Phase 4 of docs/MIGRATION_PLAN.md (an added key, not a breaking change), so older reports lack it."
+            },
             "source": { "const": ".snt_release" }
           }
         }
       ],
-      "description": "What the .snt_release marker says was last deployed: intent, not verified fact. null when the marker is absent."
+      "description": "What the .snt_release marker says was last deployed: intent, not verified fact. null when the marker is absent. Reported as read, even when it names another repository and is therefore not used as the target."
     },
     "releases_considered": {
       "type": "array",

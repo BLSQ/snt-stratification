@@ -182,7 +182,7 @@ def deploy_release(
         failures = deploy_all(tarball_root, pipelines, release, token, dry_run)
 
     if not dry_run:
-        write_release_marker(snt_root_path, release_tag)
+        write_release_marker(snt_root_path, release_tag, manifest["repo"])
 
     if failures:
         abort_run(
@@ -881,11 +881,16 @@ def call_graphql(token: str, operation: str, variables: dict) -> dict:
     return body["data"]
 
 
-def write_release_marker(snt_root_path: Path, release_tag: str) -> None:
-    """Record the currently-deployed release tag in a hidden workspace-root file."""
+def write_release_marker(snt_root_path: Path, release_tag: str, repo: str) -> None:
+    """Record the deployed release, tag and repository, in a hidden workspace-root file.
+
+    The repository is recorded because a tag alone is ambiguous across repositories
+    (contracts/snt_release_marker.md). The tag keeps its original key, `snt_release`, so a
+    checker that predates `repo` still reads it.
+    """
     marker_path = snt_root_path / ".snt_release"
-    marker_path.write_text(json.dumps({"snt_release": release_tag}, indent=2))
-    current_run.log_info(f"Wrote release marker: {marker_path}")
+    marker_path.write_text(json.dumps({"snt_release": release_tag, "repo": repo}, indent=2))
+    current_run.log_info(f"Wrote release marker: {marker_path} ({repo}@{release_tag}).")
 
 
 if __name__ == "__main__":
