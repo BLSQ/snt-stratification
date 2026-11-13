@@ -176,7 +176,7 @@ silently fails to load. That already happened: six of the seven entries in the 2
 
 Two parts, separable: (a) agree one convention and apply it; (b) decide whether the key should
 simply *equal* the OpenHEXA dataset name, which removes the trap. Migration cost: every
-`pipeline.py` reads these keys, they appear in `contracts/snt_config_json/SNT_config.skeleton.json`
+`pipeline.py` reads these keys, they appear in `contracts/snt_config/SNT_config.skeleton.json`
 and in the archived `deprecated/configuration/SNT_config_<CC>.json` copies, and the country
 workspaces' live configs must change in step. It is a coordinated change, not a rename. Resolve at
 the same time that the key set is **not** identical across countries (NER's config has
@@ -193,16 +193,16 @@ extraction: no such use is visible in this repo, but if it exists it is probably
 (external, unpinned). A search of this repo cannot settle it, so "no usage found" is not proof that
 the value is unused.
 
-**Source:** `contracts/snt_config_json/README.md` (formerly `configuration/README.md`).
+**Source:** the `snt_development` version of [`contracts/snt_config/README.md`](../contracts/snt_config/README.md) (formerly `configuration/README.md`).
 
 ### <a id="cfg-3"></a>CFG-3 · Write `snt_config.schema.json`
 
 The skeleton records *where* country-specific values go, not *how* to fill them in. That belongs in
-a JSON Schema on the model of `contracts/snt_metadata_json/`. Not created yet. Note that the config
-editor webapp repo documents the values in more depth, and the two skeletons are to be reconciled
-there ([`contracts/snt_config_json/README.md`](../contracts/snt_config/README.md)).
+a JSON Schema on the model of `contracts/snt_metadata_json/`. Not created yet. Until then, the
+per-field rules are in
+[`contracts/snt_config/config_analysis_notes.md`](../contracts/snt_config/config_analysis_notes.md).
 
-**Owner:** Giulia. **Source:** `contracts/snt_config_json/README.md`.
+**Owner:** Giulia. **Source:** the `snt_development` version of [`contracts/snt_config/README.md`](../contracts/snt_config/README.md).
 
 ### <a id="cfg-4"></a>CFG-4 · `SNT_CONFIGURATION` dataset and an editing webapp
 
