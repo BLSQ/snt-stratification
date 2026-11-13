@@ -769,43 +769,65 @@ Give Giulia the exact commands, one commit at a time.
 | 5 | `tools/build_manifest.py` + `tests/test_build_manifest.py`; `pythonpath = ["tools"]` in `pyproject.toml` | `tools: build_manifest.py, the release manifest v2 builder` |
 | 6 | Config conformance fixtures + `tests/test_config_conformance.py`; `snt_lib` pin for the test; editor §12.2 settled (option 2); DEP-1 facts | `contracts: config conformance fixtures, run through snt_lib validate_config()` |
 | 6a | This file: commit 7 hand-off, Session log | `plan: Phase 3 commits 2–6, hand-off for ci.yaml` |
-| 7 | `ci.yaml` + the scripts it runs — see the hand-off below | `ci: ci.yaml with ruff, pytest, R1/R2, link, registry and Explorer-list checks` |
-| 8 | `release.yaml` | — |
+| 7 | `ci.yaml` + `tools/check_links.py`, `tools/check_tracked_files.py`; TOOL-2, 5, 7 closed | `ci: ci.yaml with ruff, pytest, R1/R2, link, registry and Explorer-list checks` |
+| 7a | `contracts/snt_config/README.md` brought in line with D-11 (asked in the commit 7 hand-off) | `docs(contracts): snt_config README describes the one skeleton (D-11)` |
+| 7b | The old `contracts/snt_config_json/` name replaced outside this file's history | `docs: contracts/snt_config/ everywhere, not the old snt_config_json/` |
+| 7c | This file: commit 8 hand-off, Session log | `plan: Phase 3 commit 7, hand-off for release.yaml` |
+| 8 | `release.yaml` — see the hand-off below | — |
 | 9 | `push_templates.yaml` (disabled) | — |
 
-**Hand-off for commit 7, `ci.yaml` (2026-11-12).** Commits 1–6 are on the branch; start here.
-Scope, from this checklist and [BACKLOG](BACKLOG.md) TOOL-2, TOOL-5, TOOL-6 (JSON part), TOOL-7:
-- **Triggers:** `pull_request` and `push` to `main`. Python **3.13** (the workspace image; `snt_lib`
-  needs ≥ 3.12). `.gitignore` already allows `.github/workflows/*.yaml` (not `*.yml`: use `.yaml`).
-- **ruff:** `ruff check .` and `ruff format --check .`. Pin ruff to an exact version in the workflow:
-  `pyproject.toml` sets `preview = true`, so rules move between versions. Local is `ruff 0.17.3`;
-  `dev/environment.yml` has the floor `>=0.16`.
-- **pytest:** install `pytest jsonschema openhexa.sdk` (the deployer tests load pipelines that import
-  `openhexa.sdk`) and `-r tests/requirements-conformance.txt` (heavy: geopandas, polars, papermill),
-  then run with **`SNT_LIB_REQUIRED=1`** so the conformance test fails instead of skipping. The
-  pinned install has never been run: the 78-test run so far used `validate_config()`'s source
-  lifted from `~/Bluesquare/snt_utils` (on `release-v1` = `v1.0.2`), so this workflow is the first
-  real `pip install` of it. Expect `78 passed` with it, `62 passed, 16 skipped` without.
-- **Registry ↔ folders** (`pipelines/registry.json` description promises it): run
-  `python tools/build_manifest.py --version ci --repo "$GITHUB_REPOSITORY" --output <tmp>`; it exits
-  1 on a mismatch or an invalid manifest.
-- **Metadata validator:** `python .claude/skills/add-explorer-layer/validate_metadata.py` (default
-  target `catalogs/SNT_metadata_master.json`; exit 1 on failure; needs `jsonschema`).
-- **Link check (TOOL-5):** `tools/check_links.py` does not exist yet. Port it from the git-ignored
-  local copy `~/Bluesquare/snt_development/ignore/docs-restructure/check_links.py` (stdlib-only;
-  relative links and `#anchor`s in Markdown), with a test, and run it. Expect findings on first run:
-  fix them or record exclusions deliberately.
-- **TOOL-7:** fail on a tracked `.csv/.xlsx/.parquet/.rds/.geojson` (R1) and on any committed
-  notebook with outputs, read from the `.ipynb` JSON `outputs` (not `nbstripout --verify`).
-- **TOOL-6, JSON part:** the contract fixtures are covered by `pytest`; orchestrator map node ids ==
-  description keys is not yet checked: add it only if cheap, otherwise leave TOOL-6 open.
-- Close the BACKLOG items the commit delivers (delete them, R25) and update the root `CLAUDE.md`
-  "CI: debt" row and `docs/CONVENTIONS.md`/Register statuses that say "run by hand" if CI now
-  enforces them (R18 ruff; R1/R2 if TOOL-7 lands).
-- **Ask Giulia first:** `contracts/snt_config/README.md` still has outdated text (title
-  `snt_config_json/`, the "known drift between the two skeletons" section about a separate editor
-  repo, the `""` vs `null` difference settled by D-11). Left alone in commit 6; fix it in its own
-  commit or later?
+**Hand-off for commit 8, `release.yaml` (2026-11-13).** Commits 1–7c are on the branch; start here.
+
+**Step 0, before writing anything: the first CI run.** `ci.yaml` runs on `pull_request` and on
+`push` to `main` only, so it first runs once the Phase 3 PR is open. Ask Giulia for the result.
+Expected: `checks` all green; `pytest` **98 passed, 0 skipped** (the first real `pip install` of the
+pinned `snt_lib` `v1.0.2`; locally it is 82 passed, 16 skipped). A failure there is fixed first, in
+its own commit. After the first green run, suggest (Giulia sets it) making `checks` and `pytest`
+required status checks in the `main` ruleset: today a red run does not block a merge.
+
+Scope, from the `release.yaml` checklist item below and D-17. One workflow, two jobs:
+- **Assets job, on `release: published`** (fires for pre-releases and full releases). Check out the
+  release tag. Build `release_manifest.json` with `tools/build_manifest.py` (it reads
+  `GITHUB_REF_NAME` and `GITHUB_REPOSITORY` by default; it validates before writing and exits 1 on
+  a problem). Attach to the release: the manifest; a **slim tarball** holding only the manifest's
+  `files`; one `webapp-<name>-<tag>.zip` per entry in the manifest's `webapps` block, with a stamped
+  `version.json` ([`release_manifest.md`](../contracts/release_manifest.md), ADR 0037). Today that
+  is `orchestrator` only (`config_editor/app/` holds just `.gitkeep`, which the builder skips).
+- **Bootstrap-templates job, on `release: released` only** (full releases; skips pre-releases):
+  `openhexa pipelines push --yes` of each registry `kind: bootstrap` pipeline to the new templates
+  publishing workspace, which publishes their template versions (D-17, spike S6). **Disabled**
+  (e.g. `if: false` with a comment) until that workspace exists. Both triggers in one `on: release:
+  types: [published, released]`, gated per job on `github.event.action`.
+- **Build logic in a script, not inline shell:** e.g. `tools/build_release_assets.py` reading the
+  manifest it was given, with `pytest` coverage like `build_manifest.py` (CI then lints and tests it).
+
+Facts to build on:
+- **The deployers do not read the slim tarball yet.** They download GitHub's source tarball
+  (`release["tarball_url"]`) and abort unless it holds exactly one top-level directory
+  (`download_and_extract_tarball()` in `pipelines/snt_pipeline_deployer/pipeline.py`). They switch in
+  Phase 4, so the slim tarball should keep that layout (one top folder, repo paths under it) to make
+  the switch a URL change.
+- **Old repo's patterns** (read only, at `~/Bluesquare/snt_development/.github/workflows/`):
+  `generate_manifest.yaml` attached the manifest with `softprops/action-gh-release@v1` and also ran
+  on `workflow_dispatch`; `push_snt_*.yaml` pushed with `blsq/openhexa-cli-action@v1` and the
+  `OH_TOKEN` secret, passing `--code`, `--description` (head commit message, see TOOL-8) and
+  `--link`. Which secrets this repo has: not checked; ask.
+- `.gitignore` allows `.github/workflows/*.yaml`. Python 3.13 as in `ci.yaml`. The `v*` tag
+  ruleset exists (Phase 1).
+- After the commit: [`contracts/README.md`](../contracts/README.md) says the v2 builder is "run by
+  nothing yet"; update it (R23). The manifest's shape does not change, so no schema change (R22).
+
+**Ask Giulia at the start of commit 8**, one at a time:
+1. **`version.json` shape.** Nothing defines it (ADR 0037, the manifest schema and
+   `release_manifest.md` only say it is stamped). Recommend `{"version": "<tag>"}`, documented in
+   `release_manifest.md`; anything more (commit SHA, date) only if a consumer needs it.
+2. **Slim tarball name and layout.** Recommend `snt-stratification-<tag>.tar.gz` with one top folder
+   `snt-stratification-<tag>/`, mirroring GitHub's source tarball (see the deployer fact above).
+3. **Upload tool.** Recommend `gh release upload` (preinstalled on runners, job permission
+   `contents: write`) over a third-party action.
+4. **How to test before `v0.1.0`.** No release exists. Recommend a `workflow_dispatch` trigger that
+   builds the same assets and uploads them as an Actions artifact instead of release assets; a real
+   pre-release (a tag on the public repo) only when Giulia chooses to cut one.
 
 #### Phase 3 findings
 
@@ -1040,6 +1062,7 @@ proceed in parallel against the new schema.
 | 2026-11-09 | Phase 2 commits 5–8: root `CLAUDE.md` router with the merged Register R1–R26, `webapps/CLAUDE.md` W1–W9, bootstrap rules into `pipelines/CLAUDE.md` (interim `docs/bootstrap/CLAUDE.md` retired); `docs/ARCHITECTURE.md`; skills updated; deviations in [Phase 2 results](#phase-2-results) | Push, open the Phase 2 PR, merge it with a merge commit. Then Phase 3: settle OD-4 first |
 | 2026-11-12 | Phase 3 opened on `phase-3/tooling-and-ci`. **OD-4 settled as D-17**: bootstrap pipelines as templates published on each full release, plus a guarded deployer self-update (never downgrades), bootstrap in the manifest as `kind: bootstrap`. Options A (templates from `main`) and C (no templates, CLI first push) rejected, reasons in the commit 2 hand-off. Spike S6 passed in `snt-development-sandbox` → `snt-testing`; auto-update is off by default ([Phase 3 findings](#phase-3-findings)). Commit 1 written | Commit 1, then commit 2 (ADR 0042 + current-truth fixes) in a new session |
 | 2026-11-12 | Phase 3 commits 2–6: ADR 0042; two R23 fixes (templates are not being retired); manifest v2 schema (`filesystem_files`, `webapps` now, v1 file kept until Phase 4); `tools/build_manifest.py`; config conformance fixtures, `snt_lib` pinned to `v1.0.2` for the test. Order 5–9 chosen. Found: `release-v1` is a branch (DEP-1). `BLSQ/snt_utils` cloned at `~/Bluesquare/snt_utils` for reading `snt_lib` | Commit 6a (this log + hand-off), then commit 7 `ci.yaml` in a new session: see the [Phase 3 hand-off](#phase-3--tooling-and-ci) |
+| 2026-11-13 | Phase 3 commit 7: `ci.yaml` (jobs `checks` and `pytest`), `tools/check_links.py` (ported, now over git's file list so `.claude/` is checked), `tools/check_tracked_files.py` (R1/R2); TOOL-2, 5, 7 closed, TOOL-6 narrowed (the orchestrator contracts are prose, not JSON Schema); R1, R2, R18 now `enforced`. Commits 7a–7b: `contracts/snt_config/README.md` aligned with D-11, the old `snt_config_json/` name replaced. CI has not run yet: it runs once the Phase 3 PR is open | Commit 7c (this log + hand-off), then commit 8 `release.yaml` in a new session: step 0 is the first CI result, then four questions — see the [Phase 3 hand-off](#phase-3--tooling-and-ci) |
 
 ---
 
