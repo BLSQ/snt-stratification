@@ -1,12 +1,16 @@
 """Offline tests of snt_pipeline_deployer: its own helpers, and drift from snt_workspace_deployer (D28)."""
 
 import ast
+import base64
 import hashlib
 import importlib.util
+import io
+import json
 import tempfile
+import zipfile
 from collections.abc import Callable
 from pathlib import Path
-from types import ModuleType
+from types import ModuleType, SimpleNamespace
 
 import pytest
 
@@ -102,41 +106,43 @@ def test_resolve_pipeline_dir_lists_pipelines_on_unknown_name() -> None:
 
 
 ANALYTICS = {
-    "code/snt_utils.r": "a",
+    "shared/r/snt_utils.r": "a",
     "pipelines/snt_dhis2_extract/code/extract.ipynb": "b",
     "pipelines/snt_dhis2_extract/utils/extract.r": "c",
     "pipelines/snt_dhis2_extract_other/code/x.ipynb": "d",
     "pipelines/snt_map_extracts/code/map.ipynb": "e",
 }
 
+PIPELINES = {"snt_dhis2_extract": {"path": "pipelines/snt_dhis2_extract"}}
+
 
 def test_pipeline_analytics_selects_only_its_own_folder() -> None:
-    """Only pipelines/<name>/ is selected: no shared code/, no folder that merely shares a prefix."""
-    assert dep.pipeline_analytics(ANALYTICS, "snt_dhis2_extract") == {
+    """Only the pipeline's folder is selected: no shared/r/, no folder that merely shares a prefix."""
+    assert dep.pipeline_analytics(ANALYTICS, "pipelines/snt_dhis2_extract") == {
         "pipelines/snt_dhis2_extract/code/extract.ipynb": "b",
         "pipelines/snt_dhis2_extract/utils/extract.r": "c",
     }
-    assert dep.pipeline_analytics(ANALYTICS, "snt_metadata_json_trim") == {}
+    assert dep.pipeline_analytics(ANALYTICS, "pipelines/snt_metadata_json_trim") == {}
 
 
 def test_shared_library_drift_names_differing_and_missing_files() -> None:
     """A changed or missing shared file is named in one [WARNING]; pipeline folders are not checked."""
-    files = {"code/same.r": sha("same"), "code/changed.r": sha("new"), "code/gone.r": sha("x")}
+    files = {"shared/r/same.r": sha("same"), "shared/r/changed.r": sha("new"), "shared/r/gone.r": sha("x")}
     files["pipelines/snt_dhis2_extract/utils/extract.r"] = sha("not shared")
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
-        (root / "code").mkdir()
-        (root / "code/same.r").write_text("same")
-        (root / "code/changed.r").write_text("old")
+        (root / "shared/r").mkdir(parents=True)
+        (root / "shared/r/same.r").write_text("same")
+        (root / "shared/r/changed.r").write_text("old")
         dep.current_run = log = Log()
-        dep.report_shared_library_drift(files, root, "v1")
+        dep.report_shared_library_drift(files, PIPELINES, root, "v1")
 
     [(level, message)] = log.lines
     assert level == "log_warning"
     assert message.startswith("[WARNING]")
     assert "2/3 file(s)" in message
-    assert "code/changed.r" in message
-    assert "code/gone.r (missing)" in message
+    assert "shared/r/changed.r" in message
+    assert "shared/r/gone.r (missing)" in message
     assert "same.r" not in message
     assert "extract.r" not in message
 
@@ -145,18 +151,113 @@ def test_shared_library_in_line_is_info() -> None:
     """A workspace whose shared library matches the release gets an info line, not a warning."""
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
-        (root / "code").mkdir()
-        (root / "code/same.r").write_text("same")
+        (root / "shared/r").mkdir(parents=True)
+        (root / "shared/r/same.r").write_text("same")
         dep.current_run = log = Log()
-        dep.report_shared_library_drift({"code/same.r": sha("same")}, root, "v1")
+        dep.report_shared_library_drift({"shared/r/same.r": sha("same")}, PIPELINES, root, "v1")
 
     assert log.lines == [
         (
             "log_info",
-            "R scripts in code/ (shared by all pipelines, not updated by this run): all 1 file(s) match "
-            "release v1.",
+            "Shared R library (shared/r/, used by all pipelines, not updated by this run): all 1 file(s) "
+            "match release v1.",
         )
     ]
+
+
+# The shared functions below are identical in both deployers (test_shared_functions_have_not_drifted),
+# so testing them through the variant tests snt_workspace_deployer too.
+
+V2_MANIFEST = json.loads(
+    (ROOT / "tests/fixtures/release_manifest_v2_example.json").read_text(encoding="utf-8")
+)
+
+
+def test_v2_manifest_is_readable() -> None:
+    """The v2 example manifest passes the version check, with nothing logged."""
+    dep.current_run = log = Log()
+    dep.check_manifest_version(V2_MANIFEST, "v0.1.0")
+    assert log.lines == []
+
+
+@pytest.mark.parametrize(
+    ("version", "expected"),
+    [
+        (None, "it is a v1 manifest, from the old snt_development repository"),
+        (3, "has schema_version 3, and this deployer reads only schema_version 2"),
+        ("2", "has schema_version '2', and this deployer reads only schema_version 2"),
+    ],
+)
+def test_unreadable_manifest_version_stops_the_run(version: object, expected: str) -> None:
+    """A v1 manifest (no schema_version) or an unknown version stops the run with an [ERROR]."""
+    manifest = {k: v for k, v in V2_MANIFEST.items() if k != "schema_version"}
+    if version is not None:
+        manifest["schema_version"] = version
+    dep.current_run = log = Log()
+    with pytest.raises(dep.DeploymentAbortedError) as raised:
+        dep.check_manifest_version(manifest, "v0.1.0")
+    assert str(raised.value).startswith("[ERROR] Cannot deploy:")
+    assert expected in str(raised.value)
+    assert log.lines == [("log_error", str(raised.value))]
+
+
+def test_split_manifest_copies_exactly_the_filesystem_files() -> None:
+    """The filesystem route is filesystem_files, never derived from a path: no pipeline.py, no readme."""
+    analytics, pipelines = dep.split_manifest(V2_MANIFEST)
+    assert sorted(analytics) == sorted(V2_MANIFEST["filesystem_files"])
+    assert all(analytics[path] == V2_MANIFEST["files"][path] for path in analytics)
+    assert "pipelines/snt_map_extracts/pipeline.py" not in analytics
+    assert "shared/r/snt_utils.r" in analytics
+    assert pipelines == V2_MANIFEST["pipelines"]
+
+
+def asset(name: str) -> dict:
+    """Build a GitHub release asset object.
+
+    Returns
+    -------
+    dict
+        The asset's name and download URL.
+    """
+    return {"name": name, "browser_download_url": f"https://example.org/{name}"}
+
+
+RELEASE = {
+    "tag_name": "v0.1.0",
+    "html_url": "https://github.com/BLSQ/snt-stratification/releases/tag/v0.1.0",
+    "assets": [asset("release_manifest.json"), asset("snt-stratification-v0.1.0.tar.gz")],
+}
+
+
+def test_slim_tarball_asset_is_named_after_repo_and_version() -> None:
+    """The asset is <repo name>-<version>.tar.gz, as tools/build_release_assets.py names it."""
+    assert dep.slim_tarball_asset(RELEASE, V2_MANIFEST)["name"] == "snt-stratification-v0.1.0.tar.gz"
+
+
+def test_missing_slim_tarball_stops_the_run() -> None:
+    """A release without its slim tarball stops the run, naming the asset and the workflow."""
+    release = {**RELEASE, "assets": [asset("release_manifest.json")]}
+    dep.current_run = Log()
+    with pytest.raises(dep.DeploymentAbortedError) as raised:
+        dep.slim_tarball_asset(release, V2_MANIFEST)
+    assert "no snt-stratification-v0.1.0.tar.gz asset" in str(raised.value)
+    assert "'release' workflow" in str(raised.value)
+
+
+def test_pipeline_zip_holds_exactly_its_manifest_zip_files() -> None:
+    """Zipping pipelines.<name>.path of an extracted release gives exactly that pipeline's zip_files."""
+    spec = V2_MANIFEST["pipelines"]["snt_map_extracts"]
+    parsed = SimpleNamespace(parameters=[], timeout=None, functional_type=None)
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        for path in V2_MANIFEST["files"]:
+            (root / path).parent.mkdir(parents=True, exist_ok=True)
+            (root / path).write_text(path)
+        version_input = dep.build_version_input(root / spec["path"], parsed, RELEASE)
+
+    archive = zipfile.ZipFile(io.BytesIO(base64.b64decode(version_input["zipfile"])))
+    assert sorted(archive.namelist()) == sorted(spec["zip_files"])
+    assert version_input["name"] == "v0.1.0"
 
 
 @pytest.mark.parametrize(

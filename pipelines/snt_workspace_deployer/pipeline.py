@@ -1,19 +1,25 @@
 """Deploy a pinned GitHub release of the SNT codebase into this OpenHEXA workspace.
 
 Both halves of the codebase move together, on one release tag, replacing the two
-uncoordinated update paths described in docs/release_strategy.md:
+uncoordinated update paths described in docs/bootstrap/release_strategy.md. The release's
+manifest (v2, contracts/release_manifest.schema.json) says which route each file takes:
 
-    R analytics   pipelines/**/*.ipynb, pipelines/**/utils/*.r, code/**/*.r
-                  -> copied into the workspace filesystem, where notebooks source() them.
-                  Replaces the per-pipeline `Pull scripts` toggle.
+    R analytics   the manifest's `filesystem_files`: pipelines/<name>/{code,reporting}/*.ipynb,
+                  pipelines/<name>/utils/*.r and the shared library shared/r/**/*.r
+                  -> copied into the workspace filesystem, at their repository paths, where
+                  notebooks source() them. Replaces the per-pipeline `Pull scripts` toggle.
 
-    Python half   <name>/pipeline.py
+    Python half   pipelines/<name>/, zipped as `openhexa pipelines push` zips it
                   -> registered as a new pipeline VERSION through the OpenHEXA API.
                   Replaces the Template auto-update subscription.
 
-The Python half is deliberately NOT copied into the workspace filesystem. OpenHEXA runs
-each pipeline from the zip stored on its registered version, never from the bucket, so a
-pipeline.py sitting in workspace/files would look authoritative and never execute.
+The zip holds the pipeline's R half too, as the SDK's own zip does, but only the filesystem
+copy is what notebooks run. The Python half is deliberately NOT copied into the workspace
+filesystem. OpenHEXA runs each pipeline from the zip stored on its registered version, never
+from the bucket, so a pipeline.py sitting in workspace/files would look authoritative and
+never execute.
+
+The files come from the release's slim tarball asset, which holds exactly the manifest's files.
 
 Credentials: a pipeline run's own HEXA_TOKEN can read the API but is refused
 (PERMISSION_DENIED) on uploadPipeline, so deployment reads a workspace API token from a
@@ -45,6 +51,10 @@ ZIPPED_SUFFIXES = (".py", ".ipynb", ".txt", ".md", ".r", ".sql")
 
 GITHUB_HEADERS = {"User-Agent": "snt-workspace-deployer"}
 
+# The release manifest shapes this deployer can read (contracts/release_manifest.schema.json).
+# A manifest without `schema_version` is v1, from the old snt_development repository.
+SUPPORTED_MANIFEST_VERSIONS = (2,)
+
 # OpenHEXA appends " [v<number>]" to a version name when it is read back.
 VERSION_NUMBER_SUFFIX = re.compile(r"\s*\[v\d+\]\s*$")
 
@@ -64,16 +74,16 @@ class DeploymentAbortedError(RuntimeError):
 @parameter(
     "github_repo",
     name="GitHub repository",
-    help="owner/repo to pull the release from (e.g. BLSQ/snt_development_sandbox)",
+    help="owner/repo to pull the release from (e.g. BLSQ/snt-stratification)",
     type=str,
-    default="BLSQ/snt_development_sandbox",
+    default="BLSQ/snt-stratification",
     required=True,
 )
 @parameter(
     "release_tag",
     name="Release tag",
     help=(
-        "GitHub release tag to deploy (e.g. v0.3.0-test). Leave empty to deploy the repository's "
+        "GitHub release tag to deploy (e.g. v0.1.0). Leave empty to deploy the repository's "
         "latest release. The resolved tag becomes the pipeline version name."
     ),
     type=str,
@@ -116,7 +126,7 @@ def snt_workspace_deployer(
 ) -> None:
     """Deploy one GitHub release's R analytics and Python orchestration into this workspace.
 
-    Orchestration only: resolves the release, downloads its manifest and source tarball,
+    Orchestration only: resolves the release, downloads its manifest and slim tarball,
     then delegates the file sync and the pipeline deployment to plain helper functions.
 
     A raised exception reaches only the run's logs, not its Messages, so any failure that was
@@ -150,14 +160,14 @@ def deploy_release(
     release = get_release(github_repo, release_tag)
     release_tag = release["tag_name"]
     manifest = download_manifest(release)
-    analytics_files, pipeline_dirs = split_manifest(manifest["files"], manifest["pipelines"])
+    analytics_files, pipelines = split_manifest(manifest)
     current_run.log_info(
         f"Release {github_repo}@{release_tag} tracks {len(manifest['files'])} files: "
-        f"{len(analytics_files)} analytics file(s) and {len(pipeline_dirs)} pipeline(s)."
+        f"{len(analytics_files)} analytics file(s) and {len(pipelines)} pipeline(s)."
     )
 
     with tempfile.TemporaryDirectory() as tmp_dir:
-        tarball_root = download_and_extract_tarball(release["tarball_url"], Path(tmp_dir))
+        tarball_root = download_and_extract_tarball(release, manifest, Path(tmp_dir))
 
         archive_dir = snt_root_path / "archive" / release_tag if backup_existing else None
         copied, missing = sync_files(analytics_files, tarball_root, snt_root_path, archive_dir, dry_run)
@@ -168,7 +178,7 @@ def deploy_release(
                 f"{len(missing)} manifest entries were not found in the release tarball: {missing}"
             )
 
-        failures = deploy_all(tarball_root, pipeline_dirs, release, token, dry_run)
+        failures = deploy_all(tarball_root, pipelines, release, token, dry_run)
 
     if not dry_run:
         write_release_marker(snt_root_path, release_tag)
@@ -323,21 +333,22 @@ def abort_run(reason: str) -> NoReturn:
 
 
 def download_manifest(release: dict) -> dict:
-    """Download and parse release_manifest.json from a release's assets.
+    """Download and parse release_manifest.json from a release's assets, and check its shape.
 
-    A manifest without a `pipelines` block is refused before anything is written (D26).
+    A manifest this deployer cannot read is refused before anything is written.
 
     Returns
     -------
     dict
-        The parsed manifest: {"version": ..., "files": {path: sha256}, "pipelines": {dir: spec}}.
+        The parsed manifest (v2): {"schema_version", "version", "repo", "files",
+        "filesystem_files", "pipelines", ...}.
     """
     asset = next((a for a in release["assets"] if a["name"] == "release_manifest.json"), None)
     if asset is None:
         abort_run(
             f"release {release['tag_name']} has no release_manifest.json asset, so the files to deploy "
-            "are unknown. Run the 'Generate Release Manifest' workflow for this release on GitHub (or "
-            f"wait for it to finish), then re-run. Release page: {release['html_url']}"
+            "are unknown. On GitHub, wait for the 'release' workflow run of this release to finish, or "
+            f"re-run it if it failed, then re-run this pipeline. Release page: {release['html_url']}"
         )
     response = github_get(asset["browser_download_url"])
     if not response.ok:
@@ -349,62 +360,97 @@ def download_manifest(release: dict) -> dict:
         manifest = response.json()
     except ValueError:
         abort_run(f"release_manifest.json of release {release['tag_name']} is not valid JSON.")
-    if "pipelines" not in manifest:
-        abort_run(
-            f"release_manifest.json of release {release['tag_name']} has no 'pipelines' block (it predates "
-            "the phase-0 generator), so which files ship inside pipeline zips is unknown. Manifests without "
-            "it are not supported (D26): re-run the 'Generate Release Manifest' workflow for this release."
-        )
+    check_manifest_version(manifest, release["tag_name"])
     return manifest
 
 
-def split_manifest(tracked_files: dict, pipelines: dict) -> tuple[dict, list[str]]:
+def check_manifest_version(manifest: dict, release_tag: str) -> None:
+    """Stop the run unless the manifest has a `schema_version` this deployer can read (ADR 0042).
+
+    A manifest with no `schema_version` is v1, from the old snt_development repository, whose
+    paths do not match this repository's layout. A newer one may change what a key means, so
+    it is refused rather than half-read.
+    """
+    version = manifest.get("schema_version")
+    readable = ", ".join(str(v) for v in SUPPORTED_MANIFEST_VERSIONS)
+    if version is None:
+        abort_run(
+            f"release_manifest.json of release {release_tag} has no schema_version: it is a v1 manifest, "
+            "from the old snt_development repository, which this deployer no longer reads. Deploy a "
+            "release of BLSQ/snt-stratification (the 'GitHub repository' parameter)."
+        )
+    if version not in SUPPORTED_MANIFEST_VERSIONS:
+        abort_run(
+            f"release_manifest.json of release {release_tag} has schema_version {version!r}, and this "
+            f"deployer reads only schema_version {readable}. The release is newer than this deployer: "
+            "update this pipeline to the latest full release first, then re-run."
+        )
+
+
+def split_manifest(manifest: dict) -> tuple[dict, dict]:
     """Separate the manifest into filesystem-synced analytics and API-deployed pipelines.
 
-    Everything under a pipeline directory is deliberately excluded from the filesystem
-    sync, because OpenHEXA runs pipelines from their registered version's zip and never
-    from the workspace bucket. A copy in the bucket is inert and actively misleading.
+    The manifest names the filesystem files itself (`filesystem_files`); no route is derived
+    from a path, because a notebook ships in its pipeline's zip and to the filesystem alike.
+    Everything else under a pipeline's folder (pipeline.py, requirements.txt, ...) reaches the
+    workspace only inside the zip: OpenHEXA runs pipelines from their registered version and
+    never from the workspace bucket, so a copy in the bucket would be inert and misleading.
 
     Parameters
     ----------
-    tracked_files : dict
-        The manifest's `files` map, `{repository path: sha256}`.
-    pipelines : dict
-        The manifest's `pipelines` block, keyed by pipeline directory. May be empty.
+    manifest : dict
+        A v2 release manifest.
 
     Returns
     -------
-    tuple[dict, list[str]]
-        (the analytics files to copy, keyed by path; the pipeline directory names to deploy).
+    tuple[dict, dict]
+        (the analytics files to copy, {repository path: sha256}; the manifest's `pipelines`
+        block, {pipeline name: spec}).
     """
-    pipeline_dirs = set(pipelines)
-
-    analytics = {
-        rel_path: checksum
-        for rel_path, checksum in tracked_files.items()
-        if Path(rel_path).parts[0] not in pipeline_dirs
-    }
-    return analytics, sorted(pipeline_dirs)
+    analytics = {rel_path: manifest["files"][rel_path] for rel_path in manifest["filesystem_files"]}
+    return analytics, manifest["pipelines"]
 
 
-def download_and_extract_tarball(tarball_url: str, extract_to: Path) -> Path:
-    """Download a GitHub source tarball and extract it.
+def slim_tarball_asset(release: dict, manifest: dict) -> dict:
+    """Find the release's slim tarball asset, named `<repo name>-<version>.tar.gz` by the release workflow.
 
-    One request for the whole repository: a per-file Contents API fetch would need one
-    call per tracked file, against an unauthenticated limit of 60 per hour.
+    Returns
+    -------
+    dict
+        The GitHub API asset object (name, browser_download_url, ...).
+    """
+    name = f"{manifest['repo'].split('/')[-1]}-{manifest['version']}.tar.gz"
+    asset = next((a for a in release["assets"] if a["name"] == name), None)
+    if asset is None:
+        abort_run(
+            f"release {release['tag_name']} has no {name} asset, so the files to deploy cannot be "
+            "downloaded. On GitHub, wait for the 'release' workflow run of this release to finish, or "
+            f"re-run it if it failed, then re-run this pipeline. Release page: {release['html_url']}"
+        )
+    return asset
+
+
+def download_and_extract_tarball(release: dict, manifest: dict, extract_to: Path) -> Path:
+    """Download the release's slim tarball and extract it.
+
+    The slim tarball holds exactly the manifest's files, at their repository paths under one top
+    folder, each checked against its manifest hash when the release was built. One download for
+    the whole release: a per-file Contents API fetch would need one call per tracked file,
+    against an unauthenticated limit of 60 per hour.
 
     Returns
     -------
     Path
-        The path to the extracted repository root (GitHub tarballs contain one top-level
-        directory named "<owner>-<repo>-<short_sha>").
+        The path to the extracted repository root (the tarball's one top-level directory,
+        named "<repo name>-<tag>").
     """
+    tarball_url = slim_tarball_asset(release, manifest)["browser_download_url"]
     try:
         response = requests.get(tarball_url, headers=GITHUB_HEADERS, timeout=120, stream=True)
     except requests.RequestException as exception:
-        abort_run(f"could not download the release source tarball ({type(exception).__name__}: {exception}).")
+        abort_run(f"could not download the release tarball ({type(exception).__name__}: {exception}).")
     if not response.ok:
-        abort_run(f"downloading the release source tarball failed ({response.status_code}): {tarball_url}")
+        abort_run(f"downloading the release tarball failed ({response.status_code}): {tarball_url}")
 
     tarball_path = extract_to / "release.tar.gz"
     with tarball_path.open("wb") as f:
@@ -416,7 +462,7 @@ def download_and_extract_tarball(tarball_url: str, extract_to: Path) -> Path:
 
     subdirs = [p for p in extract_to.iterdir() if p.is_dir()]
     if len(subdirs) != 1:
-        abort_run(f"the release source tarball should hold exactly one directory, found: {subdirs}")
+        abort_run(f"the release tarball should hold exactly one directory, found: {subdirs}")
     return subdirs[0]
 
 
@@ -460,7 +506,7 @@ def sync_files(
 
 def deploy_all(
     tarball_root: Path,
-    pipeline_dirs: list[str],
+    pipelines: dict,
     release: dict,
     token: str,
     dry_run: bool,
@@ -473,35 +519,35 @@ def deploy_all(
     Returns
     -------
     list[str]
-        The directory names of the pipelines that could not be deployed.
+        The names of the pipelines that could not be deployed.
     """
     failures = []
-    for dir_name in pipeline_dirs:
+    for name in sorted(pipelines):
         try:
-            deploy_one(tarball_root / dir_name, dir_name, release, token, dry_run)
+            deploy_one(tarball_root, name, pipelines[name], release, token, dry_run)
         except Exception as exception:  # one bad pipeline must not stop the other nineteen
-            current_run.log_error(f"[ERROR] {dir_name}: deployment failed: {exception}")
-            failures.append(dir_name)
+            current_run.log_error(f"[ERROR] {name}: deployment failed: {exception}")
+            failures.append(name)
 
     if dry_run:
-        current_run.log_info(f"Pipelines: {len(pipeline_dirs)} inspected, none registered (dry run).")
+        current_run.log_info(f"Pipelines: {len(pipelines)} inspected, none registered (dry run).")
     else:
-        current_run.log_info(
-            f"Pipelines: {len(pipeline_dirs) - len(failures)}/{len(pipeline_dirs)} deployed."
-        )
+        current_run.log_info(f"Pipelines: {len(pipelines) - len(failures)}/{len(pipelines)} deployed.")
     return failures
 
 
-def deploy_one(pipeline_dir: Path, dir_name: str, release: dict, token: str, dry_run: bool) -> None:
-    """Deploy a single pipeline directory as a new version, creating the pipeline if it is missing.
+def deploy_one(tarball_root: Path, name: str, spec: dict, release: dict, token: str, dry_run: bool) -> None:
+    """Deploy one pipeline of the release as a new version, creating the pipeline if it is missing.
 
-    The OpenHEXA pipeline code is the directory name with underscores replaced by hyphens -
-    the same slug this repo's CI passes to `openhexa pipelines push --code`.
+    The pipeline's folder is the manifest's `path` (pipelines/<name>), and its OpenHEXA code the
+    manifest's `code`: the name with underscores replaced by hyphens, the slug this repo's
+    workflows pass to `openhexa pipelines push --code`.
     """
+    pipeline_dir = tarball_root / spec["path"]
     if not (pipeline_dir / "pipeline.py").exists():
-        raise ValueError(f"No pipeline.py in the release tarball at {dir_name}/.")
+        raise ValueError(f"No pipeline.py in the release tarball at {spec['path']}/ ({name}).")
 
-    code = dir_name.replace("_", "-")
+    code = spec["code"]
     parsed = get_pipeline(pipeline_dir)
     existing = get_pipeline_by_code(token, code)
 
