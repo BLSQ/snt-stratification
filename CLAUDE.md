@@ -58,7 +58,7 @@ calling each other.
 | Scheduler / DAG engine | **deliberate** ([ADR 0001](docs/decisions/0001-no-dag-engine.md)) | Nothing enforces run order; pipelines may run against stale upstreams |
 | dbt | **permanent** | Analytics are R, not SQL |
 | Tests for the SNT pipelines and webapps | **debt** | `pytest` covers only the bootstrap pipelines, contracts and `tools/`. Verify by reading; say what you could not verify |
-| CI that releases or deploys | **debt** (Phase 3: `release.yaml`, `push_templates.yaml`) | [`ci.yaml`](.github/workflows/ci.yaml) only checks each PR and push to `main` (ruff, pytest, R1/R2, links, registry, Explorer list); nothing deploys |
+| CI that deploys | **debt** (`release.yaml`'s bootstrap-templates job disabled; `push_templates.yaml`, Phase 3) | [`ci.yaml`](.github/workflows/ci.yaml) checks each PR and push to `main` (ruff, pytest, R1/R2, links, registry, Explorer list); [`release.yaml`](.github/workflows/release.yaml) attaches the manifest and assets to a GitHub release; nothing deploys to a workspace |
 | Full local runtime | **debt** | R runs on the workspace kernel — [`dev/README.md`](dev/README.md) |
 
 ---

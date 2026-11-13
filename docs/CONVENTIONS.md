@@ -130,12 +130,13 @@ the same PR. Each schema's `description` says what is breaking: a new key or enu
 rename, a removal or a change of meaning is. Why the manifest is frozen as a schema:
 [ADR 0033](decisions/0033-release-manifest-frozen-json-schema.md).
 
-The manifest's **producer is still in the old repo**:
+The v2 manifest's producer is [`tools/build_manifest.py`](../tools/build_manifest.py), run by
+[`release.yaml`](../.github/workflows/release.yaml), so a v2 shape change is one PR here: schema,
+builder and consumers together. The v1 producer stays in the old repo,
 [`generate_manifest.yaml`](https://github.com/BLSQ/snt_development/blob/94cfc383c0f8804d2eba264f26a4bd3d372d94da/.github/workflows/generate_manifest.yaml)
-in `snt_development`, not imported. Until Phase 3 brings it here as `tools/build_manifest.py`
-(manifest v2), a shape change there still needs a paired PR here. *Which* paths a release ships is
-the producer's choice, not part of the schema, but it changes what the deployer installs and the
-checker compares, so say so in the PR.
+in `snt_development`, not imported; v1 is frozen. *Which* paths a release ships is the producer's
+choice, not part of the schema, but it changes what the deployer installs and the checker compares,
+so say so in the PR.
 
 ## Naming
 

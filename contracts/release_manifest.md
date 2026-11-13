@@ -9,9 +9,12 @@
 
 ## Manifest v2 — this repo
 
-**Schema and producer written; nothing runs the producer yet, and no consumer reads v2.** The
-producer is [`tools/build_manifest.py`](../tools/build_manifest.py), to be run by `release.yaml`
-(Phase 3). The deployer, the single-pipeline deployer and the checker switch to v2 in Phase 4.
+**Built on every published release; no consumer reads v2 yet.** The producer is
+[`tools/build_manifest.py`](../tools/build_manifest.py), run by
+[`release.yaml`](../.github/workflows/release.yaml), which attaches the manifest and the
+[release assets](#release-assets-beside-the-manifest) to the release. No release exists yet: the
+first is `v0.1.0`, in Phase 4. The deployer, the single-pipeline deployer and the checker switch to
+v2 in Phase 4.
 
 How the builder routes each file:
 
@@ -71,6 +74,36 @@ What changed from v1, and why:
 Invariants JSON Schema cannot express are listed in the schema's `description` and checked by
 `invariant_errors()` in [`tools/build_manifest.py`](../tools/build_manifest.py).
 `repository_files` is unchanged from v1.
+
+## Release assets beside the manifest
+
+[`release.yaml`](../.github/workflows/release.yaml) attaches these to every published release,
+pre-releases included:
+
+| Asset | Content | Built by |
+|---|---|---|
+| `release_manifest.json` | The manifest above | [`tools/build_manifest.py`](../tools/build_manifest.py) |
+| `<repo name>-<tag>.tar.gz`, e.g. `snt-stratification-v0.1.0.tar.gz` (the slim tarball) | Exactly the manifest's `files`, at their repository paths, under one top folder `snt-stratification-v0.1.0/` | [`tools/build_release_assets.py`](../tools/build_release_assets.py) |
+| `webapp-<name>-<tag>.zip`, one per `webapps` entry | The bundle's files at their paths relative to `app/`, plus a stamped `version.json` at the zip's root | [`tools/build_release_assets.py`](../tools/build_release_assets.py) |
+
+The builder checks every file against its manifest hash before packing it, so the assets cannot
+disagree with the manifest they are published with. The deployers still download GitHub's own
+source tarball until Phase 4. The slim tarball keeps that tarball's layout (one top folder, repo
+paths under it), so their switch to it is a change of URL.
+
+Each webapp zip's `version.json`:
+
+```json
+{"version": "v0.1.0", "commit": "<full 40-character git commit hash of the tag>", "built_at": "2026-11-20T10:00:00Z"}
+```
+
+`built_at` is when the workflow ran, in UTC. The file is generated at release time, so the
+manifest does not hash it, and a bundle must not commit a `version.json` of its own (the builder
+refuses one). The orchestrator reads it in Phase 7 to show the version in its footer.
+
+A manual run of the workflow ("Run workflow", offered once the file is on `main`) builds the same
+files under a test version name and keeps them on the run's page for seven days. It creates and
+changes no release.
 
 ## v1: manifest generation in `snt_development` — done
 
