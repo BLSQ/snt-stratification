@@ -773,61 +773,66 @@ Give Giulia the exact commands, one commit at a time.
 | 7a | `contracts/snt_config/README.md` brought in line with D-11 (asked in the commit 7 hand-off) | `docs(contracts): snt_config README describes the one skeleton (D-11)` |
 | 7b | The old `contracts/snt_config_json/` name replaced outside this file's history | `docs: contracts/snt_config/ everywhere, not the old snt_config_json/` |
 | 7c | This file: commit 8 hand-off, Session log | `plan: Phase 3 commit 7, hand-off for release.yaml` |
-| 8 | `release.yaml` — see the hand-off below | — |
-| 9 | `push_templates.yaml` (disabled) | — |
+| 8 | `release.yaml` + `tools/build_release_assets.py` + tests; release assets and `version.json` in `release_manifest.md`; R23 fixes in `contracts/README.md`, `CLAUDE.md`, `ARCHITECTURE.md`, `CONVENTIONS.md` | `ci: release.yaml, the release manifest, slim tarball and webapp zips on each release` |
+| 8a | This file: commit 9 hand-off, Session log | `plan: Phase 3 commit 8, hand-off for push_templates.yaml` |
+| 9 | `push_templates.yaml` (disabled) — see the hand-off below | — |
 
-**Hand-off for commit 8, `release.yaml` (2026-11-13).** Commits 1–7c are on the branch; start here.
+**Hand-off for commit 9, `push_templates.yaml` (2026-11-13).** Commits 1–8a are on the branch; start here.
 
-**Step 0, before writing anything: the first CI run.** `ci.yaml` runs on `pull_request` and on
-`push` to `main` only, so it first runs once the Phase 3 PR is open. Ask Giulia for the result.
-Expected: `checks` all green; `pytest` **98 passed, 0 skipped** (the first real `pip install` of the
-pinned `snt_lib` `v1.0.2`; locally it is 82 passed, 16 skipped). A failure there is fixed first, in
-its own commit. After the first green run, suggest (Giulia sets it) making `checks` and `pytest`
-required status checks in the `main` ruleset: today a red run does not block a merge.
+**Step 0, before writing anything: the CI run on commit 8.** Ask Giulia for the result on the open
+Phase 3 PR. Expected: `checks` all green; `pytest` **115 passed, 0 skipped** (98 before commit 8,
+plus 17 in `tests/test_build_release_assets.py`; locally 99 passed, 16 skipped). A failure there is
+fixed first, in its own commit. Also ask whether `checks` and `pytest` are now required status
+checks in the `main` ruleset (suggested 2026-11-13, Giulia sets it).
 
-Scope, from the `release.yaml` checklist item below and D-17. One workflow, two jobs:
-- **Assets job, on `release: published`** (fires for pre-releases and full releases). Check out the
-  release tag. Build `release_manifest.json` with `tools/build_manifest.py` (it reads
-  `GITHUB_REF_NAME` and `GITHUB_REPOSITORY` by default; it validates before writing and exits 1 on
-  a problem). Attach to the release: the manifest; a **slim tarball** holding only the manifest's
-  `files`; one `webapp-<name>-<tag>.zip` per entry in the manifest's `webapps` block, with a stamped
-  `version.json` ([`release_manifest.md`](../contracts/release_manifest.md), ADR 0037). Today that
-  is `orchestrator` only (`config_editor/app/` holds just `.gitkeep`, which the builder skips).
-- **Bootstrap-templates job, on `release: released` only** (full releases; skips pre-releases):
-  `openhexa pipelines push --yes` of each registry `kind: bootstrap` pipeline to the new templates
-  publishing workspace, which publishes their template versions (D-17, spike S6). **Disabled**
-  (e.g. `if: false` with a comment) until that workspace exists. Both triggers in one `on: release:
-  types: [published, released]`, gated per job on `github.event.action`.
-- **Build logic in a script, not inline shell:** e.g. `tools/build_release_assets.py` reading the
-  manifest it was given, with `pytest` coverage like `build_manifest.py` (CI then lints and tests it).
+Scope, from the `push_templates.yaml` checklist item below, Phase 6 and ADRs 0040–0041: one workflow
+that pushes every registry `kind: snt` and `kind: support` pipeline (22 today) to the new templates
+publishing workspace, which publishes their template versions. **One matrix job generated from
+`pipelines/registry.json`**, so no hand-written per-pipeline path filter can be typo'd again (the old
+repo's `readme.txt`, `worlpopclient.py`). **Disabled** until Phase 6, like `release.yaml`'s
+bootstrap-templates job. Any logic beyond a `jq` one-liner goes in a `tools/` script with `pytest`
+coverage, as in commit 8.
 
 Facts to build on:
-- **The deployers do not read the slim tarball yet.** They download GitHub's source tarball
-  (`release["tarball_url"]`) and abort unless it holds exactly one top-level directory
-  (`download_and_extract_tarball()` in `pipelines/snt_pipeline_deployer/pipeline.py`). They switch in
-  Phase 4, so the slim tarball should keep that layout (one top folder, repo paths under it) to make
-  the switch a URL change.
-- **Old repo's patterns** (read only, at `~/Bluesquare/snt_development/.github/workflows/`):
-  `generate_manifest.yaml` attached the manifest with `softprops/action-gh-release@v1` and also ran
-  on `workflow_dispatch`; `push_snt_*.yaml` pushed with `blsq/openhexa-cli-action@v1` and the
-  `OH_TOKEN` secret, passing `--code`, `--description` (head commit message, see TOOL-8) and
-  `--link`. Which secrets this repo has: not checked; ask.
-- `.gitignore` allows `.github/workflows/*.yaml`. Python 3.13 as in `ci.yaml`. The `v*` tag
-  ruleset exists (Phase 1).
-- After the commit: [`contracts/README.md`](../contracts/README.md) says the v2 builder is "run by
-  nothing yet"; update it (R23). The manifest's shape does not change, so no schema change (R22).
+- **`release.yaml`'s bootstrap-templates job is the pattern** (commit 8): `blsq/openhexa-cli-action@v1`,
+  the repository variable `OH_TEMPLATES_WORKSPACE` and the secret `OH_TEMPLATES_TOKEN` (the same
+  publishing workspace, ADR 0041: one per template set), `--code "${name//_/-}"`, `--name` = the tag
+  (the deployer names its versions after the tag too), `--link`, `--yes`. It loops in shell over the
+  three bootstrap pipelines; here the plan asks for a matrix, one job per pipeline, so one failed
+  push does not hide the others and can be re-run alone.
+- **Every push from the publishing workspace publishes a template version** (S6, `--yes` skips the
+  prompt), and OpenHEXA does not compare contents: an unchanged pipeline pushed again still becomes a
+  new template version, which every auto-updating workspace then receives. R5 binds the new set.
+- **The code comes from the source pipeline** (S3): `--code` on the first push sets it, so
+  template-created pipelines get `snt-<name>` (Phase 6 item "Name the templates").
+- **The R half travels in the zip** (S1: the SDK zips `code/`, `reporting/`, `utils/` with
+  `pipeline.py`), but nothing copies it to a template user's filesystem yet: that is OD-9's route
+  choice in Phase 6, not this commit.
+- **Old repo's pattern** (read only, `~/Bluesquare/snt_development/.github/workflows/push_snt_*.yaml`):
+  20 copies, each on `push` to `main` with path filters, Python 3.11, `--description` = the head
+  commit's message, which a merge commit turns into "Merge pull request #N …" (TOOL-8).
+- `.gitignore` allows `.github/workflows/*.yaml`; check a new file with `git add --dry-run` **before**
+  the real `git add` (after it, the dry run prints nothing). Python 3.13 as in `ci.yaml`.
+- `release.yaml`'s bootstrap job also pushes all three pipelines on every full release, changed or
+  not. Whatever question 3 below settles applies to it too.
 
-**Ask Giulia at the start of commit 8**, one at a time:
-1. **`version.json` shape.** Nothing defines it (ADR 0037, the manifest schema and
-   `release_manifest.md` only say it is stamped). Recommend `{"version": "<tag>"}`, documented in
-   `release_manifest.md`; anything more (commit SHA, date) only if a consumer needs it.
-2. **Slim tarball name and layout.** Recommend `snt-stratification-<tag>.tar.gz` with one top folder
-   `snt-stratification-<tag>/`, mirroring GitHub's source tarball (see the deployer fact above).
-3. **Upload tool.** Recommend `gh release upload` (preinstalled on runners, job permission
-   `contents: write`) over a third-party action.
-4. **How to test before `v0.1.0`.** No release exists. Recommend a `workflow_dispatch` trigger that
-   builds the same assets and uploads them as an Actions artifact instead of release assets; a real
-   pre-release (a tag on the public repo) only when Giulia chooses to cut one.
+**Ask Giulia at the start of commit 9**, one at a time, each with its context (which commit, which
+file, why it matters), in plain words and without abbreviations:
+1. **Trigger.** ADR 0041 leaves "on every merge to `main` or only on release" to Phase 6
+   (recommended: on release), but the disabled file needs a trigger written in. Recommend **full
+   releases only** (`release: released`), like the bootstrap templates: every template version then
+   matches a tag, and its description can be "Release `<tag>`", which takes the template route out of
+   TOOL-8. Alternative: `push` to `main` filtered on `pipelines/**`, with a step that finds which
+   pipelines changed.
+2. **Own file or a job in `release.yaml`?** If the trigger is a release, the job could sit in
+   `release.yaml` beside the bootstrap one. The plan's tree (§4.1) and checklist name a separate
+   `push_templates.yaml`. Recommend the separate file as planned: Phase 6 enables it by editing one
+   file, and `release.yaml` stays about release assets plus the one D-17 job.
+3. **Push every pipeline, or only the changed ones?** Pushing all 22 on each release makes 22 new
+   template versions even when nothing changed (S6). Recommend pushing only the pipelines whose zip
+   files differ from the previous full release, by comparing the two releases' manifests
+   (`pipelines.<name>.zip_files` with their hashes in `files`), in a `tools/` script with tests; the
+   first release pushes all. Alternative: push all, simpler, more template versions.
 
 #### Phase 3 findings
 
@@ -877,13 +882,20 @@ Consequences:
       the metadata validator) and `pytest` (pinned `snt_lib`, `SNT_LIB_REQUIRED=1`). TOOL-2, 5, 7
       closed; TOOL-6 narrowed to JSON Schemas for `contracts/orchestrator/` (prose today), with
       map ids == description keys now in `pytest`.
-- [ ] `release.yaml`: on `release: published`, build and attach `release_manifest.json`, a **slim
+- [x] `release.yaml`: on `release: published`, build and attach `release_manifest.json`, a **slim
       release tarball** (only manifest-listed files, so the deployer doesn't download design PNGs and
       docs), and `webapp-<name>-<tag>.zip` with a stamped `version.json`. Plus a job that runs on
       **full releases only** (`release: released`, which skips pre-releases, unlike `published`):
       `openhexa pipelines push --yes` of each registry `kind: bootstrap` pipeline to the new
       templates publishing workspace, which publishes their template versions (D-17). Keep that job
       **disabled** until the publishing workspace exists.
+      Commit 8, decided 2026-11-13: `version.json` = `version`, `commit` (full hash), `built_at`
+      (UTC); slim tarball `snt-stratification-<tag>.tar.gz` with one top folder of the same name;
+      upload with `gh release upload --clobber`; a `workflow_dispatch` run keeps the assets as an
+      Actions artifact (7 days), usable once on `main`. Build logic in `tools/build_release_assets.py`
+      (hash-checks every file against the manifest, writes nothing on a mismatch). The bootstrap job
+      reads `vars.OH_TEMPLATES_WORKSPACE` and `secrets.OH_TEMPLATES_TOKEN`, created when it is
+      enabled. Not run yet: no release exists, and the manual run needs the file on `main`.
 - [ ] `push_templates.yaml`: one matrix job **generated from `pipelines/registry.json`** (kinds `snt` + `support`),
       so typo'd per-pipeline path filters (`readme.txt`, `worlpopclient.py`) can't come back.
       Target = the new templates workspace. Keep it **disabled** until Phase 6.
@@ -969,8 +981,9 @@ proceed in parallel against the new schema.
       without duplicates.
 
 ### Phase 7 — Webapps on the release train (D-2)
-- [ ] `version.json` (tag, commit, date) is stamped into the release zips. The app reads it and shows
-      it in the footer (REL-1).
+- [ ] The orchestrator reads `version.json` from its bundle and shows it in the footer (REL-1). The
+      release zips carry it since Phase 3 commit 8: `version`, `commit`, `built_at`
+      ([`release_manifest.md`](../contracts/release_manifest.md#release-assets-beside-the-manifest)).
 - [ ] Manual deploy route documented in `docs/RELEASES.md`: download `webapp-<name>-<tag>.zip` from
       the release and upload it. Never deploy from `main`.
 - [ ] Checker: compare the deployed webapp files with the manifest hashes (needs the files to be
@@ -1063,6 +1076,7 @@ proceed in parallel against the new schema.
 | 2026-11-12 | Phase 3 opened on `phase-3/tooling-and-ci`. **OD-4 settled as D-17**: bootstrap pipelines as templates published on each full release, plus a guarded deployer self-update (never downgrades), bootstrap in the manifest as `kind: bootstrap`. Options A (templates from `main`) and C (no templates, CLI first push) rejected, reasons in the commit 2 hand-off. Spike S6 passed in `snt-development-sandbox` → `snt-testing`; auto-update is off by default ([Phase 3 findings](#phase-3-findings)). Commit 1 written | Commit 1, then commit 2 (ADR 0042 + current-truth fixes) in a new session |
 | 2026-11-12 | Phase 3 commits 2–6: ADR 0042; two R23 fixes (templates are not being retired); manifest v2 schema (`filesystem_files`, `webapps` now, v1 file kept until Phase 4); `tools/build_manifest.py`; config conformance fixtures, `snt_lib` pinned to `v1.0.2` for the test. Order 5–9 chosen. Found: `release-v1` is a branch (DEP-1). `BLSQ/snt_utils` cloned at `~/Bluesquare/snt_utils` for reading `snt_lib` | Commit 6a (this log + hand-off), then commit 7 `ci.yaml` in a new session: see the [Phase 3 hand-off](#phase-3--tooling-and-ci) |
 | 2026-11-13 | Phase 3 commit 7: `ci.yaml` (jobs `checks` and `pytest`), `tools/check_links.py` (ported, now over git's file list so `.claude/` is checked), `tools/check_tracked_files.py` (R1/R2); TOOL-2, 5, 7 closed, TOOL-6 narrowed (the orchestrator contracts are prose, not JSON Schema); R1, R2, R18 now `enforced`. Commits 7a–7b: `contracts/snt_config/README.md` aligned with D-11, the old `snt_config_json/` name replaced. CI has not run yet: it runs once the Phase 3 PR is open | Commit 7c (this log + hand-off), then commit 8 `release.yaml` in a new session: step 0 is the first CI result, then four questions — see the [Phase 3 hand-off](#phase-3--tooling-and-ci) |
+| 2026-11-13 | Phase 3 commit 8. First CI run on the Phase 3 PR green (`pytest` 98 passed, 0 skipped). Decided: `version.json` = tag, commit, build time; slim tarball `snt-stratification-<tag>.tar.gz` with one top folder; `gh release upload`; a manual-run trigger for testing before `v0.1.0`. `release.yaml` written (assets job; bootstrap-templates job disabled) with `tools/build_release_assets.py` and 17 tests; R23 fixes in `contracts/`, `CLAUDE.md`, `ARCHITECTURE.md`, `CONVENTIONS.md` (approved beyond the plan's scope) | Commit 8a (this log + hand-off), then commit 9 `push_templates.yaml` in a new session: step 0 is the CI result on commit 8, then three questions — see the [Phase 3 hand-off](#phase-3--tooling-and-ci) |
 
 ---
 
