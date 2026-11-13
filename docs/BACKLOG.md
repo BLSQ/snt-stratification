@@ -95,12 +95,14 @@ bundle files in `pytest` like the other contracts.
 ### <a id="tool-8"></a>TOOL-8 · Merge policy for pull requests
 
 Decide which GitHub merge buttons stay enabled. Proposal: squash-only, with the PR title and
-description as the commit message, and branches required to be up to date. Why it matters here: the
-template-push workflow stamps the head commit's message into each published OpenHEXA version
-description ([ADR 0004](decisions/0004-publish-only-from-snt-development.md)), so a merge commit
-publishes "Merge pull request #N …" as the version's description. The migration PRs use merge
-commits on purpose, to keep the import commit separate. Decide together with `push_templates.yaml`
-([`MIGRATION_PLAN.md`](MIGRATION_PLAN.md) Phase 3), then set it in the `main` ruleset.
+description as the commit message, and branches required to be up to date. It no longer reaches
+OpenHEXA from this repo: its template pushes (`release.yaml`'s bootstrap-templates job,
+[`push_templates.yaml`](../.github/workflows/push_templates.yaml)) run on full releases and describe
+each version "Release `<tag>`". It still does in the old repo, whose template-push workflows stamp
+the head commit's message into each published version
+([ADR 0004](decisions/0004-publish-only-from-snt-development.md)), so a merge commit publishes
+"Merge pull request #N …". The migration PRs use merge commits on purpose, to keep the import commit
+separate. Decide, then set it in the `main` ruleset.
 
 **Owner:** Giulia. **Source:** Giulia's git-practices notes (local), 2026-10; Phase 2, 2026-11.
 
