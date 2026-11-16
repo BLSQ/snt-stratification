@@ -263,24 +263,73 @@ per-field rules are in
 
 **Owner:** Giulia. **Source:** the `snt_development` version of [`contracts/snt_config/README.md`](../contracts/snt_config/README.md).
 
-### <a id="cfg-4"></a>CFG-4 · `SNT_CONFIGURATION` dataset and an editing webapp
+### <a id="cfg-4"></a>CFG-4 · Read `SNT_config.json` from the `SNT_CONFIGURATION` dataset
 
-Planned, none of it exists yet: a new OpenHEXA dataset, `SNT_CONFIGURATION`, holding
-**`SNT_config.json` only**, with a fixed slug by convention (it cannot be looked up in itself), and
-the config editor ([`webapps/config_editor/`](../webapps/config_editor/CLAUDE.md), spec §6–7)
-writing to it through a Python pipeline that validates the structure first. That is where the
-schemas in `contracts/` become an executable gate rather than documentation. Pipelines then read
-the config from the dataset instead of `configuration/SNT_config.json`, which changes `snt_lib`'s
-`load_configuration_snt()` and needs a pinned `snt_lib` release (D-3).
+**Decided 2026-11-16 (Giulia), not yet implemented:**
+[ADR 0043](decisions/0043-config-read-from-snt-configuration-dataset.md). Every `pipeline.py` and
+every notebook reads `SNT_config.json` from the latest version of the dataset `SNT_CONFIGURATION`
+(slug `snt-configuration`, hardcoded), and none reads `configuration/SNT_config.json`. Until the
+config editor writes the dataset, people create it and upload versions by hand in the OpenHEXA UI.
+No validating pipeline. First item of Phase 5
+([MIGRATION_PLAN.md](MIGRATION_PLAN.md#phase-5--breaking-change-window-before-the-first-production-tag)).
 
-Not part of it: the Explorer metadata. There is no `SNT_metadata.json` any more; the
-`snt_metadata_json_trim` pipeline derives `SNT_metadata_trimmed.json` from the master list and
-publishes it to its own dataset, `SNT_METADATA` (`snt-metadata`), which it creates on first run.
+**What changes:**
 
-First item of Phase 5 ([MIGRATION_PLAN.md](MIGRATION_PLAN.md#phase-5--breaking-change-window-before-the-first-production-tag)).
+- **Python, in `snt_lib`.** A new function beside `load_configuration_snt()` in
+  `snt_lib/snt_pipeline_utils.py`. It reads `SNT_config.json` from the latest version of
+  `snt-configuration`, logs the version's name and id, and returns the config with the version.
+  The old function stays: the old repo uses it. `get_file_from_dataset()` is not reused as is,
+  because it does not return the version.
+- **R, in `shared/r/snt_utils.r`.** A new helper beside `load_snt_config()`, with a roxygen
+  docstring (R20). It reads the same file from the latest version and logs the version. It must
+  parse the JSON exactly as `load_json()` does (`jsonlite::fromJSON` with the same arguments), not
+  as `get_latest_dataset_file_in_memory()` does (`flatten = TRUE`), so the config list keeps its
+  shape. 46 notebooks under 20 pipelines' `code/` and `reporting/` read the file today: 43 through
+  `load_snt_config(file.path(snt_paths$CONFIG_PATH, "SNT_config.json"))`, and three report
+  notebooks (`snt_era5_climate_data`, `snt_dhis2_population_transformation`,
+  `snt_worldpop_extract`) through `jsonlite::fromJSON(file.path(CONFIG_PATH, "SNT_config.json"))`
+  directly. No `.r` file reads it.
+- **The `[ERROR]`.** The same message in Python and R when the dataset, its latest version or the
+  file is missing: *"[ERROR] No SNT_config.json in the latest version of dataset
+  SNT_CONFIGURATION (snt-configuration). Provide a valid SNT_config.json file. See
+  &lt;how-to URL&gt;."* The how-to is a new section of
+  [`contracts/snt_config/README.md`](../contracts/snt_config/README.md): create the dataset named
+  exactly `SNT_CONFIGURATION`, check its slug is `snt-configuration`, upload `SNT_config.json` as a
+  new version.
+- **The 21 `pipeline.py` that load the config.** Call the new function. Where the pipeline
+  publishes `{CC}_parameters.json`, add the version through `save_pipeline_parameters()`'s existing
+  `extra_metadata` as `SNT_CONFIG_VERSION` (name) and `SNT_CONFIG_VERSION_ID` (id). All but
+  `snt_metadata_json_trim` call `save_pipeline_parameters()`; that one only logs the version.
+  [PIPE-7](#pipe-7)'s stale path is in one of these messages and is fixed with it.
 
-**Owner:** Giulia. **Source:** `contracts/snt_metadata_json/README.md` (pre-2026-10-27 version),
-corrected 2026-11-16.
+**Commit plan, one commit at a time:**
+
+1. **`snt_utils`, a new branch off `release-v1`** (e.g. `release-v1-CFG4`; shared with
+   [CFG-1](#cfg-1) if that is done before `v1.0.0`): the new function and its test in
+   `tests/test_snt_pipeline_utils.py`. Push the branch; note its name and commit SHA.
+2. **This repo, the R side:** the helper, the 46 notebooks (edited as text, then
+   `nbstripout`), and the how-to section the `[ERROR]` links to.
+3. **This repo, the Python side:** the 21 `pipeline.py`, their `requirements.txt` pinned to the
+   branch's SHA, their `readme.md` (re-verified, R16).
+4. **Docs:** [`DATA_ARCHITECTURE.md`](DATA_ARCHITECTURE.md), the trap for country variants in
+   [`pipelines/CLAUDE.md`](../pipelines/CLAUDE.md), one note in the config editor's
+   `PRODUCT_SPEC.md` §6–7 (the save target is now the dataset; the rest is decided when the editor
+   is built), the migration plan's tick, and this item deleted.
+
+**Verification:** `ruff`, `pytest` and the `check_*` tools locally and in CI. Then a pre-release cut
+with the `release` skill, in a fresh test workspace with the previous release's workspace as
+baseline (D-19): create the dataset in the UI and confirm its slug; run one pipeline without it and
+read the `[ERROR]`; run the full DHIS2 chain and compare outputs; check each `{CC}_parameters.json`
+carries the version; run one notebook by hand and check it logs the version. Not covered: country
+notebook variants (`*_<CC>.ipynb`), which are not in this repo and keep reading the disk file. Live
+countries run the old repo and are untouched.
+
+Not part of it: the Explorer metadata. `snt_metadata_json_trim` publishes
+`SNT_metadata_trimmed.json` to its own dataset, `SNT_METADATA` (`snt-metadata`). A gate in the
+workspace checker is [BOOT-7](#boot-7).
+
+**Owner:** Giulia. **Source:** `contracts/snt_metadata_json/README.md` (pre-2026-10-27 version);
+Phase 5 discussion 2026-11-16.
 
 ### <a id="cfg-5"></a>CFG-5 · Per-dataset output contracts
 
@@ -643,6 +692,17 @@ adopt the copy (and what to do with several), warn, or leave it. Change both dep
 (`tests/test_pipeline_deployer.py`).
 
 **Source:** Migration Phase 4 commit 6, 2026-11-13 (deferred: the checker only, for now).
+
+### <a id="boot-7"></a>BOOT-7 · The checker reports a missing `SNT_CONFIGURATION` dataset
+
+Every SNT pipeline stops with an `[ERROR]` if the dataset `SNT_CONFIGURATION`
+(`snt-configuration`), its latest version or its `SNT_config.json` is missing
+([ADR 0043](decisions/0043-config-read-from-snt-configuration-dataset.md)). The checker could
+report this before anyone runs a pipeline. It reads no config today and takes no country code; it
+would only check that the file exists, not validate it. Changes the checker's report, so its schema
+in `contracts/` too (R22).
+
+**Source:** Phase 5 discussion (CFG-4), 2026-11-16.
 
 ---
 
