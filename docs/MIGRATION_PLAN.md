@@ -905,9 +905,13 @@ functions differ.
   the old-template codes read from the workspaces themselves (see the S3 correction under
   [Phase 0 findings](#phase-0-findings)) and matched on the title, ignoring the step number; the
   checker only, the deployers unchanged ([BOOT-5](BACKLOG.md#boot-5)); `+redeploy-` stripped.
-- **Commit 8:** see the hand-off below.
+- ~~**Commit 8:** tag the branch or merge first; the test workspace.~~ Decided 2026-11-13: merge
+  first (PR #6, commits 1–7b), tag `v0.1.0` on `main` as a pre-release, commits 8–9 on
+  `phase-4/v0.1.0-verified`. Two fresh workspaces with Burkina Faso (BFA), one from the old templates
+  and one from the deployer, instead of comparing against an existing old-repo workspace.
 
-**Hand-off for commit 8 (2026-11-13): cut `v0.1.0` and verify it.** Commits 1–7 are on the branch,
+**Hand-off for commit 8 (2026-11-13), now done.** Kept as the record of what was asked; what was
+done is in [Phase 4 results](#phase-4-results). Commits 1–7 are on the branch,
 CI green through commit 5a (ask Giulia for the result on 6, 7 and 7a first; a failure is fixed
 first, in its own commit). Start here, in a new session.
 
@@ -998,12 +1002,77 @@ first, in its own commit). Start here, in a new session.
       a stub test proves the checker reports itself `in_any_release: true`). `claimed_release_tag`:
       commit 6 strips `[vN]` and `+redeploy-<date>` and returns `null` for a bare `v<N>`
       (BOOT-1 closed).
-- [ ] **Release `v0.1.0` (pre-release) = pure move, no behaviour change.** Bootstrap a fresh test workspace,
+- [x] **Release `v0.1.0` (pre-release) = pure move, no behaviour change.** Bootstrap a fresh test workspace,
       run the SNT chain for one country (copy a config), compare outputs with an old-repo workspace,
       and confirm the checker reports `match`. This isolates "did the move break anything" from the
       bold changes.
+      Commit 8, 2026-11-13 → 16: passed. Checker `match` on all 259 entries; the BFA chain from
+      formatting to quality of care gives the same 26 tables, content identical, in both
+      workspaces. The extract was not run (DHIS2 failure outside both repos). Details in
+      [Phase 4 results](#phase-4-results).
 - [ ] `release` skill (moved from Phase 2), written while cutting `v0.1.0`: checklist, cutting an
       rc, verifying in the test workspace, then promoting.
+
+#### Phase 4 results
+
+Commit 8, 2026-11-13 → 16: `v0.1.0` cut and verified. Every result was checked on OpenHEXA by
+Giulia; the reports and summaries hold no country data and are kept outside git.
+
+**Setup.** Two fresh workspaces, each with the same BFA config, the same DHIS2 connection name and
+the image `blsq/openhexa-blsq-r-environment:latest` set by hand (Settings → General → Image):
+- `snt-v010-test-templates`: the seven DHIS2 pipelines created from the old `snt-development`
+  templates, `Pull scripts` ON (old repo, `main`);
+- `snt-v010-test-bootstrap`: `v0.1.0` installed by `snt_workspace_deployer`, `Pull scripts` OFF.
+
+**Pre-checks.** `snt_development` has not changed those seven pipelines or `code/` since `94cfc38`.
+In this repo they were touched only by the import (`2e95b2a`) and the `code/` → `shared/r/` move
+(`db5f716`, D-9), both part of the move under test.
+
+**Release.** `release.yaml` published the slim tarball and the manifest; the deployer and the
+checker read both. The webapp zips were not checked.
+
+**Deployer and checker** (in `snt-v010-test-bootstrap`), all as the code intends:
+- Dry run: 25 pipelines inspected, nothing changed. Real run: `Pipelines: 25/25 deployed.`, all 25
+  at `v0.1.0`, the files and `.snt_release` written. Same tag again: everything "already up to date,
+  skipped".
+- Checker, verification mode (target from the marker): `match` on all 259 entries (90 filesystem
+  files, 169 files inside pipeline versions); every pipeline's version name agrees with its content;
+  no errors.
+- Checker, attribution mode (`none`): no best fit, the 90 files `untracked`, every pipeline "No
+  release describes this pipeline". Correct: attribution leaves pre-releases out unless one is the
+  target (ADR 0034). The commit 8 hand-off expected best fit `v0.1.0`; that expectation was wrong.
+- Single-pipeline deployer, dry run on `snt_dhis2_extract`: only that pipeline's files listed, the
+  shared R library all `match`, no marker written.
+
+**SNT chain and comparison.** Steps 2–7 (formatting, population transformation, outliers MEAN,
+reporting rate dataset, incidence, quality of care) ran in both workspaces with the same
+parameters. A dataset summary (file names, columns, dtypes, row counts, content hashes) compared
+the two: **PASS**. All 26 tables have the same columns, dtypes and row counts, and identical
+content. Files that differ, as expected or explained:
+- every `BFA_parameters.json` written by the chain: it records `Pull scripts` and run times;
+- `BFA_shapes.geojson` (formatting): same size (667,886 bytes), different bytes. Not explained;
+  the shapes it is built from are identical in both. Left as it is.
+
+The runs were not recorded step by step; every step produced its dataset in both workspaces.
+
+**Not verified: the DHIS2 extract.** It failed in both test workspaces and in `snt-testing`, old
+template and `v0.1.0` alike: the DHIS2 response to the organisation-units request was not valid
+JSON (`An error occurred while retrieving the DHIS2 pyramid data: Expecting ',' delimiter`, after
+about 17 minutes, at character 9,829,773). The call is the same in both repos
+(`openhexa-toolbox`'s `get_organisation_units`), so the move cannot cause it. Both workspaces
+instead read one shared `snt-dhis2-extracts` dataset from an earlier extraction (version
+`dhis2_level6_BFA_20261028_1343`).
+
+**Template-created pipelines named** (commit 6, checker in `snt-v010-test-templates`, `none`): the
+seven pipelines, with codes such as `a-1-dhis2-extract` and `a-9-dhis2-quality-of-care`, each have
+`stands_for` set to their `snt_<name>`; the old `code/` folder reads `untracked`.
+
+**Learned for the `release` skill (commit 9):**
+- `openhexa pipelines push --code <code>` only selects a pipeline that already exists. In a fresh
+  workspace it fails (`Pipeline with code '…' not found`); a push without `--code` offers to create it,
+  with the code derived from the pipeline's name (`snt-workspace-deployer`). That first push named its version `v1`, so the real
+  deployer run relabelled it to `v0.1.0` (same files) instead of skipping it.
+- A fresh workspace needs the R image set by hand before any R pipeline runs.
 
 ### Phase 5 — Breaking-change window (before the first production tag)
 Batch the held-back breaking changes before any country adopts the new repo; later they would need a
@@ -1165,6 +1234,7 @@ proceed in parallel against the new schema.
 | 2026-11-13 | Phase 3 merged. Phase 4 opened on `phase-4/bootstrap-monorepo`. **OD-6 settled as D-18**: releases are tested as pre-releases of this repo, not in `snt_development_sandbox`. Commit table 1–9 written, with the questions each commit must ask first. Commit 1 written | Commit 1, then commit 2 (deployers read manifest v2): ask the slim-tarball question first — see the [Phase 4 table](#phase-4--bootstrap-adapted-to-the-monorepo) |
 | 2026-11-13 | Phase 4 commits 2–5, CI green through commit 4. Deployers read manifest v2 from the **slim tarball**; bootstrap guard by **`published_at`** (no full release yet = every release newest); `.snt_release` records `repo`, and a marker from another repository is not used as the checker's target; checker reads v2 (inert copies = zip-only files on the filesystem, `shipped` counts copies). `pytest` 119 passed, 16 skipped locally | Commit 5a (this log + hand-off), then commit 6 in a new session: three questions first — see the [commit 6 hand-off](#phase-4--bootstrap-adapted-to-the-monorepo) |
 | 2026-11-13 | Phase 4 commits 6–7, CI green through 5a. Checker: `stands_for` names template-created pipelines (old `snt-development` codes matched on the title, step number ignored; the `-<6 hex>` suffix), `+redeploy-` stripped, a bare `v<N>` claims nothing; BOOT-1 closed, BOOT-5 opened (deployers keep exact-code lookup). **S3 corrected:** a template-created code is the slug of the source pipeline's display name, not its code (read from `snt-development`, `snt-testing`, the sandbox and a workshop workspace). Manifest v1 deleted; bootstrap docs, the three readmes and `pipelines/CLAUDE.md` brought in line (D-18 included). `pytest` 118 passed, 16 skipped locally | Commit 7a (this log + hand-off), then commit 8 in a new session: CI on 6–7a, then three questions (BOOT-4, tag the branch or merge first, the test workspace) — see the [commit 8 hand-off](#phase-4--bootstrap-adapted-to-the-monorepo) |
+| 2026-11-13 → 16 | Phase 4 commit 8. Commits 1–7b merged first (PR #6); `v0.1.0` tagged on `main` as a pre-release. Verified in two fresh BFA workspaces, old templates against the deployer: checker `match` on all 259 entries; 26 tables from formatting to quality of care identical. Attribution mode correctly finds no best fit for a pre-release (ADR 0034). The DHIS2 extract was not verified: the BFA DHIS2's organisation-units response was invalid JSON in every workspace, old code included; a shared extract dataset was used instead. Details in [Phase 4 results](#phase-4-results) | Commit 9, the `release` skill, in a new session: start from "Learned for the `release` skill" in [Phase 4 results](#phase-4-results) |
 
 ---
 
