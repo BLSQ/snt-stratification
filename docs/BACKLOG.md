@@ -176,16 +176,73 @@ in this map, so an author who writes the *dataset's* name instead of the *key* p
 silently fails to load. That already happened: six of the seven entries in the 2026-09-08
 `SNT_metadata.json` draft were wrong this way.
 
-Two parts, separable: (a) agree one convention and apply it; (b) decide whether the key should
-simply *equal* the OpenHEXA dataset name, which removes the trap. Migration cost: every
-`pipeline.py` reads these keys, they appear in `contracts/snt_config/SNT_config.skeleton.json`
-and in the archived `deprecated/configuration/SNT_config_<CC>.json` copies, and the country
-workspaces' live configs must change in step. It is a coordinated change, not a rename. Resolve at
-the same time that the key set is **not** identical across countries (NER's config has
-`DHIS2_OUTLIERS_DETECTION`, `DHIS2_OUTLIERS_REMOVAL_IMPUTATION` and `SNT_SEASONALITY`; the other four
-do not). Related: [META-5](#meta-5).
+**Decided 2026-11-16 (Giulia), not yet implemented.** The convention: **key = the dataset slug in
+uppercase, dashes to underscores** (`SNT_DHIS2_EXTRACTS: snt-dhis2-extracts`). The map **stays in
+`SNT_config.json`**. Moving it to a repo-shipped file (the plan's `catalogs/snt_datasets.json`
+idea) was weighed and **deferred**: too much work for the gain, and it would have to change
+`snt_lib`'s loader, every R notebook and the config editor's rule 5. Keep that idea here as a
+possible later step; it is not a prerequisite of anything. NER's three extra keys
+(`DHIS2_OUTLIERS_DETECTION`, `DHIS2_OUTLIERS_REMOVAL_IMPUTATION`, `SNT_SEASONALITY`) come from an
+outdated example config and are **ignored**. Related: [META-5](#meta-5).
 
-**Owner:** Giulia. **Source:** CLAUDE.md *Suggestions*.
+**The rename.** Eleven keys change, four already fit (`SNT_HEALTHCARE_ACCESS`,
+`SNT_SEASONALITY_RAINFALL`, `SNT_SEASONALITY_CASES`, `SNT_MAP_EXTRACTS`):
+
+| Old key | New key | Slug |
+|---|---|---|
+| `DHIS2_DATASET_EXTRACTS` | `SNT_DHIS2_EXTRACTS` | `snt-dhis2-extracts` |
+| `DHIS2_DATASET_FORMATTED` | `SNT_DHIS2_FORMATTED` | `snt-dhis2-formatted` |
+| `DHIS2_POPULATION_TRANSFORMATION` | `SNT_DHIS2_POP_TRANSFORMATION` | `snt-dhis2-pop-transformation` |
+| `DHIS2_REPORTING_RATE` | `SNT_DHIS2_REPORTING_RATE` | `snt-dhis2-reporting-rate` |
+| `DHIS2_OUTLIERS_IMPUTATION` | `SNT_DHIS2_OUTLIERS_IMPUTATION` | `snt-dhis2-outliers-imputation` |
+| `DHIS2_INCIDENCE` | `SNT_DHIS2_INCIDENCE` | `snt-dhis2-incidence` |
+| `DHIS2_QUALITY_OF_CARE` | `SNT_DHIS2_QUALITY_OF_CARE` | `snt-dhis2-quality-of-care` |
+| `DHS_INDICATORS` | `SNT_DHS_INDICATORS` | `snt-dhs-indicators` |
+| `WORLDPOP_DATASET_EXTRACT` | `SNT_WORLDPOP_EXTRACT` | `snt-worldpop-extract` |
+| `ERA5_DATASET_CLIMATE` | `SNT_ERA5_CLIMATE` | `snt-era5-climate` |
+| `SNT_POPULATION_USER_PROVIDED` | `SNT_POP_USER_PROVIDED` | `snt-pop-user-provided` |
+
+**The blocker: `snt_lib`.** `validate_config()` in `snt_lib/snt_pipeline_utils.py` hard-codes the
+15 current key names as required and fails every pipeline at startup if one is missing. Nothing
+else in `snt_lib` uses the keys. The validator must change **before** the keys do. `snt_lib` is
+maintained by a colleague; the agreed route while they are unavailable: a branch of
+`BLSQ/snt_utils` off `release-v1` (e.g. `release-v1-CFG1`), and this repo's pipelines pin that
+branch, so the change is easy to undo. `snt_development` is left untouched.
+
+**Where the old keys appear** (84 files mention `SNT_DATASET_IDENTIFIERS`): 20 `pipeline.py`;
+about 25 notebooks under `code/` and `.r` files under `utils/` (`config_json$SNT_DATASET_IDENTIFIERS$<KEY>`);
+the report notebooks under `reporting/`; every pipeline `readme.md`; `snt_metadata_json_trim`
+(checks each Explorer layer's `DATASET.NAME` is a key of the map, by lookup, so no code change);
+`catalogs/SNT_metadata_master.json` (every layer's `DATASET.NAME`) and `catalogs/README.md`;
+`contracts/snt_config/` (skeleton, the 16 fixtures, README, `config_analysis_notes.md`,
+`config_field_matrix.md`); `contracts/snt_metadata_json/` (README, example, schema);
+`docs/DATA_ARCHITECTURE.md`, `docs/PIPELINE_README_STANDARD.md`, ADR 0002, `pipelines/CLAUDE.md`,
+the `release` skill, `docs/MIGRATION_PLAN.md`; the config editor's `docs/PRODUCT_SPEC.md`,
+`docs/EXTERNAL_CHECKS.md` and the `design/*.html` prototypes.
+
+**Commit plan (agreed 2026-11-16), one commit at a time:**
+
+1. **`snt_utils`, new branch off `release-v1`:** the `required_dataset_keys` list in
+   `validate_config()`, and the one expected message in `tests/test_snt_pipeline_utils.py` that
+   names `DHIS2_DATASET_EXTRACTS`. Push the branch; note its name and commit SHA.
+2. **This repo, the contract:** `SNT_config.skeleton.json`; the 16 fixtures (the
+   `invalid_dataset_identifier_*` cases list the key paths); `tests/requirements-conformance.txt`
+   pinned to that SHA so CI runs the fixtures against the new validator; the 21
+   `pipelines/*/requirements.txt` pinned to the branch (one pins nothing today); the three
+   `contracts/snt_config/*.md`.
+3. **The pipelines:** a mechanical word-boundary rename over `pipelines/`, then read the diff for
+   false hits (a table or variable sharing a name). Notebooks edited as text, then `nbstripout`.
+4. **Explorer and docs:** the master list (validate with the `add-explorer-layer` skill),
+   `contracts/snt_metadata_json/`, the docs listed above, the editor's spec and external checks.
+   The editor's rule 5 ("emit all 15 identifiers") **stays**: it only needed reversing for the
+   deferred move. Record the convention as an ADR (R24).
+
+**Verification:** `pytest` and the fixture run locally and in CI; then a pre-release cut with the
+`release` skill, a fresh test workspace with a config in the new shape, the previous release's
+workspace as baseline (D-19). Live countries are untouched (they run the old repo). Country
+configs installed from this repo before the rename need the 11 keys renamed by hand.
+
+**Owner:** Giulia. **Source:** CLAUDE.md *Suggestions*; Phase 5 discussion 2026-11-16.
 
 ### <a id="cfg-2"></a>CFG-2 · The shape of `REPORTING_DATASETS[].METRICS`
 
@@ -209,11 +266,21 @@ per-field rules are in
 ### <a id="cfg-4"></a>CFG-4 · `SNT_CONFIGURATION` dataset and an editing webapp
 
 Planned, none of it exists yet: a new OpenHEXA dataset, `SNT_CONFIGURATION`, holding
-`SNT_config.json` and `SNT_metadata.json`, and a user-facing webapp that lets non-technical users edit
-them, probably writing through a Python pipeline that validates the structure first. That is where the
-schemas in `contracts/` would become an executable gate rather than documentation.
+**`SNT_config.json` only**, with a fixed slug by convention (it cannot be looked up in itself), and
+the config editor ([`webapps/config_editor/`](../webapps/config_editor/CLAUDE.md), spec §6–7)
+writing to it through a Python pipeline that validates the structure first. That is where the
+schemas in `contracts/` become an executable gate rather than documentation. Pipelines then read
+the config from the dataset instead of `configuration/SNT_config.json`, which changes `snt_lib`'s
+`load_configuration_snt()` and needs a pinned `snt_lib` release (D-3).
 
-**Source:** `contracts/snt_metadata_json/README.md` (pre-2026-10-27 version).
+Not part of it: the Explorer metadata. There is no `SNT_metadata.json` any more; the
+`snt_metadata_json_trim` pipeline derives `SNT_metadata_trimmed.json` from the master list and
+publishes it to its own dataset, `SNT_METADATA` (`snt-metadata`), which it creates on first run.
+
+First item of Phase 5 ([MIGRATION_PLAN.md](MIGRATION_PLAN.md#phase-5--breaking-change-window-before-the-first-production-tag)).
+
+**Owner:** Giulia. **Source:** `contracts/snt_metadata_json/README.md` (pre-2026-10-27 version),
+corrected 2026-11-16.
 
 ### <a id="cfg-5"></a>CFG-5 · Per-dataset output contracts
 
