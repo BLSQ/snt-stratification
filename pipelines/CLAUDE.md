@@ -151,7 +151,8 @@ import (migration plan D-13). The few that existed are readable in `snt_developm
 `snt_workspace_deployer`, `snt_pipeline_deployer` and `snt_workspace_checker` (`kind: bootstrap`)
 manage which **release** a workspace runs. Not live in any country workspace. They read **manifest
 v2**, the releases of this repo (`BLSQ/snt-stratification`), and refuse a v1 manifest from the old
-repo; no release exists yet (the first is `v0.1.0`).
+repo. The first release is `v0.1.0`, a pre-release verified in a test workspace (Phase 4 results in
+[`MIGRATION_PLAN.md`](../docs/MIGRATION_PLAN.md#phase-4-results)); no full release exists yet.
 
 - **`snt_workspace_deployer`** installs one GitHub release, whole, from its slim tarball asset: the
   manifest's `filesystem_files` to the workspace filesystem, every `pipelines/<name>/` through the

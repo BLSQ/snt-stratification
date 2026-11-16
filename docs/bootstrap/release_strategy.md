@@ -84,7 +84,7 @@ What already supports it:
   `release: published`, which GitHub also fires for a pre-release, and builds the manifest and the
   slim tarball from the tag, so a tag on a branch commit gets its own
   ([`release_manifest.md`](../../contracts/release_manifest.md#release-assets-beside-the-manifest)).
-  Not yet run: no release exists.
+  Run for `v0.1.0`, a tag on `main`; not yet run for a tag on a branch commit.
 * **Countries cannot pick one up by accident.** An empty `release_tag` resolves through
   `/releases/latest`, which skips pre-releases (D23), so a staging release is deployed only by typing
   its tag, and the deployer then logs a `[WARNING]` (D27).
@@ -111,11 +111,14 @@ What has to be settled first:
    ([ADR 0042](../decisions/0042-bootstrap-pipelines-as-templates-on-release.md)), and a pre-release
    target counts as newer than the latest full release, so the deployer's bootstrap guard lets it
    update itself from it.
-4. **What "clean workspace" means.** The deployer cannot delete pipelines or files
-   ([`deployer.md`](deployer.md) §7.5), so a reused staging workspace keeps strays from the last PR.
-   Either a new workspace per test, which needs the `oh` connection set up each time
-   ([`openhexa_deployment.md`](openhexa_deployment.md) §7.3b), or one staging workspace where the
-   checker's report is read with that in mind. This fits D25: one workspace per release.
+4. ~~**What "clean workspace" means.**~~ **Settled for release candidates (D-19 in
+   [`MIGRATION_PLAN.md`](../MIGRATION_PLAN.md), 2026-11-16):** a new workspace per candidate, with
+   the `oh` connection set up each time ([`openhexa_deployment.md`](openhexa_deployment.md) §7.3b).
+   The previous release's workspace is kept as the comparison baseline. The deployer cannot delete
+   pipelines or files ([`deployer.md`](deployer.md) §7.5), so a reused workspace would keep strays.
+   This fits D25: one workspace per release. The procedure is the `release` skill
+   ([`.claude/skills/release/`](../../.claude/skills/release/SKILL.md)). Per-PR staging is still
+   open, with the rest of this proposal.
 5. **The `snt_development` side.** Its CLAUDE.md *Release management* section (R22) should point
    at this section, so both repositories follow one written strategy rather than two copies.
 
@@ -172,7 +175,7 @@ the pipelines. The web app is out of scope beyond the report contract it will co
 
 | Component | Role | State |
 |---|---|---|
-| `snt_workspace_deployer` | **Fix / install.** Deploys one pinned release, always whole, into the workspace: R analytics to the filesystem, `pipeline.py` via the API. Cannot delete anything ([`deployer.md`](deployer.md) §7.5). | **BUILT**, prototype — changed 2026-09-30 (D21, D22), **not yet tested in a workspace** ([`deployer.md`](deployer.md) §6.7) |
+| `snt_workspace_deployer` | **Fix / install.** Deploys one pinned release, always whole, into the workspace: R analytics to the filesystem, `pipeline.py` via the API. Cannot delete anything ([`deployer.md`](deployer.md) §7.5). | **BUILT**, prototype — changed 2026-09-30 (D21, D22); `v0.1.0` installed in a test workspace, test-plan steps 1–2 passed, **steps 3–9 not yet tested** ([`deployer.md`](deployer.md) §6.7) |
 | `snt_workspace_checker` | **Check.** Read-only. Hashes what is actually in the workspace, attributes each file to a release, and writes a status report. | **BUILT**, phase 4 — both modes verified in the sandbox ([`checker.md`](checker.md) §6.3, [`checker.md`](checker.md) §6.5); report schema frozen at `schema_version: 1` ([`checker.md`](checker.md) §5.5, D18). Reaches a workspace as a template published on each full release ([ADR 0042](../decisions/0042-bootstrap-pipelines-as-templates-on-release.md); not built yet) |
 | Release manifest generation | GitHub Action producing `release_manifest.json` per release | **BUILT** — covers everything the deploy zip ships |
 | Status web app | Reads the checker's report; offers "fix" or "leave as is" | Deferred |

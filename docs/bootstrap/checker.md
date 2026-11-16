@@ -388,7 +388,7 @@ still open.
 | **2** | ✅ **DONE** 2026-09-29 — taxonomy verified in the sandbox, D9 decided (§6.3). Full taxonomy: `removed_in_target`, `untracked`, `not_covered`, the pipeline-directory case. Plus **measure notebook drift** on a real workspace and decide D9. | A workspace at T-1 with one hand-edited file reports exactly the expected mix. | 1 |
 | **3** | ✅ **DONE** 2026-09-29 — attribution mode, per-release agreement and completeness in both modes, D15–D17 (§6.4, §6.5). | Met: the mixed sandbox workspace scores `v0.3.0-test` as best fit, agreement 1.0, completeness 0.9816. | — |
 | **4** | ✅ **DONE** 2026-09-30 — `schema_version: 1` frozen as [`status_report.schema.json`](../../contracts/status_report.schema.json); `snt_workspace_checker/readme.md` re-verified against the code (§6.6, D18). | Met: schema documented and validated against reports the code builds; readme verified by reading, discrepancies listed in §6.6. | — |
-| **5** | `snt_workspace_deployer` integration: report before and after a fix; enrich `.snt_release` ([`snt_release_marker.md`](../../contracts/snt_release_marker.md) §7.4). **In progress**: step 1, making the deployer solid on its own (re-deploy defect, whole-release-only), is written and untested ([`deployer.md`](deployer.md) §6.7). Integration with the checker comes after. | A fix run links to the before/after reports it produced. | 4 |
+| **5** | `snt_workspace_deployer` integration: report before and after a fix; enrich `.snt_release` ([`snt_release_marker.md`](../../contracts/snt_release_marker.md) §7.4). **In progress**: step 1, making the deployer solid on its own (re-deploy defect, whole-release-only), is written; its test plan's steps 1–2 passed at `v0.1.0`, steps 3–9 are untested ([`deployer.md`](deployer.md) §6.7). Integration with the checker comes after. | A fix run links to the before/after reports it produced. | 4 |
 | **6** | Web app. | Out of scope for this spec. | 5 |
 
 ### 6.2 Phase 1, as verified
@@ -709,7 +709,8 @@ retention/pruning. Also parked until one of them blocks something (Giulia, 2026-
 * **A manifest cache**, keyed by tag. Safe, because tags never move. It is no longer needed for the
   rate limit (§7.2); it would matter only for GitHub outages, bandwidth, or runs with no internet.
 * ~~**The deployer's `DUPLICATE_PIPELINE_VERSION_NAME` defect** on re-deploy.~~ **Written 2026-09-30
-  (D22), untested** — [`deployer.md`](deployer.md) §6.7. No longer blocks phase 5 once the test plan passes.
+  (D22); re-deploying the same tag passed at `v0.1.0`** — [`deployer.md`](deployer.md) §6.7. No longer
+  blocks phase 5 once the rest of the test plan passes.
 * ~~**Delete the deployer's legacy-manifest fallback**~~ **Deleted 2026-10-02** ([`release_manifest.md`](../../contracts/release_manifest.md) §2.1, D26).
 * **The 15 `not_in_repo` notebooks** from the D9 run, one real country workspace, 2026-09-29. Their
   names would show whether they are country variants, renamed notebooks or scratch work, which is

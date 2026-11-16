@@ -12,9 +12,10 @@ It is the Phase 3/4 prototype of [`docs/release_strategy.md`](../../docs/bootstr
 the deployment mechanism is documented in
 [`docs/openhexa_deployment.md`](../../docs/bootstrap/openhexa_deployment.md).
 
-> **Status: prototype. It reads release manifest v2, the releases of this repository; no release
-> exists yet (the first is `v0.1.0`), so the v2 code has not run in a workspace. Test plan in
-> [`docs/deployer.md`](../../docs/bootstrap/deployer.md) §6.7.** The first version, which read manifest
+> **Status: prototype. It reads release manifest v2, the releases of this repository. It installed
+> `v0.1.0`, a pre-release, in a fresh test workspace, and re-ran it with nothing to do; the rest of the
+> test plan in [`docs/deployer.md`](../../docs/bootstrap/deployer.md) §6.7 (a newer tag, rollback,
+> hand edits, existing files, error messages) is not yet tested.** The first version, which read manifest
 > v1 from the old repository, was verified end to end on 2026-09-16 in `snt-development-sandbox` for
 > `snt_dhis2_extract` and `snt_map_extracts` only. It replaces the per-pipeline
 > `Pull scripts` toggle and the Template auto-update subscription, so do not run it against a

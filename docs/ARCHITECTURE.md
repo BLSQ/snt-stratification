@@ -89,11 +89,11 @@ because OpenHEXA runs Python pipelines but not R ([Part 2](#part-2--openhexa-in-
 | What | Route | State |
 |---|---|---|
 | `pipeline.py` + `requirements.txt` | **Old templates**: the old repo's CI pushes to `snt-development`, which publishes a new template version; subscribed countries update automatically (R5) | **Live**, old repo only |
-| | **Deployer**: installs every pipeline of a release | Built, not run for this repo (Phase 4) |
+| | **Deployer**: installs every pipeline of a release | Built; installed `v0.1.0` in a test workspace (Phase 4), no country workspace yet |
 | | **New templates**, from their own publishing workspace on each full release, codes `snt-<name>` ([ADR 0040](decisions/0040-templates-kept-alongside-the-deployer.md), [0041](decisions/0041-new-templates-publishing-workspace.md)) | [`push_templates.yaml`](../.github/workflows/push_templates.yaml) written, disabled until Phase 6 |
 | Bootstrap pipelines (`kind: bootstrap`, pure Python) | **Templates on each full release**, from the new publishing workspace, installed once per workspace; plus the **deployer**, which updates them only when the target tag is the latest full release or newer ([ADR 0042](decisions/0042-bootstrap-pipelines-as-templates-on-release.md)) | Templates: [`release.yaml`](../.github/workflows/release.yaml)'s bootstrap-templates job written, disabled until Phase 6; deployer: Phase 4; pushed by hand until then |
 | R half: notebooks, `utils/*.r`, `shared/r/` | **`Pull scripts` = ON** in a run: `snt_lib` copies them from GitHub (R6) | **Live**, old repo only (`snt_lib` hardcodes it) |
-| | **Deployer**: copies them to the workspace filesystem | Built, not run for this repo (Phase 4) |
+| | **Deployer**: copies them to the workspace filesystem | Built; installed `v0.1.0` in a test workspace (Phase 4), no country workspace yet |
 | | **Self-sync**: a pipeline copies its bundled R half on start | Proven in a spike; not built (OD-9) |
 | Country variants `<name>_<CC>.ipynb` | None: edited in the country's workspace only | By design ([ADR 0003](decisions/0003-country-variants-outside-pull-scripts.md)) |
 | Webapp bundle `webapps/<name>/app/` | Uploaded by hand (drag-and-drop or MCP), scopes set separately ([`DEPLOYMENT.md`](../webapps/orchestrator/docs/DEPLOYMENT.md)) | **Live**; release zips in Phase 7 |
@@ -113,8 +113,10 @@ first production release. A webapp-only fix is a patch release.
 
 *([`release.yaml`](../.github/workflows/release.yaml) builds manifest v2, a slim tarball and the
 stamped webapp zips on each published release ([assets](../contracts/release_manifest.md#release-assets-beside-the-manifest)).
-No release exists yet; the deployers read the manifest and the slim tarball, the checker the
-manifest, and the orchestrator shows the stamp from Phase 7.)*
+The first release is `v0.1.0`, a pre-release; no full release exists yet. The deployers read the
+manifest and the slim tarball, the checker the manifest, and the orchestrator shows the stamp from
+Phase 7. How a release is cut, verified and promoted: the `release` skill
+([`.claude/skills/release/`](../.claude/skills/release/SKILL.md)).)*
 
 ### 1.5 Where docs live
 
