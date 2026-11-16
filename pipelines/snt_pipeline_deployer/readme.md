@@ -14,9 +14,9 @@ release resolution, version naming, failure messages. Spec and test plan:
 [`docs/deployer.md`](../../docs/bootstrap/deployer.md) § Single-pipeline deployer.
 
 > **Status: built 2026-10-30 and first run on a local OpenHEXA instance the same day, against
-> manifest v1 from the old repository. It now reads manifest v2, the releases of this repository; no
-> release exists yet (the first is `v0.1.0`), so that code has not run in a workspace.** Run it with
-> `dry_run` first.
+> manifest v1 from the old repository. It now reads manifest v2, the releases of this repository; a
+> dry run against `v0.1.0` passed in a test workspace, and a real run with v2 has not been made yet.**
+> Run it with `dry_run` first.
 
 > **Read this before using it: the shared R library in `shared/r/` is never updated.** Every
 > pipeline's notebooks `source()` the R files in `shared/r/`, so those files are shared by all

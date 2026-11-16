@@ -175,7 +175,7 @@ the pipelines. The web app is out of scope beyond the report contract it will co
 
 | Component | Role | State |
 |---|---|---|
-| `snt_workspace_deployer` | **Fix / install.** Deploys one pinned release, always whole, into the workspace: R analytics to the filesystem, `pipeline.py` via the API. Cannot delete anything ([`deployer.md`](deployer.md) §7.5). | **BUILT**, prototype — changed 2026-09-30 (D21, D22), **not yet tested in a workspace** ([`deployer.md`](deployer.md) §6.7) |
+| `snt_workspace_deployer` | **Fix / install.** Deploys one pinned release, always whole, into the workspace: R analytics to the filesystem, `pipeline.py` via the API. Cannot delete anything ([`deployer.md`](deployer.md) §7.5). | **BUILT**, prototype — changed 2026-09-30 (D21, D22); `v0.1.0` installed in a test workspace, test-plan steps 1–2 passed, **steps 3–9 not yet tested** ([`deployer.md`](deployer.md) §6.7) |
 | `snt_workspace_checker` | **Check.** Read-only. Hashes what is actually in the workspace, attributes each file to a release, and writes a status report. | **BUILT**, phase 4 — both modes verified in the sandbox ([`checker.md`](checker.md) §6.3, [`checker.md`](checker.md) §6.5); report schema frozen at `schema_version: 1` ([`checker.md`](checker.md) §5.5, D18). Reaches a workspace as a template published on each full release ([ADR 0042](../decisions/0042-bootstrap-pipelines-as-templates-on-release.md); not built yet) |
 | Release manifest generation | GitHub Action producing `release_manifest.json` per release | **BUILT** — covers everything the deploy zip ships |
 | Status web app | Reads the checker's report; offers "fix" or "leave as is" | Deferred |

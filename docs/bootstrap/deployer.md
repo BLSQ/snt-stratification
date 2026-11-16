@@ -6,7 +6,7 @@
 > [`openhexa_deployment.md`](openhexa_deployment.md). Section numbers are those of the former
 > `PRODUCT_SPEC.md`.
 
-## Workspace Deployer — built, **changed 2026-09-30 and not yet fully tested**
+## Workspace Deployer — built, changed 2026-09-30, **partly tested** (`v0.1.0`)
 
 [`snt_workspace_deployer/`](../../pipelines/snt_workspace_deployer/), an OpenHEXA pipeline that
 reads the releases of this repository, `BLSQ/snt-stratification` (manifest v2). Parameters:
@@ -86,14 +86,20 @@ published release, only pre-releases, or unknown tag.
 * The same applies to analytics files a release removes: they remain on the filesystem.
 
 **Testing state.** The 2026-09-30 changes (D21, D22) pass `ruff` and an offline stub test of
-`deploy_new_version()` (seven cases). **They have not been run in a workspace.** The full test plan
-is §6.7. Still unverified from before: **`backup_existing`**, since every verified
-run so far was against an empty workspace. Past verification runs: [`HISTORY.md`](HISTORY.md) §4.2.
-Every workspace run so far read manifest v1 from the old repository's releases; the v2 code (slim
-tarball, `filesystem_files`, bootstrap guard, marker `repo`) is covered only by the `pytest` stubs
-until `v0.1.0` is verified in a test workspace (Phase 4 of [`MIGRATION_PLAN.md`](../MIGRATION_PLAN.md)).
+`deploy_new_version()` (seven cases). In a workspace, `v0.1.0` (manifest v2, slim tarball,
+`filesystem_files`, marker `repo`) was installed into a fresh test workspace and then re-deployed:
+§6.7 steps 1–2 passed (Phase 4 results in [`MIGRATION_PLAN.md`](../MIGRATION_PLAN.md#phase-4-results)).
+**Steps 3–9 are not yet tested**: relabelling on a newer tag, rollback, hand edits, error messages and
+the bootstrap guard's skip, which needs a full release. Still unverified from before:
+**`backup_existing`**, since every verified run so far was against an empty workspace. Past
+verification runs: [`HISTORY.md`](HISTORY.md) §4.2.
 
-## Single-pipeline deployer — built 2026-10-30, **not yet tested in a workspace**
+## Single-pipeline deployer — built 2026-10-30, **dry run tested** (`v0.1.0`)
+
+Tested: a dry run against `v0.1.0` in a test workspace listed only that pipeline's files, reported
+the shared R library as matching, and wrote no marker (Phase 4 results in
+[`MIGRATION_PLAN.md`](../MIGRATION_PLAN.md#phase-4-results)). A real run with manifest v2 has not
+been made yet.
 
 [`snt_pipeline_deployer/`](../../pipelines/snt_pipeline_deployer/) deploys **one** pipeline of a release (D28). It
 is meant for a workspace that already holds real work, such as a locally hosted OpenHEXA with a running
@@ -174,7 +180,7 @@ manifest v2 included, has been run in a workspace.
 4. Same again. "already up to date, skipped".
 5. `pull_r_scripts` off on another pipeline. A version is registered, no file is written.
 
-## 6.7 Phase 5, step 1 — the deployer on its own (written 2026-09-30, **not yet tested**)
+## 6.7 Phase 5, step 1 — the deployer on its own (written 2026-09-30, **steps 1–2 tested**)
 
 The deployer is treated as a standalone pipeline first; integration with the checker (before/after
 reports, enriched `.snt_release`) is the next step and has not been started. Changes made, all in
@@ -193,7 +199,7 @@ reports, enriched `.snt_release`) is the next step and has not been started. Cha
   release is diagnosed into its cause.
 * **D27 (2026-10-02):** a pre-release (only ever deployed by typing its tag) is deployed as usual,
   with a `[WARNING]` in the run's Messages that it is for development and testing only.
-  Not yet tested in a workspace.
+  Run at `v0.1.0`, a pre-release deployed by typing its tag.
 
 **Verified so far:** `ruff check` and `ruff format --check` clean; `get_pipeline` parses the deployer
 and yields exactly `github_repo, release_tag, api_connection, backup_existing, dry_run`; an offline
@@ -202,8 +208,10 @@ relabel, plain register, `+redeploy-` for a taken current name, fallback when an
 the tag, dry run, no current version. That stub was thrown away; recreate it before extending.
 **Verified in `snt-development-sandbox` on 2026-10-01 (D23, D24 only):** an empty tag resolves to the
 latest release (`v0.4.0-test`), and its missing manifest now stops the run with an `[ERROR]` message in
-Messages. **Not verified: the D21/D22 test plan below**, nor the other D24 diagnoses (no release, only
-pre-releases, unknown tag, private repo).
+Messages. **Verified at `v0.1.0`, in a fresh test workspace (2026-11-13 → 16):** steps 1 and 2 of
+the test plan below, the "same tag again" case included (Phase 4 results in
+[`MIGRATION_PLAN.md`](../MIGRATION_PLAN.md#phase-4-results)). **Not verified:** steps 3–9, nor the
+other D24 diagnoses (no release, only pre-releases, unknown tag, private repo).
 
 **Test plan** (a test workspace, against pre-releases of this repository, D-18 in
 [`MIGRATION_PLAN.md`](../MIGRATION_PLAN.md); use tags never before deployed to these pipelines; run
