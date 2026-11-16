@@ -30,7 +30,7 @@ This pipeline takes no domain parameters; it only has the standard `run_report_o
 * **`[COUNTRY_CODE]_reporting.parquet`** on **`DHIS2_DATASET_FORMATTED`** — required; produced by the DHIS2 formatting pipeline from the extract's reporting data. Its grain depends on how reporting rates are configured for extraction (**`DHIS2_DATA_DEFINITIONS.DHIS2_REPORTING_RATES`**):
   * **`REPORTING_DATASETS`**: one row per facility (**`OU_ID`**) × period × dataset metric.
   * **`REPORTING_INDICATORS`**: one row per district (**`ADM2_ID`**) × period × indicator, already aggregated by DHIS2; no **`OU_ID`** / **`OU_NAME`** columns.
-* **`configuration/SNT_config.json`** for **`SNT_CONFIG.COUNTRY_CODE`**, **`SNT_CONFIG.REPORTING_RATE_PRODUCT_UID`** (required) and the dataset identifiers **`DHIS2_DATASET_FORMATTED`** and **`DHIS2_REPORTING_RATE`**.
+* **`SNT_config.json`** from the latest version of **`SNT_CONFIGURATION`** (required) for **`SNT_CONFIG.COUNTRY_CODE`**, **`SNT_CONFIG.REPORTING_RATE_PRODUCT_UID`** (required) and the dataset identifiers **`DHIS2_DATASET_FORMATTED`** and **`DHIS2_REPORTING_RATE`**.
 * Reporting notebook only: **`[COUNTRY_CODE]_shapes.geojson`** on **`DHIS2_DATASET_FORMATTED`** (maps) and the **`REPORTING_RATE.SCALE`** breaks in **`configuration/SNT_metadata.json`** (colour categories).
 
 ## Outputs
@@ -39,7 +39,7 @@ This pipeline takes no domain parameters; it only has the standard `run_report_o
 
 * **`data/dhis2/reporting_rate/[COUNTRY_CODE]_reporting_rate_dataset.parquet`** and **`.csv`** (monthly).
 * **`data/dhis2/reporting_rate/[COUNTRY_CODE]_reporting_rate_dataset_yearly.parquet`** and **`.csv`** (yearly).
-* **Pipeline parameters JSON** in the same directory.
+* **Pipeline parameters JSON** in the same directory, with **`SNT_CONFIG_VERSION`** and **`SNT_CONFIG_VERSION_ID`**, the name and id of the **`SNT_CONFIGURATION`** version read.
 * **Report figures** in **`pipelines/snt_dhis2_reporting_rate_dataset/reporting/outputs/figures/`**: line-point plot, heatmap, monthly map and yearly map, named **`[COUNTRY_CODE]_reporting_rate_dataset_adm2_{linepoint|heatmap|map|map_year}_[PRODUCT_UIDs].png`**. Written, not published.
 
 **Published to `DHIS2_REPORTING_RATE`**

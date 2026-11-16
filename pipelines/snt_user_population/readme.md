@@ -29,14 +29,14 @@ The **SNT User Population** pipeline imports a population file supplied by the o
 * **`[COUNTRY_CODE]_pyramid.parquet`** on **`DHIS2_DATASET_FORMATTED`** — required; the run stops if it is missing.
 * **`[COUNTRY_CODE]_shapes.geojson`** on **`DHIS2_DATASET_FORMATTED`** — read by the reporting notebook only, for the map boundaries and the name check.
 * **`[COUNTRY_CODE]_population.parquet`** on **`SNT_POPULATION_USER_PROVIDED`** — read back by the reporting notebook.
-* **`configuration/SNT_config.json`** for **`SNT_CONFIG.COUNTRY_CODE`**, **`SNT_CONFIG.DHIS2_ADMINISTRATION_1`**, **`SNT_CONFIG.DHIS2_ADMINISTRATION_2`**, **`SNT_DATASET_IDENTIFIERS.SNT_POPULATION_USER_PROVIDED`** and **`SNT_DATASET_IDENTIFIERS.DHIS2_DATASET_FORMATTED`**.
+* **`SNT_config.json`** from the latest version of **`SNT_CONFIGURATION`** (required) for **`SNT_CONFIG.COUNTRY_CODE`**, **`SNT_CONFIG.DHIS2_ADMINISTRATION_1`**, **`SNT_CONFIG.DHIS2_ADMINISTRATION_2`**, **`SNT_DATASET_IDENTIFIERS.SNT_POPULATION_USER_PROVIDED`** and **`SNT_DATASET_IDENTIFIERS.DHIS2_DATASET_FORMATTED`**.
 
 ## Outputs
 
 **Workspace filesystem**
 
 * **`data/user_population/[COUNTRY_CODE]_population.parquet`** and **`.csv`**
-* **Pipeline parameters JSON** in the same directory
+* **Pipeline parameters JSON** in the same directory, with **`SNT_CONFIG_VERSION`** and **`SNT_CONFIG_VERSION_ID`**, the name and id of the **`SNT_CONFIGURATION`** version read
 * **Report outputs** under **`pipelines/snt_user_population/reporting/outputs/`**, including one PNG per indicator in **`figures/[COUNTRY_CODE]_choropleth_population_user_<INDICATOR>.png`** (not published)
 
 **Published to `SNT_POPULATION_USER_PROVIDED`**

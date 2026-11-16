@@ -16,7 +16,7 @@ from openhexa.sdk import current_run, parameter, pipeline, workspace
 from snt_lib.snt_pipeline_utils import (
     add_files_to_dataset,
     get_file_from_dataset,
-    load_configuration_snt,
+    load_configuration_snt_from_dataset,
     pull_scripts_from_repository,
     run_report_notebook,
     save_pipeline_parameters,
@@ -111,7 +111,7 @@ def snt_map_extracts(year_start: int, year_end: int, run_report_only: bool, pull
         )
 
     # Load configuration
-    snt_config = load_configuration_snt(config_path=root_path / "configuration" / "SNT_config.json")
+    snt_config, snt_config_version = load_configuration_snt_from_dataset()
     validate_config(snt_config)
     country_code = snt_config["SNT_CONFIG"].get("COUNTRY_CODE")
 
@@ -134,6 +134,10 @@ def snt_map_extracts(year_start: int, year_end: int, run_report_only: bool, pull
             },
             output_path=output_path,
             country_code=country_code,
+            extra_metadata={
+                "SNT_CONFIG_VERSION": snt_config_version.name,
+                "SNT_CONFIG_VERSION_ID": snt_config_version.id,
+            },
         )
 
         periods = get_extract_periods(start=str(year_start), end=str(year_end))

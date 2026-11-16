@@ -34,7 +34,7 @@ The **SNT DHIS2 Outliers Imputation (Magic Glasses)** pipeline flags outliers in
 ## Inputs
 
 * **`[COUNTRY_CODE]_routine.parquet`** on **`DHIS2_DATASET_FORMATTED`**: required; the notebook stops with an `[ERROR]` if it cannot be loaded or lacks a configured indicator column.
-* **`configuration/SNT_config.json`** for:
+* **`SNT_config.json`** from the latest version of **`SNT_CONFIGURATION`** (required) for:
   * **`SNT_CONFIG.COUNTRY_CODE`** (and **`SNT_CONFIG.COUNTRY_NAME`** in the report)
   * **`DHIS2_DATA_DEFINITIONS.DHIS2_INDICATOR_DEFINITIONS`**: its keys are the indicators screened
   * **`SNT_DATASET_IDENTIFIERS.DHIS2_DATASET_FORMATTED`** and **`SNT_DATASET_IDENTIFIERS.DHIS2_OUTLIERS_IMPUTATION`**
@@ -47,7 +47,7 @@ The **SNT DHIS2 Outliers Imputation (Magic Glasses)** pipeline flags outliers in
 * **`data/dhis2/outliers_imputation/[COUNTRY_CODE]_routine_outliers_detected.parquet`**
 * **`data/dhis2/outliers_imputation/[COUNTRY_CODE]_routine_outliers_imputed.parquet`**
 * **`data/dhis2/outliers_imputation/[COUNTRY_CODE]_routine_outliers_removed.parquet`**
-* **Pipeline parameters JSON** in the same directory
+* **Pipeline parameters JSON** in the same directory, with **`SNT_CONFIG_VERSION`** and **`SNT_CONFIG_VERSION_ID`**, the name and id of the **`SNT_CONFIGURATION`** version read
 * Executed notebook under **`pipelines/snt_dhis2_outliers_imputation_magic_glasses/papermill_outputs/`**; report outputs under **`pipelines/snt_dhis2_outliers_imputation_magic_glasses/reporting/outputs/`**
 
 **Published to `DHIS2_OUTLIERS_IMPUTATION`** (not in report-only mode)

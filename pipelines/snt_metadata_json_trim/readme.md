@@ -30,8 +30,9 @@ the **`SNT_METADATA`** dataset, creating that dataset on first run.
 
 ## Functionality Overview
 
-1. **Configuration:** Load **`configuration/SNT_config.json`** for **`COUNTRY_CODE`** and
-   **`SNT_DATASET_IDENTIFIERS`**. If it cannot be loaded, the run fails (nothing written).
+1. **Configuration:** Load **`SNT_config.json`** from the latest version of
+   **`SNT_CONFIGURATION`** for **`COUNTRY_CODE`** and **`SNT_DATASET_IDENTIFIERS`**, and log
+   that version's name and id. If it cannot be loaded, the run fails (nothing written).
 2. **Get the master list:** If `metadata_file` is given, read it. Otherwise resolve `repository_ref`
    (`latest` → the latest release's tag) and download `catalogs/SNT_metadata_master.json` at that
    ref, unauthenticated (the repository is public). Its SHA256 is recorded in the report. If the
@@ -71,7 +72,8 @@ which is logged at error level.
 
 * **The master list** — from the repository at `repository_ref`, or `metadata_file` (see
   Parameters). Needs outbound HTTPS to `api.github.com` and `raw.githubusercontent.com`.
-* **`configuration/SNT_config.json`** for **`SNT_CONFIG.COUNTRY_CODE`** and
+* **`SNT_config.json`** from the latest version of **`SNT_CONFIGURATION`** (required) for
+  **`SNT_CONFIG.COUNTRY_CODE`** and
   **`SNT_DATASET_IDENTIFIERS`** (every key named by a layer's `DATASET.NAME`).
 * **Every dataset file referenced by the catalogue.** Each one is optional: a missing one drops its
   layers, it does not stop the run.

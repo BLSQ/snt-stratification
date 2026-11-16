@@ -14,7 +14,7 @@ import pandas as pd
 import pyarrow.parquet as pq
 from openhexa.sdk import File, current_run, parameter, pipeline, workspace
 from openhexa.sdk.datasets.dataset import Dataset, DatasetVersion
-from snt_lib.snt_pipeline_utils import load_configuration_snt
+from snt_lib.snt_pipeline_utils import load_configuration_snt_from_dataset
 
 OUTPUT_DATASET_NAME = "SNT_METADATA"
 OUTPUT_DATASET_SLUG = "snt-metadata"
@@ -97,12 +97,13 @@ def snt_metadata_json_trim(repository_ref: str, metadata_file: File | None = Non
     output_path = root_path / "pipelines" / "snt_metadata_json_trim" / "output"
 
     try:
-        snt_config = load_configuration_snt(config_path=root_path / "configuration" / "SNT_config.json")
+        snt_config, _ = load_configuration_snt_from_dataset()
         country_code = snt_config["SNT_CONFIG"]["COUNTRY_CODE"]
         dataset_identifiers = snt_config.get("SNT_DATASET_IDENTIFIERS", {})
     except Exception as e:
         fail(
-            f"Could not load configuration/SNT_config.json or read COUNTRY_CODE from it: {e}. "
+            "Could not load SNT_config.json from the SNT_CONFIGURATION dataset or read COUNTRY_CODE "
+            f"from it: {e}. "
             "Nothing was produced.",
             e,
         )

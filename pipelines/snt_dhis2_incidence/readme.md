@@ -63,7 +63,7 @@ The **SNT DHIS2 Incidence** pipeline estimates monthly malaria case metrics and 
 * **Population** (required): **`[COUNTRY_CODE]_population.parquet`** from the dataset of the selected **`population_selection`** — see Parameters.
 * **Reporting rate** (required): **`[COUNTRY_CODE]_reporting_rate_dataelement.parquet`** from **`DHIS2_REPORTING_RATE`**, falling back to **`[COUNTRY_CODE]_reporting_rate_dataset.parquet`**; the run fails if neither can be loaded.
 * **Care-seeking** (optional): the uploaded **`careseeking_file_path`** CSV (start from **`uploads/[COUNTRY_CODE]_careseeking_template.csv`**, written by **`snt_dhis2_formatting`**), else **`[COUNTRY_CODE]_DHS_ADM2_PCT_CARESEEKING_SAMPLE_AVERAGE.parquet`** from **`DHS_INDICATORS`**, falling back to **`[COUNTRY_CODE]_DHS_ADM1_PCT_CARESEEKING_SAMPLE_AVERAGE.parquet`** (columns **`ADM1_ID`** and **`PCT_PUBLIC_CARE`**, one row per **`ADM1_ID`**; any other column, including **`YEAR`**, is ignored, so the survey value of each ADM1 applies to all its ADM2 units and all years).
-* **`configuration/SNT_config.json`**: **`SNT_CONFIG.COUNTRY_CODE`**, **`SNT_CONFIG.DHIS2_ADMINISTRATION_1`** / **`DHIS2_ADMINISTRATION_2`**, **`DHIS2_DATA_DEFINITIONS.DHIS2_INDICATOR_DEFINITIONS`**, and under **`SNT_DATASET_IDENTIFIERS`**: **`DHIS2_DATASET_FORMATTED`**, **`DHIS2_OUTLIERS_IMPUTATION`**, **`SNT_POPULATION_USER_PROVIDED`**, **`DHIS2_POPULATION_TRANSFORMATION`**, **`DHIS2_REPORTING_RATE`**, **`DHS_INDICATORS`** and **`DHIS2_INCIDENCE`**.
+* **`SNT_config.json`** from the latest version of **`SNT_CONFIGURATION`** (required): **`SNT_CONFIG.COUNTRY_CODE`**, **`SNT_CONFIG.DHIS2_ADMINISTRATION_1`** / **`DHIS2_ADMINISTRATION_2`**, **`DHIS2_DATA_DEFINITIONS.DHIS2_INDICATOR_DEFINITIONS`**, and under **`SNT_DATASET_IDENTIFIERS`**: **`DHIS2_DATASET_FORMATTED`**, **`DHIS2_OUTLIERS_IMPUTATION`**, **`SNT_POPULATION_USER_PROVIDED`**, **`DHIS2_POPULATION_TRANSFORMATION`**, **`DHIS2_REPORTING_RATE`**, **`DHS_INDICATORS`** and **`DHIS2_INCIDENCE`**.
 
 ---
 
@@ -72,7 +72,7 @@ The **SNT DHIS2 Incidence** pipeline estimates monthly malaria case metrics and 
 **Workspace filesystem**
 
 * **`data/dhis2/incidence/[COUNTRY_CODE]_incidence.parquet`** and **`.csv`**
-* **`data/dhis2/incidence/[COUNTRY_CODE]_parameters.json`**
+* **`data/dhis2/incidence/[COUNTRY_CODE]_parameters.json`**, with **`SNT_CONFIG_VERSION`** and **`SNT_CONFIG_VERSION_ID`**, the name and id of the **`SNT_CONFIGURATION`** version read
 * **`pipelines/snt_dhis2_incidence/intermediate_results/[COUNTRY_CODE]_monthly_cases.parquet`** — intermediate ADM2 × monthly table (not published)
 * Executed notebooks under **`pipelines/snt_dhis2_incidence/papermill_outputs/`** and **`reporting/outputs/`** (not published)
 

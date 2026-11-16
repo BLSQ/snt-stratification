@@ -5,7 +5,7 @@ from openhexa.sdk import current_run, parameter, pipeline, workspace, File
 from snt_lib.snt_pipeline_utils import (
     pull_scripts_from_repository,
     add_files_to_dataset,
-    load_configuration_snt,
+    load_configuration_snt_from_dataset,
     run_notebook,
     run_report_notebook,
     validate_config,
@@ -221,9 +221,7 @@ def snt_dhis2_population_transformation(
 
     try:
         # Load configuration (needed for report and for main run)
-        snt_config_dict = load_configuration_snt(
-            config_path=snt_root_path / "configuration" / "SNT_config.json"
-        )
+        snt_config_dict, snt_config_version = load_configuration_snt_from_dataset()
         validate_config(snt_config_dict)
         country_code = snt_config_dict["SNT_CONFIG"]["COUNTRY_CODE"]
     except Exception as e:
@@ -296,6 +294,10 @@ def snt_dhis2_population_transformation(
             parameters=parameters,
             output_path=snt_dhis2_pop_transform_path,
             country_code=country_code,
+            extra_metadata={
+                "SNT_CONFIG_VERSION": snt_config_version.name,
+                "SNT_CONFIG_VERSION_ID": snt_config_version.id,
+            },
         )
         current_run.log_info(f"Saved pipeline parameters to {params_file}")
 

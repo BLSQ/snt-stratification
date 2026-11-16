@@ -33,14 +33,14 @@ The **SNT Quality of Care** pipeline computes **district-year (ADM2 × YEAR)** q
 
 * **`[COUNTRY_CODE]_routine_outliers_imputed.parquet`** or **`[COUNTRY_CODE]_routine_outliers_removed.parquet`** (per **`data_action`**) on **`DHIS2_OUTLIERS_IMPUTATION`** — required. Produced by whichever outliers imputation pipeline ran last.
 * **`[COUNTRY_CODE]_shapes.geojson`** on **`DHIS2_DATASET_FORMATTED`** — required.
-* **`configuration/SNT_config.json`** for **`SNT_CONFIG.COUNTRY_CODE`** and the dataset identifiers **`DHIS2_OUTLIERS_IMPUTATION`**, **`DHIS2_DATASET_FORMATTED`** and **`DHIS2_QUALITY_OF_CARE`**.
+* **`SNT_config.json`** from the latest version of **`SNT_CONFIGURATION`** (required) for **`SNT_CONFIG.COUNTRY_CODE`** and the dataset identifiers **`DHIS2_OUTLIERS_IMPUTATION`**, **`DHIS2_DATASET_FORMATTED`** and **`DHIS2_QUALITY_OF_CARE`**.
 
 ## Outputs
 
 **Workspace filesystem**
 
 * **`data/dhis2/quality_of_care/[COUNTRY_CODE]_quality_of_care_district_year_[data_action].parquet`** and **`.csv`**.
-* **Pipeline parameters JSON** in the same directory.
+* **Pipeline parameters JSON** in the same directory, with **`SNT_CONFIG_VERSION`** and **`SNT_CONFIG_VERSION_ID`**, the name and id of the **`SNT_CONFIGURATION`** version read.
 * **Yearly indicator maps** in **`pipelines/snt_dhis2_quality_of_care/reporting/outputs/figures/`**, named **`[indicator]_[YEAR].png`** (e.g. **`testing_rate_2023.png`**; the outpatient map uses the prefix **`allout_`**). Written, not published.
 * **Report outputs** in **`pipelines/snt_dhis2_quality_of_care/reporting/outputs/`**: **`[COUNTRY_CODE]_quality_of_care_summary.parquet`** and **`.csv`** (year-level summary) and **`figures/[COUNTRY_CODE]_quality_of_care_by_year.png`**. Written, not published.
 

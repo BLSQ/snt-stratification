@@ -302,7 +302,6 @@ No validating pipeline. First item of Phase 5
   publishes `{CC}_parameters.json`, add the version through `save_pipeline_parameters()`'s existing
   `extra_metadata` as `SNT_CONFIG_VERSION` (name) and `SNT_CONFIG_VERSION_ID` (id). All but
   `snt_metadata_json_trim` call `save_pipeline_parameters()`; that one only logs the version.
-  [PIPE-7](#pipe-7)'s stale path is in one of these messages and is fixed with it.
 
 **Commit plan, one commit at a time:**
 
@@ -608,14 +607,6 @@ into its parameters file, and `snt_healthcare_access` storing the `File` object 
 Each needs a deliberate decision: harden it, or accept it and say so.
 
 **Source:** DATA_ARCHITECTURE §6.2.
-
-### <a id="pipe-7"></a>PIPE-7 · Stale config path in an error message
-
-`snt_dhis2_reporting_rate_dataset/pipeline.py:73` says `(see: configuration/SNT_config_{country_code}.json)`,
-which points at the old per-country copies, now archived in `deprecated/configuration/`. One-line fix,
-but keep it in a separate PR: changing a `pipeline.py` triggers that pipeline's CI deploy on merge.
-
-**Owner:** Giulia. **Source:** docs restructure plan, 2026-10.
 
 ### <a id="pipe-8"></a>PIPE-8 · Post-merge review of the `snt_dhis2_incidence` changes from PR #138
 

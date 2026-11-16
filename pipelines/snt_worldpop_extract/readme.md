@@ -29,7 +29,7 @@ The **SNT WorldPop Extract** pipeline downloads gridded WorldPop population rast
 
 ## Inputs
 
-* **`SNT_config.json`**: **`COUNTRY_CODE`** and **`WORLDPOP_DATASET_EXTRACT`**, **`DHIS2_DATASET_FORMATTED`** identifiers.
+* **`SNT_config.json`** from the latest version of **`SNT_CONFIGURATION`** (required): **`COUNTRY_CODE`** and **`WORLDPOP_DATASET_EXTRACT`**, **`DHIS2_DATASET_FORMATTED`** identifiers.
 * **`[COUNTRY_CODE]_shapes.geojson`** from the formatted DHIS2 dataset.
 
 ---
@@ -39,6 +39,6 @@ The **SNT WorldPop Extract** pipeline downloads gridded WorldPop population rast
 * **`data/worldpop/raw/[COUNTRY_CODE]_worldpop_ppp_{year}.tif`** (and optional **`_UNadj.tif`**)
 * **`data/worldpop/aggregations/*.parquet`** / **`.csv`** per raster stem
 * **`data/worldpop/population/[COUNTRY_CODE]_worldpop_population.parquet`** and **`.csv`**
-* **Dataset version** on **`WORLDPOP_DATASET_EXTRACT`** with the above plus parameters JSON
+* **Dataset version** on **`WORLDPOP_DATASET_EXTRACT`** with the above plus parameters JSON. The parameters JSON records **`SNT_CONFIG_VERSION`** and **`SNT_CONFIG_VERSION_ID`**, the name and id of the **`SNT_CONFIGURATION`** version read.
 
 ---

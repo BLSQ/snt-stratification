@@ -20,7 +20,7 @@ None. `pipeline.py` does not define user-configurable domain parameters; standar
 ## Inputs
 
 * **`[COUNTRY_CODE]_dhis2_raw_analytics.parquet`**, **`[COUNTRY_CODE]_dhis2_raw_population.parquet`**, **`[COUNTRY_CODE]_dhis2_raw_shapes.parquet`**, **`[COUNTRY_CODE]_dhis2_raw_pyramid.parquet`**, **`[COUNTRY_CODE]_dhis2_raw_reporting.parquet`** on **`DHIS2_DATASET_EXTRACTS`** (each is optional; missing inputs skip the corresponding formatting step).
-* **`configuration/SNT_config.json`** for **`COUNTRY_CODE`** and **`SNT_DATASET_IDENTIFIERS`**.
+* **`SNT_config.json`** from the latest version of **`SNT_CONFIGURATION`** (required) for **`COUNTRY_CODE`** and **`SNT_DATASET_IDENTIFIERS`**.
 
 ## Outputs
 
@@ -33,7 +33,7 @@ None. `pipeline.py` does not define user-configurable domain parameters; standar
 * **`uploads/[COUNTRY_CODE]_careseeking_template.csv`**: ADM1/ADM2 names and IDs, plus an empty **`CARESEEKING_PCT`** column (no **`YEAR`** column)
 * **`uploads/[COUNTRY_CODE]_population_disaggregation_template.csv`**: ADM1/ADM2 names and IDs, plus empty disaggregation columns (**`POP_UNDER_5`**, **`POP_PREGNANT_WOMEN`**, …)
 * **`uploads/[COUNTRY_CODE]_population_user_template.csv`**: empty **`YEAR`**, ADM1/ADM2 names and IDs, empty **`POPULATION`**, then the same disaggregation columns
-* **Pipeline parameters JSON** in the same formatted data directory
+* **Pipeline parameters JSON** in the same formatted data directory, with **`SNT_CONFIG_VERSION`** and **`SNT_CONFIG_VERSION_ID`**, the name and id of the **`SNT_CONFIGURATION`** version read
 * Copies of the above artifacts on the **`DHIS2_DATASET_FORMATTED`** OpenHEXA dataset
 * **Report outputs** under **`pipelines/snt_dhis2_formatting/reporting/outputs/`**
 
