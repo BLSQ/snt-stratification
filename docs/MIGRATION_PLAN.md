@@ -1087,31 +1087,46 @@ seven pipelines, with codes such as `a-1-dhis2-extract` and `a-9-dhis2-quality-o
 Batch the held-back breaking changes before any country adopts the new repo; later they would need a
 major version. One PR each, each verified on a `v0.x` pre-release.
 
+**Re-scoped 2026-11-16 (Giulia).** Only what the first production release needs stays before
+`v1.0.0`; the rest is deferred, each item with its BACKLOG entry, and the cost of deferring is
+stated once below. Then Phase 6, then Phase 7.
+
 **Sequencing with the config editor:** the editor has no code yet, and its storage design (spec §6–7)
-assumes `configuration/SNT_config.json` plus the current full shape. Settle the config split and the
-`SNT_CONFIGURATION` dataset **before** building the editor's write step (`WorkspaceStore`), so it is
-built once against the final contract. The form and validation (`LocalStore`, download only) can
-proceed in parallel against the new schema.
-- [ ] **CFG-1 dataset keys:** key = dataset slug in uppercase (`SNT_DHIS2_EXTRACTS: snt-dhis2-extracts`).
-      Move the fixed identifiers out of `SNT_config.json` into `catalogs/snt_datasets.json`. NER's extra
-      keys need a deliberate home.
-- [ ] **Config split:** `SNT_config.json` keeps only the country-specific parts (`SNT_CONFIG`,
-      `DHIS2_DATA_DEFINITIONS`). Write `snt_config.schema.json` (CFG-3) in `contracts/`, used by both
-      the config editor and pipelines.
+assumes `configuration/SNT_config.json` plus the current full shape. Settle the `SNT_CONFIGURATION`
+dataset **before** building the editor's write step (`WorkspaceStore`), so it is built once against
+the final contract. The form and validation (`LocalStore`, download only) can proceed in parallel.
+
+**Before `v1.0.0`, in this order:**
 - [ ] **Config as dataset `SNT_CONFIGURATION`** (CFG-4), with a fixed slug by convention (it can't
       be looked up in itself). The editor writes through a validating pipeline. Needs a pinned
-      `snt_lib` release (D-3), so sequence this together with CFG-1, since both touch config loading.
-- [ ] **Report-only semantics** (OD-7): S4 first; otherwise `RUN_MODE` in `{CC}_parameters.json`;
-      the orchestrator only counts full runs as "processed".
-- [ ] Clear the `⚠ exceptions` the old repo couldn't touch: R11 (seasonality lowercase globals,
-      PIPE-3), R14 (`run_reports_only`), R9 (ERA5 name, healthcare_access `File`), PIPE-5 (pregnant women).
-- [ ] Orchestrator: fix `ohName` drift (APP-9) and the `create_pipeline_cards` README raw-URL docs.
-      Consider generating `pipeline_map.json` ids from the manifest, so a pipeline can't be added
-      without the map knowing.
-- [ ] The editor follows each change: its rules 3 and 5 (emit all 15 dataset ids, keep the
-      `POP_PREGNANT_WOMEN`/`_PREGNANT_WOMAN` mismatch) **must be reversed** in the same PR as CFG-1 and
-      PIPE-5 respectively.
-- [ ] Cut **`v1.0.0`** (first production release).
+      `snt_lib` release (D-3): config loading changes.
+- [ ] **Orchestrator:** implement D-12 (count only full runs as "processed", reading the run's own
+      `run_report_only` through the proxy; OD-7 was settled on 2026-11-03), fix `ohName` drift
+      (APP-9) and the `create_pipeline_cards` README raw-URL docs.
+- [ ] Cut **`v1.0.0`** (first production release). Note: the templates publishing workspace does not
+      exist before Phase 6, so `v1.0.0` ships without templates and both template jobs stay disabled
+      (D-17); the deployer route does not need them.
+
+**Optional before `v1.0.0`, decided at the pre-cut checklist:**
+- [ ] **CFG-1 dataset keys:** key = dataset slug in uppercase (`SNT_DHIS2_EXTRACTS: snt-dhis2-extracts`),
+      the map stays in `SNT_config.json`. Decided and fully planned (key table, `snt_lib` branch route,
+      four commits, verification) in [BACKLOG CFG-1](BACKLOG.md#cfg-1); start there. Cheapest item
+      to do now, most annoying later: after `v1.0.0` it also touches the editor's write step and
+      CFG-4's validating pipeline.
+
+**Deferred past `v1.0.0`.** A config-shape change after `v1.0.0` is a major version or a migration
+step for every country config installed from this repo; accepted. Each item lives in the BACKLOG,
+not here:
+- Config split (`SNT_config.json` keeps only `SNT_CONFIG` and `DHIS2_DATA_DEFINITIONS`) and
+  `snt_config.schema.json` ([CFG-3](BACKLOG.md#cfg-3)); moving the dataset map to a repo-shipped
+  file ([CFG-1](BACKLOG.md#cfg-1), part (b), deferred).
+- The `⚠ exceptions` the old repo couldn't touch: R11 ([PIPE-3](BACKLOG.md#pipe-3)), R14
+  (`run_reports_only`), R9 (ERA5 name, healthcare_access `File`), [PIPE-5](BACKLOG.md#pipe-5)
+  (pregnant women). The editor's rule 3 (keep the `POP_PREGNANT_WOMEN`/`_PREGNANT_WOMAN` mismatch)
+  is reversed in the same PR as PIPE-5; its rule 5 (emit all 15 dataset ids) stays while the map
+  stays in the config.
+- `pipeline_map.json` ids generated from the manifest, so a pipeline can't be added without the
+  map knowing.
 
 ### Phase 6 — New template set (for teams not using the deployer)
 - [ ] Create a dedicated publishing workspace for the new templates (it does **not** replace
@@ -1245,6 +1260,7 @@ proceed in parallel against the new schema.
 | 2026-11-13 | Phase 4 commits 6–7, CI green through 5a. Checker: `stands_for` names template-created pipelines (old `snt-development` codes matched on the title, step number ignored; the `-<6 hex>` suffix), `+redeploy-` stripped, a bare `v<N>` claims nothing; BOOT-1 closed, BOOT-5 opened (deployers keep exact-code lookup). **S3 corrected:** a template-created code is the slug of the source pipeline's display name, not its code (read from `snt-development`, `snt-testing`, the sandbox and a workshop workspace). Manifest v1 deleted; bootstrap docs, the three readmes and `pipelines/CLAUDE.md` brought in line (D-18 included). `pytest` 118 passed, 16 skipped locally | Commit 7a (this log + hand-off), then commit 8 in a new session: CI on 6–7a, then three questions (BOOT-4, tag the branch or merge first, the test workspace) — see the [commit 8 hand-off](#phase-4--bootstrap-adapted-to-the-monorepo) |
 | 2026-11-13 → 16 | Phase 4 commit 8. Commits 1–7b merged first (PR #6); `v0.1.0` tagged on `main` as a pre-release. Verified in two fresh BFA workspaces, old templates against the deployer: checker `match` on all 259 entries; 26 tables from formatting to quality of care identical. Attribution mode correctly finds no best fit for a pre-release (ADR 0034). The DHIS2 extract was not verified: the BFA DHIS2's organisation-units response was invalid JSON in every workspace, old code included; a shared extract dataset was used instead. Details in [Phase 4 results](#phase-4-results) | Commit 9, the `release` skill, in a new session: start from "Learned for the `release` skill" in [Phase 4 results](#phase-4-results) |
 | 2026-11-16 | Phase 4 commit 9: the `release` skill (`.claude/skills/release/`), built on the commit 8 runbook, with the two dataset-comparison scripts; `CLAUDE.md` and `README.md` list it. **D-19**: a new test workspace per candidate, with the previous release's kept as baseline; the full DHIS2 chain compared every time; promotion = a new full release on the verified rc's commit. `release_strategy.md` open point 4 settled by it | Close Phase 4: CI on 8–9a, PR, merge. Then Phase 5 — see the [closing hand-off](#phase-4--bootstrap-adapted-to-the-monorepo) |
+| 2026-11-16 | Phase 4 merged. Phase 5 opened on `phase-5/cfg-1-dataset-keys`. CFG-1 analysed and **decided** (key = slug uppercased, map stays in the config, `snt_lib` validator changed on a branch off `release-v1`), then **deferred**: the full plan is in [BACKLOG CFG-1](BACKLOG.md#cfg-1). **Phase 5 re-scoped**: before `v1.0.0` only CFG-4, the orchestrator items (D-12, APP-9, README docs) and the cut; CFG-1 optional at the pre-cut checklist; the rest deferred past `v1.0.0` with its cost stated. Nothing implemented | CFG-4, in a new session: start from [BACKLOG CFG-4](BACKLOG.md#cfg-4), the editor spec §6–7 and `snt_lib`'s `load_configuration_snt` |
 
 ---
 
