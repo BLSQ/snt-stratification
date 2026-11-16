@@ -225,4 +225,4 @@ Before calling a change done — each item maps to a rule in the [Register](#reg
 | The migration into this repo (a plan, not current state — read only for that work) | [`docs/MIGRATION_PLAN.md`](docs/MIGRATION_PLAN.md) |
 | Local setup | [`dev/README.md`](dev/README.md) |
 | How the git guardrail is enforced | [`.claude/README.md`](.claude/README.md) |
-| Skills: `handover`, `write-pipeline-readme`, `add-explorer-layer` | [`.claude/skills/`](.claude/skills/) |
+| Skills: `handover`, `write-pipeline-readme`, `add-explorer-layer`, `release` | [`.claude/skills/`](.claude/skills/) |
