@@ -264,76 +264,6 @@ per-field rules are in
 
 **Owner:** Giulia. **Source:** the `snt_development` version of [`contracts/snt_config/README.md`](../contracts/snt_config/README.md).
 
-### <a id="cfg-4"></a>CFG-4 · Read `SNT_config.json` from the `SNT_CONFIGURATION` dataset
-
-**Decided 2026-11-16 (Giulia), not yet implemented:**
-[ADR 0043](decisions/0043-config-read-from-snt-configuration-dataset.md). Every `pipeline.py` and
-every notebook reads `SNT_config.json` from the latest version of the dataset `SNT_CONFIGURATION`
-(slug `snt-configuration`, hardcoded), and none reads `configuration/SNT_config.json`. Until the
-config editor writes the dataset, people create it and upload versions by hand in the OpenHEXA UI.
-No validating pipeline. First item of Phase 5
-([MIGRATION_PLAN.md](MIGRATION_PLAN.md#phase-5--breaking-change-window-before-the-first-production-tag)).
-
-**What changes:**
-
-- **Python, in `snt_lib`.** A new function beside `load_configuration_snt()` in
-  `snt_lib/snt_pipeline_utils.py`. It reads `SNT_config.json` from the latest version of
-  `snt-configuration`, logs the version's name and id, and returns the config with the version.
-  The old function stays: the old repo uses it. `get_file_from_dataset()` is not reused as is,
-  because it does not return the version.
-- **R, in `shared/r/snt_utils.r`.** A new helper beside `load_snt_config()`, with a roxygen
-  docstring (R20). It reads the same file from the latest version and logs the version. It must
-  parse the JSON exactly as `load_json()` does (`jsonlite::fromJSON` with the same arguments), not
-  as `get_latest_dataset_file_in_memory()` does (`flatten = TRUE`), so the config list keeps its
-  shape. 46 notebooks under 20 pipelines' `code/` and `reporting/` read the file today: 43 through
-  `load_snt_config(file.path(snt_paths$CONFIG_PATH, "SNT_config.json"))`, and three report
-  notebooks (`snt_era5_climate_data`, `snt_dhis2_population_transformation`,
-  `snt_worldpop_extract`) through `jsonlite::fromJSON(file.path(CONFIG_PATH, "SNT_config.json"))`
-  directly. No `.r` file reads it.
-- **The `[ERROR]`.** The same message in Python and R when the dataset, its latest version or the
-  file is missing, the download fails or the file is not valid JSON: *"[ERROR] No usable
-  SNT_config.json in the latest version of dataset SNT_CONFIGURATION (snt-configuration):
-  &lt;reason&gt;. Provide a valid SNT_config.json file. See &lt;how-to URL&gt;"*. The how-to is
-  the section
-  [`contracts/snt_config/README.md#snt-configuration-dataset`](../contracts/snt_config/README.md#snt-configuration-dataset):
-  create the dataset named exactly `SNT_CONFIGURATION`, check its slug is `snt-configuration`,
-  upload `SNT_config.json` as a new version.
-- **The 21 `pipeline.py` that load the config.** Call the new function. Where the pipeline
-  publishes `{CC}_parameters.json`, add the version through `save_pipeline_parameters()`'s existing
-  `extra_metadata` as `SNT_CONFIG_VERSION` (name) and `SNT_CONFIG_VERSION_ID` (id). All but
-  `snt_metadata_json_trim` call `save_pipeline_parameters()`; that one only logs the version.
-
-**Commit plan, one commit at a time:**
-
-1. **Done: `snt_utils` branch `cfg-4-config-from-dataset`** off `release-v1`, commit
-   `44f59462846ecbb35e86c4daa8b2f434584036b3` (shared with [CFG-1](#cfg-1) if that is done before
-   `v1.0.0`): `load_configuration_snt_from_dataset()`, returning the config and the dataset
-   version, and its tests in `tests/test_snt_pipeline_utils.py`. Branch names starting with
-   `release-v1` are blocked by the `snt_utils` ruleset `protect-release-branches`.
-2. **This repo, the R side:** the helper, the 46 notebooks (edited as text, then
-   `nbstripout`), and the how-to section the `[ERROR]` links to.
-3. **This repo, the Python side:** the 21 `pipeline.py`, their `requirements.txt` pinned to the
-   branch's SHA, their `readme.md` (re-verified, R16).
-4. **Docs:** [`DATA_ARCHITECTURE.md`](DATA_ARCHITECTURE.md), the trap for country variants in
-   [`pipelines/CLAUDE.md`](../pipelines/CLAUDE.md), one note in the config editor's
-   `PRODUCT_SPEC.md` §6–7 (the save target is now the dataset; the rest is decided when the editor
-   is built), the migration plan's tick, and this item deleted.
-
-**Verification:** `ruff`, `pytest` and the `check_*` tools locally and in CI. Then a pre-release cut
-with the `release` skill, in a fresh test workspace with the previous release's workspace as
-baseline (D-19): create the dataset in the UI and confirm its slug; run one pipeline without it and
-read the `[ERROR]`; run the full DHIS2 chain and compare outputs; check each `{CC}_parameters.json`
-carries the version; run one notebook by hand and check it logs the version. Not covered: country
-notebook variants (`*_<CC>.ipynb`), which are not in this repo and keep reading the disk file. Live
-countries run the old repo and are untouched.
-
-Not part of it: the Explorer metadata. `snt_metadata_json_trim` publishes
-`SNT_metadata_trimmed.json` to its own dataset, `SNT_METADATA` (`snt-metadata`). A gate in the
-workspace checker is [BOOT-7](#boot-7).
-
-**Owner:** Giulia. **Source:** `contracts/snt_metadata_json/README.md` (pre-2026-10-27 version);
-Phase 5 discussion 2026-11-16.
-
 ### <a id="cfg-5"></a>CFG-5 · Per-dataset output contracts
 
 Add a contract per OpenHEXA dataset to `contracts/`: files, columns, `YEAR` presence. Needs reading
@@ -439,7 +369,7 @@ selector? If so, which column does it expect (`MONTH`, `PERIOD`)? Affects ERA5, 
 The example does not point at its own schema, so an editor does not validate it automatically, and
 nothing records which format version a file follows. Worth adding once the shape settles, as a
 `$schema` property, a `FORMAT_VERSION` field, or through the `SNT_CONFIGURATION` dataset version
-([CFG-4](#cfg-4)).
+([ADR 0043](decisions/0043-config-read-from-snt-configuration-dataset.md)).
 
 ### <a id="meta-9"></a>META-9 · Year-independent layers
 

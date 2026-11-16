@@ -108,6 +108,14 @@ import (migration plan D-13). The few that existed are readable in `snt_developm
   `..._NER.ipynb` exists there. Name in the handover the countries that need it applied by hand.
 - **Location matters.** A variant only takes effect in the same folder the generic notebook is
   loaded from (`code/` or `reporting/`). A `country_specific/` folder is on no execution path.
+- **A variant may still read the config from disk.** The generic notebooks read `SNT_config.json`
+  from the latest version of the `SNT_CONFIGURATION` dataset, through
+  `load_snt_config_from_dataset()` ([ADR 0043](../docs/decisions/0043-config-read-from-snt-configuration-dataset.md)).
+  A variant written before that reads `configuration/SNT_config.json`, and nothing changes it. In
+  a workspace installed from this repo that file is either missing, so the variant fails, or an
+  old copy, so the variant runs on a different config from the rest of its pipeline and logs no
+  version. When a country with variants moves to this repo, switch each variant to
+  `load_snt_config_from_dataset()` in its workspace.
 
 ## Pipeline traps
 

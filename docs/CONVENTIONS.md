@@ -254,8 +254,12 @@ not assume every current output already complies.
 
 ## Configuration
 
-- Pipelines read `<workspace>/configuration/SNT_config.json` — one file, one country, one workspace.
-  (That is the workspace path — this repo has no `configuration/` folder.)
+- Every `pipeline.py` and notebook reads `SNT_config.json` from the latest version of the OpenHEXA
+  dataset `SNT_CONFIGURATION` (slug `snt-configuration`) — one file, one country, one workspace
+  ([ADR 0043](decisions/0043-config-read-from-snt-configuration-dataset.md)). None reads
+  `configuration/SNT_config.json` from the workspace disk. How to provide the file, which must
+  pass `validate_config()`:
+  [the how-to](../contracts/snt_config/README.md#snt-configuration-dataset).
 - The current structure of that file is
   [`../contracts/snt_config/SNT_config.skeleton.json`](../contracts/snt_config/README.md), the one
   copy for the pipelines and the config editor — keep it in sync when a schema key changes. The old

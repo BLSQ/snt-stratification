@@ -116,8 +116,14 @@ Use two workspaces, and run every comparison step in both:
    no R image until you set it, and every R pipeline needs it.
 2. Connections → the country's DHIS2 connection, **with the same name as in the baseline**. Its
    slug is a pipeline parameter.
-3. Files → `configuration/SNT_config.json`: the same file as in the baseline (download it from
-   there).
+3. Datasets → the config, as in the
+   [how-to](../../../contracts/snt_config/README.md#snt-configuration-dataset): create the dataset
+   `SNT_CONFIGURATION`, check its slug is `snt-configuration`, and upload `SNT_config.json` as a
+   new version. Use the same content as the baseline's config: in a baseline on `v0.1.0`, which
+   predates ADR 0043, that is Files → `configuration/SNT_config.json`; in a later one, the latest
+   version of its `SNT_CONFIGURATION`. The file must pass `validate_config()` (the how-to shows
+   how to check it): a copy that lacks a key the current `snt_lib` requires, such as
+   `SNT_DATASET_IDENTIFIERS.SNT_POPULATION_USER_PROVIDED`, stops every pipeline.
 4. Connections → New → **Custom**, name `oh`, one field `token`, marked secret. Its value is the
    workspace token shown under Pipelines → Create → "From OpenHEXA CLI"
    ([`openhexa_deployment.md`](../../../docs/bootstrap/openhexa_deployment.md) §7.3b).

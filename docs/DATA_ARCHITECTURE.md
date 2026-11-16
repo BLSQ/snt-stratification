@@ -482,6 +482,10 @@ reads only `{CC}_reporting.parquet` from `DHIS2_DATASET_FORMATTED`, and publishe
 Note the shapes fan-out: the three external-source pipelines are **downstream of
 `snt_dhis2_formatting`**, not independent roots, because they aggregate into its ADM2 geometries.
 
+Not drawn either, because every box has it: **the config is an input of every pipeline and every
+notebook**, read from the latest version of the `SNT_CONFIGURATION` dataset
+([§5.4](#54-configuration-schema-snt_configjson)) before anything else runs.
+
 ---
 
 ## 4. Orchestration model
@@ -497,7 +501,9 @@ Note the shapes fan-out: the three external-source pipelines are **downstream of
 - Consequence: a results table can mix vintages — e.g. incidence computed from January's
   imputation run joined to reporting rates computed from March's routine data. Only the
   per-pipeline `{CC}_parameters.json` and the OpenHEXA dataset version names record which
-  inputs were current.
+  inputs were current. The same `{CC}_parameters.json` records the config version the run read
+  (`SNT_CONFIG_VERSION`, `SNT_CONFIG_VERSION_ID`): to check that every result came from the same
+  config, compare those keys across datasets.
 
 ### 4.2 `[TODO: Giulia]` — authoritative order & dependency map
 
@@ -534,7 +540,10 @@ five `*_ready` flags gate `add_files_to_dataset_for_extracts`.
   the JSON.
 - The notebook resolves its own inputs — dataset ids come from `SNT_config.json` inside the R
   code (`config_json$SNT_DATASET_IDENTIFIERS$…`), not from `pipeline.py`. **Lineage for
-  notebook-driven pipelines is therefore only visible in the `.ipynb`/`.r` files.**
+  notebook-driven pipelines is therefore only visible in the `.ipynb`/`.r` files.** The notebook
+  also loads the config itself, with `load_snt_config_from_dataset()` (`shared/r/snt_utils.r`),
+  from the latest version of `SNT_CONFIGURATION`: not necessarily the version its pipeline read
+  if one was uploaded during the run ([§5.4](#54-configuration-schema-snt_configjson)).
 - Errors are surfaced by **string labels in the R message**: a message beginning `[ERROR]` or
   `[WARNING]` is mapped to the OpenHEXA log severity via
   `error_label_severity_map={"[ERROR]": "error", "[WARNING]": "warning"}`. A `[WARNING]`-labelled
@@ -550,7 +559,6 @@ five `*_ready` flags gate `add_files_to_dataset_for_extracts`.
 
 ```
 ~/workspace/
-  configuration/SNT_config.json          # the ONLY config the pipelines read
   configuration/SNT_metadata.json        # old-format column list; no reader left
   code/snt_utils.r snt_report.r snt_palettes.r
   pipelines/<pipeline>/
@@ -568,6 +576,11 @@ five `*_ready` flags gate `add_files_to_dataset_for_extracts`.
 `data/` is scratch; **OpenHEXA datasets are the contract.** A file that exists on disk but was
 never added to its dataset is invisible to every downstream pipeline.
 
+The config is not on the filesystem either: it is in the `SNT_CONFIGURATION` dataset
+([§5.4](#54-configuration-schema-snt_configjson)). A workspace set up for the old repo still holds
+`configuration/SNT_config.json`; nothing from this repo reads it, only the old repo's pipelines and
+country notebook variants ([`pipelines/CLAUDE.md`](../pipelines/CLAUDE.md#country-specific-notebook-variants)).
+
 ### 5.2 Naming
 
 | Artefact | Pattern |
@@ -576,7 +589,7 @@ never added to its dataset is invisible to every downstream pipeline.
 | Per-period intermediate | `{CC}_raw_{family}_{PERIOD}.parquet` (merged then usually deleted) |
 | Formatted | `{CC}_{routine,population,pyramid,reporting}.parquet` + `.csv`; `{CC}_shapes.geojson` |
 | Outliers | `{CC}_routine_outliers_{detected,removed,imputed}.parquet` |
-| Run parameters | `{CC}_parameters.json` (written by `save_pipeline_parameters`) |
+| Run parameters | `{CC}_parameters.json` (written by `save_pipeline_parameters`, with the config version read: `SNT_CONFIG_VERSION`, `SNT_CONFIG_VERSION_ID`) |
 | Dataset version | `{CC}_dhis2_level{N}_…` / `{CC}_…` prefix via `get_new_dataset_version()` |
 
 `{CC}` = `SNT_CONFIG.COUNTRY_CODE`, uppercase (`COD`, `BFA`, `NER`, `BDI`, `CMR`).
@@ -597,6 +610,27 @@ Parquet is the machine contract; the `.csv` twin is for human inspection.
 
 ### 5.4 Configuration schema (`SNT_config.json`)
 
+**Where it lives** ([ADR 0043](decisions/0043-config-read-from-snt-configuration-dataset.md)): the
+file `SNT_config.json` in the **latest version** of the OpenHEXA dataset `SNT_CONFIGURATION`, slug
+`snt-configuration`, one per workspace. The slug is hardcoded, not in `SNT_DATASET_IDENTIFIERS`, and
+the file name has no `{CC}_` prefix: it is read before the country is known.
+
+- **Who reads it:** every `pipeline.py`, through `snt_lib`'s `load_configuration_snt_from_dataset()`
+  (then `validate_config()`, in all but `snt_metadata_json_trim`); and every notebook, through
+  `load_snt_config_from_dataset()` in `shared/r/snt_utils.r`. Each logs the version's name and id.
+- **What a run records:** the 20 pipelines that call `save_pipeline_parameters()` add
+  `SNT_CONFIG_VERSION` (the version's name) and `SNT_CONFIG_VERSION_ID` (its id) to
+  `{CC}_parameters.json`. `snt_metadata_json_trim` publishes no parameters file and only logs the
+  version.
+- **When it is missing** (no dataset, no version, no file, failed download, invalid JSON): the run
+  stops with `[ERROR] No usable SNT_config.json in the latest version of dataset
+  SNT_CONFIGURATION (snt-configuration): …`, linking to the how-to.
+- **How to provide it:** upload the whole file as a new version, by hand in the OpenHEXA UI until
+  the config editor writes it: [how-to](../contracts/snt_config/README.md#snt-configuration-dataset).
+  The file must also pass `validate_config()`, which the SNT pipelines run right after loading it:
+  a file missing a key the validator requires (for example
+  `SNT_DATASET_IDENTIFIERS.SNT_POPULATION_USER_PROVIDED`) loads and then fails.
+
 ```
 SNT_CONFIG                COUNTRY_CODE, COUNTRY_NAME, DHIS2_ADMINISTRATION_1/2,
                           ANALYTICS_ORG_UNITS_LEVEL, REPORTING_RATE_PRODUCT_UID
@@ -608,7 +642,7 @@ DHIS2_DATA_DEFINITIONS
 ```
 
 Versioned variants `deprecated/configuration/SNT_config_<CC>.json` are **archived reference copies only** — not
-loadable as-is. In a workspace the file is manually renamed to drop the `_<CC>` suffix.
+loadable as-is.
 `configuration/readme.txt` records population blocks removed from those variants.
 
 ---
@@ -689,7 +723,7 @@ originates. Open: [BACKLOG PIPE-5](BACKLOG.md#pipe-5).
 
 | Library | Location | Role |
 |---|---|---|
-| `snt_lib.snt_pipeline_utils` | **external** — `git+https://github.com/BLSQ/snt_utils.git` (unpinned) | `load_configuration_snt`, `validate_config`, `run_notebook`, `run_report_notebook`, `add_files_to_dataset`, `dataset_file_exists`, `get_new_dataset_version`, `get_file_from_dataset`, `save_pipeline_parameters`, `pull_scripts_from_repository`, `push_data_to_db_table`, `delete_raw_files`, `generate_html_report`, `handle_rkernel_error_with_labels` |
+| `snt_lib.snt_pipeline_utils` | **external** — `git+https://github.com/BLSQ/snt_utils.git` (unpinned) | `load_configuration_snt_from_dataset`, `validate_config`, `run_notebook`, `run_report_notebook`, `add_files_to_dataset`, `dataset_file_exists`, `get_new_dataset_version`, `get_file_from_dataset`, `save_pipeline_parameters`, `pull_scripts_from_repository`, `push_data_to_db_table`, `delete_raw_files`, `generate_html_report`, `handle_rkernel_error_with_labels` |
 | `code/snt_utils.r` | this repo (~1 550 lines) | config loading, dataset I/O, logging (`log_msg`/`pipeline_msg`), seasonality computation, cartesian completion, DHS helpers, geo helpers |
 | `code/snt_report.r`, `code/snt_palettes.r` | this repo | choropleths, binning, month colours/labels (FR) |
 | `worldpopclient.py` | **duplicated** in `snt_worldpop_extract/`, `snt_map_extracts/`, `snt_healthcare_access/` | WorldPop raster download |

@@ -129,10 +129,10 @@ rather than fail across this codebase:
 ### `## Inputs`
 
 Every file the pipeline reads, with **the dataset it comes from** and whether it is required or
-optional. Include `configuration/SNT_config.json` and the specific keys used — it is skipped as a
-*parameter*, but it is a real input and the keys are part of the contract. Include operator
-uploads. Include implicit inputs — a shared raster cache, or a geojson fetched only to define
-boundaries, still counts.
+optional. Include `SNT_config.json` from the latest version of `SNT_CONFIGURATION` and the specific
+keys used — it is skipped as a *parameter*, but it is a real input and the keys are part of the
+contract. Include operator uploads. Include implicit inputs — a shared raster cache, or a geojson
+fetched only to define boundaries, still counts.
 
 ### `## Outputs`
 
@@ -225,14 +225,16 @@ The **SNT <Name>** pipeline <what it does, 2–3 sentences>. It publishes <artef
 
 * **`[COUNTRY_CODE]_<file>.parquet`** on **`<UPSTREAM_DATASET_ID>`** — <required|optional; what
   happens when missing>.
-* **`configuration/SNT_config.json`** for **`<KEYS USED>`**.
+* **`SNT_config.json`** from the latest version of **`SNT_CONFIGURATION`** (required) for
+  **`<KEYS USED>`**.
 
 ## Outputs
 
 **Workspace filesystem**
 
 * **`data/<path>/[COUNTRY_CODE]_<file>.parquet`** and **`.csv`**
-* **Pipeline parameters JSON** in the same directory
+* **Pipeline parameters JSON** in the same directory, with **`SNT_CONFIG_VERSION`** and
+  **`SNT_CONFIG_VERSION_ID`**, the name and id of the **`SNT_CONFIGURATION`** version read
 * **Report outputs** under **`pipelines/<name>/reporting/outputs/`**
 
 **Published to `<DATASET_ID>`**

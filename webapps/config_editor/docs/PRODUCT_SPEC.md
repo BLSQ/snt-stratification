@@ -356,6 +356,16 @@ question 1) — do not enforce a rule the team has not agreed.
 
 ## 6. Storage design
 
+> **Note, 2026-11-16: the save target is now a dataset**
+> ([ADR 0043](../../../docs/decisions/0043-config-read-from-snt-configuration-dataset.md)). The
+> pipelines no longer read `<workspace>/configuration/SNT_config.json`: every `pipeline.py` and
+> every notebook reads `SNT_config.json` from the latest version of the OpenHEXA dataset
+> `SNT_CONFIGURATION` (slug `snt-configuration`). A valid config is therefore published as a new
+> version of that dataset, not written to `/configuration`. Where §6–7 name that path or
+> `load_configuration_snt()`, they predate this. How the editor stores drafts, validates and
+> writes the version is decided when it is built. Until then, people upload the file by hand:
+> [how-to](../../../contracts/snt_config/README.md#snt-configuration-dataset).
+
 ### 6.1 The principle
 
 > **`SNT_config.json` is a deliverable, not a workspace.** It exists at

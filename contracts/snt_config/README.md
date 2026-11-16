@@ -6,10 +6,6 @@ dataset `SNT_CONFIGURATION`: one file, one country, one workspace
 ([ADR 0043](../../docs/decisions/0043-config-read-from-snt-configuration-dataset.md)). People upload
 it by hand ([below](#snt-configuration-dataset)); in future the config editor will write it.
 
-**Switch in progress** ([BACKLOG CFG-4](../../docs/BACKLOG.md#cfg-4)): the notebooks read the
-dataset, but each `pipeline.py` still reads `<workspace>/configuration/SNT_config.json`. Until that
-is done, a workspace needs both, with the same content.
-
 | File | What it is | Trust it? |
 |---|---|---|
 | `SNT_config.skeleton.json` | The **fixed part** of `SNT_config.json`, which is the same in every country and workspace. The country-specific values are left empty. The one copy, shared by the pipelines and the config editor. | **Yes.** This is the reference for the current structure. |
@@ -45,13 +41,23 @@ Until the config editor writes the dataset, set it up by hand in the OpenHEXA wo
 3. **Upload the config as a new version.** Create a new version of the dataset and add the file,
    named exactly `SNT_config.json` (no `{CC}_` prefix: it is read before the country is known). A
    version name that says what changed helps, since every run logs it (for example
-   `2026-11-16 added reporting dataset`).
+   `2026-11-16 added reporting dataset`). The file must pass `validate_config()`
+   ([below](#conformance-fixtures--fixtures)): the SNT pipelines run it right after loading the
+   file, so a file that loads but lacks a required key still stops the run: for example, a config
+   without `SNT_DATASET_IDENTIFIERS.SNT_POPULATION_USER_PROVIDED`. To check a file before
+   uploading it, install `snt_lib` as for the conformance test (below), then, in the folder that
+   holds the file, run the command after this list. It prints nothing if the file is valid, and
+   raises with every failing key otherwise.
 4. **To change the config, upload a new version** with the whole file. Do not delete old
    versions: runs record the version they read, so an old result can be traced to its config.
 
+```bash
+python -c "import json; from snt_lib.snt_pipeline_utils import validate_config; validate_config(json.load(open('SNT_config.json')))"
+```
+
 Each run reads the version that is latest when it starts reading, and logs its name and id. A
-pipeline that publishes `{CC}_parameters.json` will record it there as `SNT_CONFIG_VERSION` and
-`SNT_CONFIG_VERSION_ID`. A notebook reads the latest version too, not the one its pipeline read, so
+pipeline that publishes `{CC}_parameters.json` records it there as `SNT_CONFIG_VERSION` (the name)
+and `SNT_CONFIG_VERSION_ID` (the id): 20 pipelines do; `snt_metadata_json_trim` only logs it. A notebook reads the latest version too, not the one its pipeline read, so
 avoid uploading a version while a pipeline is running.
 
 What makes the file valid: the shape of [`SNT_config.skeleton.json`](#snt_configskeletonjson) and
