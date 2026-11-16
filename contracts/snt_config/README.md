@@ -1,9 +1,14 @@
 # `contracts/snt_config/` — `SNT_config.json`
 
 Reference for the structure of the SNT configuration file. **Nothing in this folder is read by a
-pipeline.** In a workspace, pipelines read `<workspace>/configuration/SNT_config.json`: one file, one
-country, one workspace. That file is placed there by hand (or, in future, by the config editor, see
-below).
+pipeline.** In a workspace, the config is the file `SNT_config.json` in the latest version of the
+dataset `SNT_CONFIGURATION`: one file, one country, one workspace
+([ADR 0043](../../docs/decisions/0043-config-read-from-snt-configuration-dataset.md)). People upload
+it by hand ([below](#snt-configuration-dataset)); in future the config editor will write it.
+
+**Switch in progress** ([BACKLOG CFG-4](../../docs/BACKLOG.md#cfg-4)): the notebooks read the
+dataset, but each `pipeline.py` still reads `<workspace>/configuration/SNT_config.json`. Until that
+is done, a workspace needs both, with the same content.
 
 | File | What it is | Trust it? |
 |---|---|---|
@@ -15,6 +20,43 @@ below).
 Past per-country copies (BDI, BFA, CMR, COD, NER) are archived in
 [`deprecated/configuration/`](https://github.com/BLSQ/snt_development/blob/94cfc383c0f8804d2eba264f26a4bd3d372d94da/deprecated/configuration/README.md). They were never checked
 against the running workspaces: use them as examples only.
+
+---
+
+## <a id="snt-configuration-dataset"></a>How to provide `SNT_config.json`: the `SNT_CONFIGURATION` dataset
+
+The SNT pipelines and notebooks read `SNT_config.json` from the **latest version** of the
+OpenHEXA dataset `SNT_CONFIGURATION`, slug `snt-configuration`. If the dataset, its latest version
+or the file is missing, the run stops with an error that links here:
+
+```text
+[ERROR] No usable SNT_config.json in the latest version of dataset SNT_CONFIGURATION (snt-configuration): <reason>. Provide a valid SNT_config.json file. See <link to this section>
+```
+
+Until the config editor writes the dataset, set it up by hand in the OpenHEXA workspace:
+
+1. **Create the dataset once.** In **Datasets**, create a dataset named exactly
+   `SNT_CONFIGURATION`. One per workspace.
+2. **Check its slug.** OpenHEXA derives the slug from the name; it must be `snt-configuration`
+   (it is in the dataset's URL). The pipelines look the dataset up by this slug, which is fixed and
+   not in `SNT_DATASET_IDENTIFIERS`. If it is anything else, for example with a suffix because
+   another dataset already holds `snt-configuration`, the pipelines will not find it: sort that out
+   before going on.
+3. **Upload the config as a new version.** Create a new version of the dataset and add the file,
+   named exactly `SNT_config.json` (no `{CC}_` prefix: it is read before the country is known). A
+   version name that says what changed helps, since every run logs it (for example
+   `2026-11-16 added reporting dataset`).
+4. **To change the config, upload a new version** with the whole file. Do not delete old
+   versions: runs record the version they read, so an old result can be traced to its config.
+
+Each run reads the version that is latest when it starts reading, and logs its name and id. A
+pipeline that publishes `{CC}_parameters.json` will record it there as `SNT_CONFIG_VERSION` and
+`SNT_CONFIG_VERSION_ID`. A notebook reads the latest version too, not the one its pipeline read, so
+avoid uploading a version while a pipeline is running.
+
+What makes the file valid: the shape of [`SNT_config.skeleton.json`](#snt_configskeletonjson) and
+the per-field rules in [`config_analysis_notes.md`](config_analysis_notes.md). Pipelines check it
+at startup with `snt_lib`'s `validate_config()` ([below](#conformance-fixtures--fixtures)).
 
 ---
 

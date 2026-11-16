@@ -206,8 +206,9 @@ outdated example config and are **ignored**. Related: [META-5](#meta-5).
 15 current key names as required and fails every pipeline at startup if one is missing. Nothing
 else in `snt_lib` uses the keys. The validator must change **before** the keys do. `snt_lib` is
 maintained by a colleague; the agreed route while they are unavailable: a branch of
-`BLSQ/snt_utils` off `release-v1` (e.g. `release-v1-CFG1`), and this repo's pipelines pin that
-branch, so the change is easy to undo. `snt_development` is left untouched.
+`BLSQ/snt_utils` off `release-v1` (e.g. `cfg-1-dataset-keys`; names starting with `release-v1`
+are blocked by the `snt_utils` ruleset `protect-release-branches`), and this repo's pipelines pin
+that branch, so the change is easy to undo. `snt_development` is left untouched.
 
 **Where the old keys appear** (84 files mention `SNT_DATASET_IDENTIFIERS`): 20 `pipeline.py`;
 about 25 notebooks under `code/` and `.r` files under `utils/` (`config_json$SNT_DATASET_IDENTIFIERS$<KEY>`);
@@ -290,12 +291,13 @@ No validating pipeline. First item of Phase 5
   `snt_worldpop_extract`) through `jsonlite::fromJSON(file.path(CONFIG_PATH, "SNT_config.json"))`
   directly. No `.r` file reads it.
 - **The `[ERROR]`.** The same message in Python and R when the dataset, its latest version or the
-  file is missing: *"[ERROR] No SNT_config.json in the latest version of dataset
-  SNT_CONFIGURATION (snt-configuration). Provide a valid SNT_config.json file. See
-  &lt;how-to URL&gt;."* The how-to is a new section of
-  [`contracts/snt_config/README.md`](../contracts/snt_config/README.md): create the dataset named
-  exactly `SNT_CONFIGURATION`, check its slug is `snt-configuration`, upload `SNT_config.json` as a
-  new version.
+  file is missing, the download fails or the file is not valid JSON: *"[ERROR] No usable
+  SNT_config.json in the latest version of dataset SNT_CONFIGURATION (snt-configuration):
+  &lt;reason&gt;. Provide a valid SNT_config.json file. See &lt;how-to URL&gt;"*. The how-to is
+  the section
+  [`contracts/snt_config/README.md#snt-configuration-dataset`](../contracts/snt_config/README.md#snt-configuration-dataset):
+  create the dataset named exactly `SNT_CONFIGURATION`, check its slug is `snt-configuration`,
+  upload `SNT_config.json` as a new version.
 - **The 21 `pipeline.py` that load the config.** Call the new function. Where the pipeline
   publishes `{CC}_parameters.json`, add the version through `save_pipeline_parameters()`'s existing
   `extra_metadata` as `SNT_CONFIG_VERSION` (name) and `SNT_CONFIG_VERSION_ID` (id). All but
@@ -304,9 +306,11 @@ No validating pipeline. First item of Phase 5
 
 **Commit plan, one commit at a time:**
 
-1. **`snt_utils`, a new branch off `release-v1`** (e.g. `release-v1-CFG4`; shared with
-   [CFG-1](#cfg-1) if that is done before `v1.0.0`): the new function and its test in
-   `tests/test_snt_pipeline_utils.py`. Push the branch; note its name and commit SHA.
+1. **Done: `snt_utils` branch `cfg-4-config-from-dataset`** off `release-v1`, commit
+   `44f59462846ecbb35e86c4daa8b2f434584036b3` (shared with [CFG-1](#cfg-1) if that is done before
+   `v1.0.0`): `load_configuration_snt_from_dataset()`, returning the config and the dataset
+   version, and its tests in `tests/test_snt_pipeline_utils.py`. Branch names starting with
+   `release-v1` are blocked by the `snt_utils` ruleset `protect-release-branches`.
 2. **This repo, the R side:** the helper, the 46 notebooks (edited as text, then
    `nbstripout`), and the how-to section the `[ERROR]` links to.
 3. **This repo, the Python side:** the 21 `pipeline.py`, their `requirements.txt` pinned to the
