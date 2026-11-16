@@ -84,7 +84,7 @@ What already supports it:
   `release: published`, which GitHub also fires for a pre-release, and builds the manifest and the
   slim tarball from the tag, so a tag on a branch commit gets its own
   ([`release_manifest.md`](../../contracts/release_manifest.md#release-assets-beside-the-manifest)).
-  Not yet run: no release exists.
+  Run for `v0.1.0`, a tag on `main`; not yet run for a tag on a branch commit.
 * **Countries cannot pick one up by accident.** An empty `release_tag` resolves through
   `/releases/latest`, which skips pre-releases (D23), so a staging release is deployed only by typing
   its tag, and the deployer then logs a `[WARNING]` (D27).

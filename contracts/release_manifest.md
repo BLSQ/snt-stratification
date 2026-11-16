@@ -11,8 +11,9 @@
 **Built on every published release, read by the two deployers and the checker.** The producer is
 [`tools/build_manifest.py`](../tools/build_manifest.py), run by
 [`release.yaml`](../.github/workflows/release.yaml), which attaches the manifest and the
-[release assets](#release-assets-beside-the-manifest) to the release. No release exists yet: the
-first is `v0.1.0`, in Phase 4 of [`MIGRATION_PLAN.md`](../docs/MIGRATION_PLAN.md).
+[release assets](#release-assets-beside-the-manifest) to the release. The first release, `v0.1.0`
+(a pre-release), carries one; the deployers and the checker read it in a test workspace (Phase 4
+results in [`MIGRATION_PLAN.md`](../docs/MIGRATION_PLAN.md#phase-4-results)).
 
 How the builder routes each file:
 
