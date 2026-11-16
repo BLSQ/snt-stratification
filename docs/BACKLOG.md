@@ -266,11 +266,21 @@ per-field rules are in
 ### <a id="cfg-4"></a>CFG-4 · `SNT_CONFIGURATION` dataset and an editing webapp
 
 Planned, none of it exists yet: a new OpenHEXA dataset, `SNT_CONFIGURATION`, holding
-`SNT_config.json` and `SNT_metadata.json`, and a user-facing webapp that lets non-technical users edit
-them, probably writing through a Python pipeline that validates the structure first. That is where the
-schemas in `contracts/` would become an executable gate rather than documentation.
+**`SNT_config.json` only**, with a fixed slug by convention (it cannot be looked up in itself), and
+the config editor ([`webapps/config_editor/`](../webapps/config_editor/CLAUDE.md), spec §6–7)
+writing to it through a Python pipeline that validates the structure first. That is where the
+schemas in `contracts/` become an executable gate rather than documentation. Pipelines then read
+the config from the dataset instead of `configuration/SNT_config.json`, which changes `snt_lib`'s
+`load_configuration_snt()` and needs a pinned `snt_lib` release (D-3).
 
-**Source:** `contracts/snt_metadata_json/README.md` (pre-2026-10-27 version).
+Not part of it: the Explorer metadata. There is no `SNT_metadata.json` any more; the
+`snt_metadata_json_trim` pipeline derives `SNT_metadata_trimmed.json` from the master list and
+publishes it to its own dataset, `SNT_METADATA` (`snt-metadata`), which it creates on first run.
+
+First item of Phase 5 ([MIGRATION_PLAN.md](MIGRATION_PLAN.md#phase-5--breaking-change-window-before-the-first-production-tag)).
+
+**Owner:** Giulia. **Source:** `contracts/snt_metadata_json/README.md` (pre-2026-10-27 version),
+corrected 2026-11-16.
 
 ### <a id="cfg-5"></a>CFG-5 · Per-dataset output contracts
 
