@@ -111,11 +111,14 @@ What has to be settled first:
    ([ADR 0042](../decisions/0042-bootstrap-pipelines-as-templates-on-release.md)), and a pre-release
    target counts as newer than the latest full release, so the deployer's bootstrap guard lets it
    update itself from it.
-4. **What "clean workspace" means.** The deployer cannot delete pipelines or files
-   ([`deployer.md`](deployer.md) §7.5), so a reused staging workspace keeps strays from the last PR.
-   Either a new workspace per test, which needs the `oh` connection set up each time
-   ([`openhexa_deployment.md`](openhexa_deployment.md) §7.3b), or one staging workspace where the
-   checker's report is read with that in mind. This fits D25: one workspace per release.
+4. ~~**What "clean workspace" means.**~~ **Settled for release candidates (D-19 in
+   [`MIGRATION_PLAN.md`](../MIGRATION_PLAN.md), 2026-11-16):** a new workspace per candidate, with
+   the `oh` connection set up each time ([`openhexa_deployment.md`](openhexa_deployment.md) §7.3b).
+   The previous release's workspace is kept as the comparison baseline. The deployer cannot delete
+   pipelines or files ([`deployer.md`](deployer.md) §7.5), so a reused workspace would keep strays.
+   This fits D25: one workspace per release. The procedure is the `release` skill
+   ([`.claude/skills/release/`](../../.claude/skills/release/SKILL.md)). Per-PR staging is still
+   open, with the rest of this proposal.
 5. **The `snt_development` side.** Its CLAUDE.md *Release management* section (R22) should point
    at this section, so both repositories follow one written strategy rather than two copies.
 
