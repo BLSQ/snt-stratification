@@ -31,7 +31,7 @@
     "pipelines": [
       {
         "id":                "string — Python function name; stable key across workspaces",
-        "name":              "string — human-readable display name for the UI card header",
+        "name":              "string — the pipeline's display name in this workspace (template name, or the @pipeline id when the deployer created it). The app shows it as the step panel's \"OpenHEXA: <name>\" line, in place of the map's ohName",
         "uuid":              "string — workspace-specific pipeline UUID; NEVER copy across workspaces",
         "openhexa_code":     "string — OpenHEXA pipeline code/slug; useful when multiple instances of the same pipeline exist in one workspace",
         "parameters_source": "string — always 'openhexa_deployed': parameters were read from the pipeline's deployed version via the OpenHEXA API, which is what runPipeline validates against. Not read by the app",

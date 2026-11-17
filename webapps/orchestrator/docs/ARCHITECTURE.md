@@ -42,7 +42,10 @@ catalog.
 | `readmes/<id>.md` — **in the workspace bucket, next to the catalog** | per workspace | each curated pipeline's README, copied from its deployed version | — (Markdown, see [Pipeline READMEs](#pipeline-readmes)) |
 | `webapps/orchestrator/app/index.html` + `app.js` + `styles.css` | bundle | the app shell: merges map + descriptions with the catalog, runs and polls pipelines | — |
 
-The map and descriptions are **hand-authored**, not generated from the API.
+The map and descriptions are **hand-authored**, not generated from the API. The step panel's
+"OpenHEXA: <name>" line shows an installed pipeline's real name from the catalog (it depends on
+how the pipeline was installed), and the map's `ohName`, the template name, only for a step that
+is not installed (`openhexaName()`).
 `design/pipeline_map_preview.html` renders the map for review.
 
 ### The bundle is workspace-independent

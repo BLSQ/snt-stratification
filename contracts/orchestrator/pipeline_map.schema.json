@@ -8,7 +8,7 @@
     "4. Add one entry to `edges` per direct dependency (a required predecessor / data-flow link). Endpoints reference node `id`. The webapp derives lock/unlock state from edges — do NOT add a separate `req` field on nodes.",
     "5. For mutually-exclusive alternatives (only one of the set may run), give every member the same `group` string and set type to 'alternative'.",
     "6. Do NOT duplicate parameter definitions here — those live in pipeline_cards.json. The map carries only `label`/`code` for display, so that greyed-out nodes (absent from the workspace's pipeline_cards.json) still render a name. Do NOT add a `description` field here either — it lives in webapps/orchestrator/pipeline_descriptions.json.",
-    "7. `label`/`code` are the canonical display strings. When a node is active, the workspace card's `name` may override `label` for display. The node's description is looked up separately, by `id`, in webapps/orchestrator/pipeline_descriptions.json.",
+    "7. `label`/`code` are the canonical display strings, the same in every workspace. When a node is active, the workspace card's `name` replaces `ohName` in the step panel's \"OpenHEXA: <name>\" line; it never replaces `label`. The node's description is looked up separately, by `id`, in webapps/orchestrator/pipeline_descriptions.json.",
     "8. Edges out of an alternative group are drawn per member: because edges reference individual node ids (there is no group->group edge), a dependency leaving a group is written once per member (e.g. A.3 -> A.6 is 5 edges, one per outlier method). For the unlock semantics of a solid edge out of a group, see the group-aware bucket rule in docs/ARCHITECTURE.md -> Node states."
   ],
 
@@ -27,13 +27,13 @@
       {
         "id":          "string — Python function name; join key to pipeline_cards.json. REQUIRED",
         "code":        "string — short human code shown as a tag, e.g. 'A.1', 'A.3.1'. REQUIRED",
-        "label":       "canonical display title WITHOUT the code prefix, e.g. 'DHIS2 Extract' (the code, e.g. 'A.1', is carried separately in `code` and shown alongside). REQUIRED. A bilingual { \"en\": ..., \"fr\": ... } object; a plain string (legacy, English-only) is also accepted. The app resolves the active language via pickLang() and falls back to `en`; a plain string is treated as `en`. `code`/`type`/`group`/`row`/`col`/`track` and `ohName` are NOT translated (ohName must match the name shown in OpenHEXA).",
+        "label":       "canonical display title WITHOUT the code prefix, e.g. 'DHIS2 Extract' (the code, e.g. 'A.1', is carried separately in `code` and shown alongside). REQUIRED. A bilingual { \"en\": ..., \"fr\": ... } object; a plain string (legacy, English-only) is also accepted. The app resolves the active language via pickLang() and falls back to `en`; a plain string is treated as `en`. `code`/`type`/`group`/`row`/`col`/`track` and `ohName` are NOT translated (ohName must match the template name shown in OpenHEXA).",
         "type":        "string — mandatory | alternative | facultative. REQUIRED",
         "row":         "int — walkthrough stage index: 0=Extract, 1=Format, 2=Clean & enrich, 3=Derive, 4=Outputs (i18n keys `stage.<row>`). Not used for ordering (array order is). Currently only feeds a stage label that is commented out in the UI. REQUIRED",
         "col":         "number — horizontal position from the former 2D grid layout (fractional values were used to centre a node/group between columns). NOT read by the app; kept so the map can still be rendered in 2D by the design/ tools. REQUIRED",
         "group":       "string — mutual-exclusion group id; REQUIRED only when type == 'alternative', omit otherwise",
         "track":       "string — data track, used for the accent color and track label: 'A' (DHIS2) | 'B' (WorldPop & MAP) | 'C' (DHS) | 'D' (ERA5). Optional",
-        "ohName":      "string — the pipeline's display name as shown in OpenHEXA (e.g. from its template). Display-only: rendered as an \"OpenHEXA: <name>\" line in the step panel so users can find the pipeline in the OpenHEXA UI. NOT a join key — matching is by `id`. Never translated. Optional"
+        "ohName":      "string — the display name of the pipeline's OpenHEXA TEMPLATE (as listed on the templates tab). Display-only fallback: the step panel's \"OpenHEXA: <name>\" line shows the installed pipeline's real name from the workspace catalog (pipeline_cards.json `name`) and uses ohName only when the step is not installed, so users can find the template to install. Keep it in lockstep with the template names. NOT a join key — matching is by `id`. Never translated. Optional"
       }
     ],
     "edges": [

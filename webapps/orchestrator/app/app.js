@@ -377,6 +377,15 @@ function userParameters(params) {
   });
 }
 
+/* The name to look for in OpenHEXA (the step panel's "OpenHEXA: …" line). An
+ * installed step uses its real name in this workspace, from the catalog: it
+ * depends on how the pipeline was installed (template name, or the @pipeline id
+ * when the deployer created it). A step that is not installed falls back to the
+ * map's `ohName`, the template's display name (APP-9). */
+function openhexaName(node) {
+  return (node.available && node.ohLiveName) || node.ohName || null;
+}
+
 function mergeNodes(map, cards, descriptions) {
   var cardsById = {};
   var pipelines = (cards && cards.pipelines) || [];
@@ -399,6 +408,7 @@ function mergeNodes(map, cards, descriptions) {
       col: node.col,
       track: node.track,
       uuid: card ? card.uuid : null,
+      ohLiveName: card ? card.name || null : null,
       parameters: card ? userParameters(card.parameters) : [],
       available: !!(card && card.uuid),
     };
@@ -2480,8 +2490,10 @@ function renderCockpit() {
     "<h2>" +
     escapeHtml(/* step.code + " " + */ step.title) +
     "</h2>" +
-    (node && node.ohName
-      ? '<div class="ck-ohname">OpenHEXA: ' + escapeHtml(node.ohName) + "</div>"
+    (node && openhexaName(node)
+      ? '<div class="ck-ohname">OpenHEXA: ' +
+        escapeHtml(openhexaName(node)) +
+        "</div>"
       : "") +
     '<div class="chips">' +
     '<span class="chip type">' +
