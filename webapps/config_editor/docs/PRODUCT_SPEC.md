@@ -708,7 +708,8 @@ Blocking a *correct* app, not a *working* one. From `config_analysis_notes.md` �
    dataset with per-country files? Affects nothing in v1 but shapes `DatasetStore`.
 6. **Does any country actually run two DHIS2 instances for SNT — and if so, how?** A national SNIS
    and an NMDR hold the same indicators under different UIDs, so each needs its own config, while
-   `load_configuration_snt()` reads exactly one path (§6.1). None of the five current configs
+   the pipelines read exactly one file, `SNT_config.json` in the latest version of
+   `SNT_CONFIGURATION` (note at the top of §6). None of the five current configs
    exposes this, because none records an instance at all. v1 warns (W11) and does nothing else.
    Needed before it can be solved: whether this is hypothetical or live, and whether the intended
    answer is two workspaces, two config files with a run-parameter switch, or one config carrying
@@ -736,9 +737,9 @@ section exists so that risk is managed rather than discovered.
 
 | Upstream component | Where it lives | How this app uses it | What breaks here if it changes |
 |---|---|---|---|
-| **`snt_lib.validate_config()`** | `github.com/BLSQ/snt_utils` → `snt_pipeline_utils`. The pipelines install the **moving branch** `@release-v1` (DEP-1); the conformance test pins tag `v1.0.2` | **Reimplemented in JavaScript** as spec §5.1 rules 1–7. The single most important reuse. | The app declares a file valid that the pipelines reject, or blocks a file they would accept. **Silent** — nothing tells us. See §12.2 |
-| **`validate_required_config_keys()`** (R side) | SNT pipelines repo, R helpers | Assumed equivalent to the Python gate. **Unverified** — the analysis docs treat them as the same contract | If the R gate is stricter, R pipelines reject files this app calls valid |
-| **`load_configuration_snt()`** | SNT pipelines repo | Defines the path contract: exactly `<workspace>/configuration/SNT_config.json`. This is why §6.1 exists and why history goes in a subfolder | If it starts globbing, or reads a different path, the whole draft-isolation design needs revisiting |
+| **`snt_lib.validate_config()`** | `github.com/BLSQ/snt_utils` → `snt_pipeline_utils`. The pipelines pin commit `44f5946` on the `snt_utils` branch `cfg-4-config-from-dataset` (DEP-1); the conformance test pins tag `v1.0.2` | **Reimplemented in JavaScript** as spec §5.1 rules 1–7. The single most important reuse. | The app declares a file valid that the pipelines reject, or blocks a file they would accept. **Silent** — nothing tells us. See §12.2 |
+| **No R-side gate** | — | This table assumed an R `validate_required_config_keys()` equivalent to the Python gate. It does not exist (checked 2026-11-17, [`EXTERNAL_CHECKS.md`](EXTERNAL_CHECKS.md) item 2): notebooks load the config without a shared check, so `validate_config()` is the only gate to match | If an R gate is ever added, it is a second contract to match |
+| **`load_configuration_snt_from_dataset()`** (Python) and **`load_snt_config_from_dataset()`** (R) | `snt_lib`; [`shared/r/snt_utils.r`](../../../shared/r/snt_utils.r) in this repo | Define the location contract: exactly `SNT_config.json` in the latest version of the `SNT_CONFIGURATION` dataset (slug `snt-configuration`), [ADR 0043](../../../docs/decisions/0043-config-read-from-snt-configuration-dataset.md). Whatever the app publishes as a new version is what the next run reads. §6.1–6.2 were designed for the old disk path, read by `load_configuration_snt()` | If they read a different dataset, file or version, the app's save target moves with them |
 | **`SNT_config.skeleton.json`** | [`docs/`](../../../contracts/snt_config/SNT_config.skeleton.json) in *this* repo | Drives the form: section order, key order, key sets, placeholder conventions. Acceptance criterion §10.2 compares against it | It is a **derived artefact** — see §12.3 |
 | **The 5 reference configs** `configuration/SNT_config_<CC>.json` | SNT pipelines repo | Source of the fixed-vs-variable analysis: the 15 identical dataset identifiers, the 8 population keys, observed level values | A sixth country with a different shape invalidates a "fixed" assumption — most likely the dataset identifiers |
 | **`indicators_selection()`, `build_indicators()`, `get_unique_data_elements()`** | SNT pipelines repo (extract + formatting) | Define UID semantics: bare = sum all COCs, dotted = one COC, `.split(".")[0]` at extract, lists are summed. All of §5.2 W1 and W5 rest on this | The double-counting warning becomes wrong — actively misleading, worse than absent |
@@ -748,7 +749,7 @@ section exists so that risk is managed rather than discovered.
 | **`docs/DATA_ARCHITECTURE.md`, `docs/GLOSSARY.md`** | SNT pipelines repo | Source of the "what you lose" copy in §5.3 and of indicator help text. Four glossary entries are marked ❓ — do not present those as definitive | Help text drifts from reality; low severity, but it is user-facing |
 | **`snt_dhis2_extract` connection parameter** | SNT pipelines repo | The extraction pipeline takes a DHIS2 connection as a **run parameter**, not from the config. This is why §4.1 records the instance as provenance only, and why W10 is a warning about the workspace rather than about the file | If a connection field is ever added to the config schema, §4.1 reverses — record it in `SNT_CONFIG` instead of `_EDITOR_METADATA`. The value is already captured, so the change is small |
 | **OpenHEXA workspace connections** | OpenHEXA platform | `WorkspaceContext.listDhis2Connections()` (§7.1) enumerates them and filters to DHIS2 type. Metadata only — never the credentials, never a DHIS2 call | No enumeration API, or no type exposed ⇒ the dropdown cannot be built as specified and §4.1 falls back to "unavailable". [`EXTERNAL_CHECKS.md`](EXTERNAL_CHECKS.md) item 8 |
-| **The `SNT_CONFIGURATION` OpenHEXA dataset** | OpenHEXA workspace | Long-term destination (§7 `DatasetStore`). Not touched in v1 | — |
+| **The `SNT_CONFIGURATION` OpenHEXA dataset** | OpenHEXA workspace | Where the pipelines read the config (ADR 0043), so the save target for a valid config. How the app writes to it is decided when the write step is built | If the slug or file name changes, the app publishes where no pipeline reads |
 
 ### 12.2 The duplication problem — say it plainly
 

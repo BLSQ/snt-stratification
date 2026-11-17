@@ -505,5 +505,5 @@ Ordered by how much they block the app.
 | The `POP_PREGNANT_WOMAN` defect, traced | `docs/DATA_ARCHITECTURE.md` §6.1 |
 | Indicator vocabulary, French etymology, confidence flags | `docs/GLOSSARY.md` §2 |
 | Admin-level rules, naming and schema conventions | `CLAUDE.md` → Schema, Configuration |
-| `validate_config()` — the universal gate | external: `github.com/BLSQ/snt_utils`, `snt_pipeline_utils` (unpinned) |
+| `validate_config()` — the universal gate | external: `github.com/BLSQ/snt_utils`, `snt_pipeline_utils`; the pipelines pin a commit (`docs/DATA_ARCHITECTURE.md` §7.1) |
 | The five reference configs this analysis is based on | `configuration/SNT_config_<CC>.json` |

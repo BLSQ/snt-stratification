@@ -653,7 +653,7 @@ Validation is **in-line and advisory**, not a framework. What exists today:
 
 | Control | Where | Behaviour |
 |---|---|---|
-| Config key presence | `validate_config()` (Python, `snt_lib`); `validate_required_config_keys()` (R) | raises |
+| Config key presence | `validate_config()` (Python, `snt_lib`), in every SNT pipeline right after loading the config. No R equivalent: notebooks load the config without a shared check | raises |
 | Period format | `validate_yyyymm` / `validate_period_range` in `snt_dhis2_extract` | raises before any download |
 | Org-unit level bounds | each extract task, vs `source_pyramid["level"].max()` | raises |
 | Reporting-rate config vs DHIS2 metadata | `validate_reporting_rates()` | drops invalid, warns |
@@ -723,7 +723,7 @@ originates. Open: [BACKLOG PIPE-5](BACKLOG.md#pipe-5).
 
 | Library | Location | Role |
 |---|---|---|
-| `snt_lib.snt_pipeline_utils` | **external** — `git+https://github.com/BLSQ/snt_utils.git` (unpinned) | `load_configuration_snt_from_dataset`, `validate_config`, `run_notebook`, `run_report_notebook`, `add_files_to_dataset`, `dataset_file_exists`, `get_new_dataset_version`, `get_file_from_dataset`, `save_pipeline_parameters`, `pull_scripts_from_repository`, `push_data_to_db_table`, `delete_raw_files`, `generate_html_report`, `handle_rkernel_error_with_labels` |
+| `snt_lib.snt_pipeline_utils` | **external** — `git+https://github.com/BLSQ/snt_utils.git`, pinned to a commit ([§7.1](#71-dependency-resolution-is-not-reproducible)) | `load_configuration_snt_from_dataset`, `validate_config`, `run_notebook`, `run_report_notebook`, `add_files_to_dataset`, `dataset_file_exists`, `get_new_dataset_version`, `get_file_from_dataset`, `save_pipeline_parameters`, `pull_scripts_from_repository`, `push_data_to_db_table`, `delete_raw_files`, `generate_html_report`, `handle_rkernel_error_with_labels` |
 | `code/snt_utils.r` | this repo (~1 550 lines) | config loading, dataset I/O, logging (`log_msg`/`pipeline_msg`), seasonality computation, cartesian completion, DHS helpers, geo helpers |
 | `code/snt_report.r`, `code/snt_palettes.r` | this repo | choropleths, binning, month colours/labels (FR) |
 | `worldpopclient.py` | **duplicated** in `snt_worldpop_extract/`, `snt_map_extracts/`, `snt_healthcare_access/` | WorldPop raster download |
@@ -731,30 +731,37 @@ originates. Open: [BACKLOG PIPE-5](BACKLOG.md#pipe-5).
 
 ### 7.1 Dependency resolution is not reproducible
 
-Every `requirements.txt` in the repo is the same two lines:
+**`snt_lib` is pinned to one commit.** The 21 `requirements.txt` that install it (every SNT and
+support pipeline) carry the same line:
+
+```
+snt_lib @ git+https://git@github.com/BLSQ/snt_utils.git@44f59462846ecbb35e86c4daa8b2f434584036b3
+```
+
+That commit is on the `snt_utils` branch `cfg-4-config-from-dataset`
+([ADR 0043](decisions/0043-config-read-from-snt-configuration-dataset.md)). Redeploying installs
+the same `snt_lib`, and an upstream change reaches the pipelines only through a PR here that bumps
+the SHA. It is not a tag, and the commit is reachable only through that branch.
+
+**`openhexa.toolbox` is not.** 13 files install it from a moving branch:
 
 ```
 openhexa.toolbox @ git+https://github.com/BLSQ/openhexa-toolbox@main
-snt_lib @ git+https://git@github.com/BLSQ/snt_utils.git
 ```
 
-Both are **Git dependencies pointing at a moving branch**, not at released versions. `@main`
-resolves to whatever the tip of `main` happens to be *at the moment the pipeline is deployed*;
-the `snt_lib` line specifies no ref at all and so follows that repo's default branch. The
-installed commit is never recorded.
-
-What this means in practice:
+`@main` resolves to whatever the tip of `main` happens to be *at the moment the pipeline is
+deployed*, and the installed commit is never recorded. (One file pins `@v2.10.0`; the others have
+no toolbox line.) What this means in practice:
 
 | | Effect |
 |---|---|
-| **Same code, different runtime** | Redeploying an unchanged `pipeline.py` weeks apart can install different `snt_lib` code, so behaviour changes with no diff in this repo. |
-| **Invisible blast radius** | A change in `BLSQ/snt_utils` — a renamed helper, a new required argument on `run_notebook()` — propagates to all ~20 pipelines on their next deploy, with no PR and no CI signal here. |
-| **Un-diagnosable failures** | After a broken run, "which version of `snt_lib` did this use?" cannot be answered. |
+| **Same code, different runtime** | Redeploying an unchanged `pipeline.py` weeks apart can install different `openhexa.toolbox` code, so behaviour changes with no diff in this repo. |
+| **Invisible blast radius** | A change in `BLSQ/openhexa-toolbox` — a renamed helper, a new required argument — propagates to those 13 pipelines on their next deploy, with no PR and no CI signal here. |
+| **Un-diagnosable failures** | After a broken run, "which version of `openhexa.toolbox` did this use?" cannot be answered. |
 
-Mitigation would be to pin a fixed point — a tag (`…/snt_utils.git@v1.4.0`) or a commit SHA
-(`…/snt_utils.git@a1b2c3d`) — turning upgrades into reviewable, revertible one-line PRs. Cost:
-someone must bump the refs to adopt upstream changes. **Not currently implemented**:
-[BACKLOG DEP-1](BACKLOG.md#dep-1).
+Mitigation is the one already applied to `snt_lib`: pin a fixed point, a tag or a commit SHA,
+turning upgrades into reviewable, revertible one-line PRs, at the cost of someone bumping the refs.
+Open: [BACKLOG DEP-1](BACKLOG.md#dep-1).
 
 ### 7.1.1 Pipeline versions: three different numbers — ⚠️ pain point
 

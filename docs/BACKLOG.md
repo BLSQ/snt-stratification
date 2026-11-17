@@ -123,12 +123,16 @@ The fix is to name a fixed point instead of a moving branch: a tag (`…/snt_uti
 commit SHA. Upgrades then become a reviewable, revertible one-line PR. The cost is that someone has
 to bump the refs. Tags are the usual compromise.
 
-**Current repo state (checked 2026-10-16), which the reference docs do not yet reflect:** all 20
-files reference `snt_utils.git@release-v1`. **`release-v1` is a branch** (checked 2026-11-12 in a
-local clone), so the problem above is unchanged. A real tag exists for its head that day:
-annotated tag `v1.0.2` → `23b8340`, which the config conformance test already pins
-(`tests/requirements-conformance.txt`); `v1.0.0` and `v1.0.1` are older. `openhexa.toolbox @main`
-remains in 13 files. See [DOC-3](#doc-3).
+**Current repo state (checked 2026-11-17):** the 21 files that install `snt_lib` pin one commit,
+`snt_utils.git@44f59462846ecbb35e86c4daa8b2f434584036b3`, on the `snt_utils` branch
+`cfg-4-config-from-dataset` off `release-v1`
+([ADR 0043](decisions/0043-config-read-from-snt-configuration-dataset.md)). For `snt_lib`, (a)–(c)
+no longer hold, but the pin is not a tag, and that commit is reachable only through that branch:
+deleting or rewriting the branch can break every install. `release-v1` itself is a branch
+(checked 2026-11-12 in a local clone); annotated tag `v1.0.2` → `23b8340` was its head that day,
+and the config conformance test pins it (`tests/requirements-conformance.txt`).
+`openhexa.toolbox @main` remains in 13 files, so (a)–(c) still hold for it. Left: a tag for the
+`snt_lib` pin, and a fixed ref for `openhexa.toolbox`. See [DOC-3](#doc-3).
 
 Related: the workspace image pins `openhexa.toolbox=2.11.3`, which `@main` overrides at pipeline
 run time, so a notebook run interactively and the same notebook run by the pipeline can see
@@ -943,9 +947,6 @@ owns the fact:
 - **`configuration/readme.txt` does not exist** in the repo, but
   [`DATA_ARCHITECTURE.md` §5.4](DATA_ARCHITECTURE.md#54-configuration-schema-snt_configjson) and
   [§6.1](DATA_ARCHITECTURE.md#61-confirmed-defect--pop_pregnant_woman-vs-pop_pregnant_women) cite it.
-- **The requirements description is stale.** `DATA_ARCHITECTURE.md` §7.1 and `CLAUDE.md` say every
-  `requirements.txt` is the same two lines with `snt_lib` on no ref. Today `snt_lib` is on
-  `@release-v1` everywhere, and 7 of the 20 files have no `openhexa.toolbox` line. See [DEP-1](#dep-1).
 
 **Owner:** Giulia.
 

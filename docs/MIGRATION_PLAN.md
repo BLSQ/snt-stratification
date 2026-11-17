@@ -1124,7 +1124,7 @@ the final contract. The form and validation (`LocalStore`, download only) can pr
       the map stays in `SNT_config.json`. Decided and fully planned (key table, `snt_lib` branch route,
       four commits, verification) in [BACKLOG CFG-1](BACKLOG.md#cfg-1); start there. Cheapest item
       to do now, most annoying later: after `v1.0.0` it also touches the editor's write step and
-      CFG-4's validating pipeline.
+      every config already uploaded to a workspace's `SNT_CONFIGURATION` dataset.
 
 **Deferred past `v1.0.0`.** A config-shape change after `v1.0.0` is a major version or a migration
 step for every country config installed from this repo; accepted. Each item lives in the BACKLOG,
@@ -1226,7 +1226,8 @@ not here:
   but Phase 4 still adds `repo` to the marker.
 - **Config editor ↔ pipelines duplication:** `validate_config()` lives in Python (`snt_lib`) and in
   the editor's JS, and nothing keeps them in agreement. Handled by the conformance fixtures (Phase 3).
-  Server-side validation (editor spec §12.2 option 4) arrives naturally with CFG-4's validating pipeline.
+  Server-side validation (editor spec §12.2 option 4) is not planned: ADR 0043 decided against a
+  validating pipeline for now, and how the editor validates and writes is decided when it is built.
 - **The editor writes to the workspace, but the orchestrator only has `FILES_READ`.** The write
   mechanism and scopes are unverified (editor EXTERNAL_CHECKS item 4). Fold this into S5.
 - **`snt_lib@release-v1` is unpinned** (tag or branch is unverified). D-3 pins it.
