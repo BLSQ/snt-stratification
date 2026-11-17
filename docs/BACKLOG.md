@@ -844,21 +844,12 @@ app has not booted there, so the control would need to work without `APP` state.
 
 Step 1 links to the templates tab (`/pipelines/?tab=templates`). OpenHEXA also has a page per
 template, `/workspaces/<slug>/templates/<encoded template name>` (e.g. `…/templates/A.6%20DHIS2%20Incidence`),
-the same shape `generatorTemplateUrl` already uses. The map has no template-name field, though.
-`ohName` is display-only, and 5 of the 18 values don't match a current template name (see
-[APP-9](#app-9)). A wrong name gives a broken page, and the app can't detect that. Options: build the
-link from `ohName` once APP-9 is fixed and keep the two in lockstep, or add a `templateName` field to
-the map contract. Either way, fall back to the templates tab when the field is missing.
-
-**Source:** `snt_webapp_orchestrator` BACKLOG.
-
-### <a id="app-9"></a>APP-9 · `ohName` no longer matches the OpenHEXA template names
-
-The contract says `ohName` must match the name shown in OpenHEXA. Against the template list, these
-don't match: the four A.3 mean/median/IQR/magic-glasses nodes (templates are now `A.3.1 …`; PATH is
-still `A.3 …`), and `snt_seasonality_rainfall` (template `D.3 ERA5 Seasonality - Rainfall`, map
-`D.2 …`). Decide whether `ohName` mirrors the template name or the installed pipeline's name (they
-can differ), then update the map.
+the same shape `generatorTemplateUrl` already uses. The map's `ohName` is now defined as the
+template's display name, shown only for a step that is not installed; the five values that had
+drifted were corrected on 2026-11-17, the other 13 were not re-checked against the template list.
+A wrong name gives a broken page, and the app can't detect that. Options: build the link from
+`ohName` and keep it in lockstep with the template names, or add a separate `templateName` field
+to the map contract. Either way, fall back to the templates tab when the field is missing.
 
 **Source:** `snt_webapp_orchestrator` BACKLOG.
 
