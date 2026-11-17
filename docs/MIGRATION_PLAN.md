@@ -1112,9 +1112,21 @@ the final contract. The form and validation (`LocalStore`, download only) can pr
       the dataset (the `[ERROR]`), the full DHIS2 chain against the baseline, the version in each
       `{CC}_parameters.json`, one notebook run by hand. Country variants (`*_<CC>.ipynb`) keep
       reading the disk file ([`pipelines/CLAUDE.md`](../pipelines/CLAUDE.md#country-specific-notebook-variants)).
-- [ ] **Orchestrator:** implement D-12 (count only full runs as "processed", reading the run's own
+- [x] **Orchestrator:** implement D-12 (count only full runs as "processed", reading the run's own
       `run_report_only` through the proxy; OD-7 was settled on 2026-11-03), fix `ohName` drift
       (APP-9) and the `create_pipeline_cards` README raw-URL docs.
+      Commits 1–4, 2026-11-17, on `phase-5/orchestrator`: (1) the status board reads each
+      pipeline's last 5 runs with their `config`; completion, unlocks and the group "in use" mark
+      read the newest full run, a report-only run shows only while in flight; (2) beyond D-12, the
+      parameter form hides the report-only flag, so the app only starts full runs
+      ([`PRODUCT_SPEC.md` §5](../webapps/orchestrator/docs/PRODUCT_SPEC.md#5-what-the-app-does-not-do));
+      (3) the "OpenHEXA:" line shows the installed pipeline's name from the catalog, `ohName` (now
+      the template name, 5 values corrected) only for a step that is not installed; (4) the
+      generator README points at `pipelines/` here. Checked offline only (syntax, links, the
+      run-selection logic in Node). Still to verify by serving the app against a test workspace:
+      a report-only run started from the OpenHEXA UI leaves the step's completion unchanged, the
+      form shows no report-only flag (C.1 included), the "OpenHEXA:" line for an installed and a
+      not-installed step, and whether the proxy returns `config` as an object.
 - [ ] Cut **`v1.0.0`** (first production release). Note: the templates publishing workspace does not
       exist before Phase 6, so `v1.0.0` ships without templates and both template jobs stay disabled
       (D-17); the deployer route does not need them.
@@ -1276,6 +1288,7 @@ not here:
 | 2026-11-16 | Phase 4 merged. Phase 5 opened on `phase-5/cfg-1-dataset-keys`. CFG-1 analysed and **decided** (key = slug uppercased, map stays in the config, `snt_lib` validator changed on a branch off `release-v1`), then **deferred**: the full plan is in [BACKLOG CFG-1](BACKLOG.md#cfg-1). **Phase 5 re-scoped**: before `v1.0.0` only CFG-4, the orchestrator items (D-12, APP-9, README docs) and the cut; CFG-1 optional at the pre-cut checklist; the rest deferred past `v1.0.0` with its cost stated. Nothing implemented | CFG-4, in a new session: start from BACKLOG CFG-4 (since done: [ADR 0043](decisions/0043-config-read-from-snt-configuration-dataset.md)), the editor spec §6–7 and `snt_lib`'s `load_configuration_snt` |
 | 2026-11-16 | CFG-4 opened on `phase-5/cfg-4-config-dataset`. **Decided** (ADR 0043): every `pipeline.py` and notebook reads `SNT_config.json` from the latest version of `SNT_CONFIGURATION` (`snt-configuration`); upload by hand in the UI until the editor writes it; no validating pipeline; the version recorded in `{CC}_parameters.json`, not passed to notebooks; a missing dataset is an `[ERROR]` linking to a how-to. Found: 46 notebooks read the disk file, not only the 21 `pipeline.py`. BOOT-7 opened (checker). Commit 0 (decision + plan) written | Commit 1, the `snt_utils` branch: see BACKLOG CFG-4 (since done: [ADR 0043](decisions/0043-config-read-from-snt-configuration-dataset.md)) |
 | 2026-11-16 → 17 | CFG-4 commits 2–6 on `phase-5/cfg-4-config-dataset`: the R helper `load_snt_config_from_dataset()`, the 46 notebooks and the how-to (2); the 21 `pipeline.py` on `load_configuration_snt_from_dataset()`, pinned to `snt_utils@44f5946`, the 20 that publish `{CC}_parameters.json` adding `SNT_CONFIG_VERSION` and `SNT_CONFIG_VERSION_ID` (3); docs, CFG-4 ticked and removed from the BACKLOG (4); the `release` skill's `dataset_summary.py` reads the dataset, falling back to the disk file for an older baseline (5); facts left stale (6): no validating pipeline, `snt_lib` pinned to a commit, no R config validator (config editor EXTERNAL_CHECKS item 2 answered). Tested in a test workspace: `snt_dhis2_formatting` only, both version keys right; a first attempt failed `validate_config()` on a missing `SNT_POPULATION_USER_PROVIDED`, so the docs now say the file must pass it. Left as is: on a failed load, 20 pipelines log the `[ERROR]` twice | Commit 7 (this log), CI, PR, merge. Then, in a new session, the orchestrator items of [Phase 5](#phase-5--breaking-change-window-before-the-first-production-tag) (D-12, APP-9, README docs). CFG-4's full verification is at the next pre-release cut (its tick lists the steps) |
+| 2026-11-17 | Orchestrator items of Phase 5 on `phase-5/orchestrator`, commits 1–4: D-12 (status board reads the last 5 runs with `config`; completion from the newest full run; `run_reports_only` in `snt_dhs_indicators` handled too); the report-only flag hidden from the form (Giulia's call, recorded in the orchestrator `PRODUCT_SPEC.md` §5); APP-9 (live name from the catalog, `ohName` = template name as fallback; the 5 listed values corrected, the other 13 not re-checked); the `create_pipeline_cards` README. Checked offline only. Known effect left as is: after a report-only run finishes in the session, the Outputs box shows the last full run's outputs | Commit 5 (tick, BACKLOG, this log), CI, PR, merge. Test the app against a test workspace (steps in the Phase 5 tick). Then the `v1.0.0` pre-cut checklist with the `release` skill, CFG-1 decided there |
 
 ---
 

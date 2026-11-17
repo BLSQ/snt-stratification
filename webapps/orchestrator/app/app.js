@@ -381,7 +381,7 @@ function userParameters(params) {
  * installed step uses its real name in this workspace, from the catalog: it
  * depends on how the pipeline was installed (template name, or the @pipeline id
  * when the deployer created it). A step that is not installed falls back to the
- * map's `ohName`, the template's display name (APP-9). */
+ * map's `ohName`, the template's display name. */
 function openhexaName(node) {
   return (node.available && node.ohLiveName) || node.ohName || null;
 }
