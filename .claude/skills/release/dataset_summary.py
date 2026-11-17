@@ -2,8 +2,11 @@
 
 Paste this whole file into ONE cell of a new Jupyter notebook in the workspace, and run it.
 It writes /home/hexa/workspace/snt_compare/<workspace slug>_summary.json: for every file in the
-latest version of each dataset named in configuration/SNT_config.json, its size, sha256 and, for
+latest version of each dataset named in the workspace's SNT_config.json, its size, sha256 and, for
 tables (.parquet/.csv), the row count, columns, dtypes and an order-independent content hash.
+The config is read where the workspace's pipelines read it: from the latest version of the
+SNT_CONFIGURATION dataset (ADR 0043), or, in a workspace that has no such dataset (one on a
+release before ADR 0043, or on the old repo), from configuration/SNT_config.json.
 No data values leave the workspace: only names, counts and hashes. Compare two summaries with
 compare_summaries.py, next to this file. Used by the `release` skill (SKILL.md, step 3.10).
 """
@@ -19,7 +22,40 @@ import requests
 from openhexa.sdk import workspace
 
 ROOT = Path("/home/hexa/workspace")
-config = json.loads((ROOT / "configuration" / "SNT_config.json").read_text())
+CONFIG_DATASET = "snt-configuration"
+CONFIG_FILE = "SNT_config.json"
+
+
+def load_config() -> tuple[dict, str]:
+    """Read the workspace's SNT_config.json from where its pipelines read it.
+
+    The latest version of the SNT_CONFIGURATION dataset when the workspace has one with a version;
+    otherwise the file on disk, for a workspace set up before ADR 0043.
+
+    Returns
+    -------
+    tuple[dict, str]
+        The config, and a description of where it was read from.
+    """
+    try:
+        dataset = workspace.get_dataset(CONFIG_DATASET)
+    except Exception:  # the SDK raises when the dataset does not exist (older versions return None)
+        dataset = None
+    version = dataset.latest_version if dataset is not None else None
+    if version is None:
+        path = ROOT / "configuration" / CONFIG_FILE
+        return json.loads(path.read_text()), str(path)
+    # A dataset with a version is what the pipelines read: no fallback to disk from here on.
+    config_file = version.get_file(CONFIG_FILE)  # raises, or returns None, when the file is absent
+    if config_file is None:
+        raise FileNotFoundError(f"{CONFIG_FILE} is not in version {version.name} of {CONFIG_DATASET}")
+    response = requests.get(config_file.download_url, timeout=600)
+    response.raise_for_status()
+    return response.json(), f"dataset {CONFIG_DATASET}, version {version.name} ({version.id})"
+
+
+config, config_source = load_config()
+print(f"Config read from {config_source}")
 
 
 def table_summary(df: pd.DataFrame) -> dict:
