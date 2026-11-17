@@ -130,6 +130,11 @@ query ($ws: String!) {
 `skipped`, `terminating`. A pipeline with no runs returns an empty `runs.items`. The orchestrator
 does not paginate past 100 pipelines ([APP-1](BACKLOG.md#app-1)).
 
+Each run's `config` (the parameters it was started with) is readable under the same scope. `runs`
+takes no filter, so to skip some runs (the orchestrator skips report-only ones) ask for `config`
+and a few runs per pipeline, then pick client-side: the orchestrator fetches 5
+([`ARCHITECTURE.md`](../webapps/orchestrator/docs/ARCHITECTURE.md#node-states)).
+
 ## Running a pipeline
 
 Pass the pipeline **UUID** (not code) as `id`; parameters go in `config` as a plain JSON object

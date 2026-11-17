@@ -146,9 +146,13 @@ Three independent axes per node:
   with a `uuid`. Otherwise greyed and unclickable, with a "how to install" panel linking to the
   templates page and a button that re-runs the generator
   ([ADR 0024](../../../docs/decisions/0024-webapp-may-run-the-generator.md)).
-- **completed** — the pipeline's **most recent run in the workspace** succeeded, read from the
-  cross-session status board (`cockpitState(node) === "ok"`). Not limited to runs started in this
-  session.
+- **completed** — the pipeline's **most recent full run in the workspace** succeeded, read from
+  the cross-session status board (`isSuccess()`, from `fullRunOf()`). Not limited to runs started
+  in this session. A **report-only** run (`run_report_only`, or `run_reports_only` in
+  `snt_dhs_indicators`, set in the run's own `config`) processes no data, so it never completes a
+  step and never undoes a completion (migration plan D-12). The status board fetches each
+  pipeline's last 5 runs (`STATUS_RUNS_PER_PIPELINE`) to find the newest full one; if all 5 are
+  report-only, the step counts as never fully run.
 - **locked vs unlocked** — dynamic, from `edges`. A node unlocks once every **hard** prerequisite
   (an edge whose `to` is this node and whose `type` is `"solid"` or omitted) is completed.
   `type: "optional"` edges are soft: listed as "uses if available", never gating (the downstream
@@ -161,7 +165,9 @@ node with an unmet hard prerequisite — only never-run nodes are locked, see
 [APP-10](../../../docs/BACKLOG.md#app-10)), queued, running, succeeded, failed or stopped. `cockpitState()` maps
 OpenHEXA run statuses onto these (`terminating` → running, `skipped` → stopped); the colours and
 labels follow OpenHEXA's run badges (tokens at the top of `styles.css`). A legend under the rail
-spells out the nesting.
+spells out the nesting. The state shown is that of the newest full run (`liveRunOf()`); a
+report-only run shows only while it is queued or running, so it can be watched and stopped, and
+once it finishes the step shows its newest full run again.
 
 **Group-aware unlock.** When several hard prerequisites of a node belong to the same alternative
 `group`, they count as one: bucket the solid sources of node `N` by `group` (a source with no group
@@ -172,7 +178,8 @@ must honour it rather than require all members.
 **Mutual exclusion.** `type: "alternative"` nodes sharing a `group` are mutually exclusive; the
 member with the most recent successful run is "in use" and the others are shown as superseded
 (`computeGroupInUse()`). Data-driven via `group` — today the A.3 outlier-imputation and A.4
-reporting-rate groups. Only a *succeeding* run moves the "in use" mark.
+reporting-rate groups. Only a *succeeding full* run moves the "in use" mark; a report-only run
+never does.
 
 ## Map format
 

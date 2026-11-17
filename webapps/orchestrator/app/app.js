@@ -46,17 +46,29 @@ async function gql(query, variables) {
   return json.data;
 }
 
+// Report-only runs (D-12, migration plan): a run with the standard flag set
+// re-runs the report on existing outputs and processes no data, so it never
+// counts as completing a step. `run_reports_only` is snt_dhs_indicators' spelling
+// (an R14 exception). The API cannot filter runs by config, so the status board
+// fetches the last STATUS_RUNS_PER_PIPELINE runs and looks for the newest full
+// one; if all of them are report-only, the step counts as never fully run.
+var REPORT_ONLY_KEYS = ["run_report_only", "run_reports_only"];
+var STATUS_RUNS_PER_PIPELINE = 5;
+
 // Cross-session status board: one query for the whole workspace, each pipeline
-// with its single most-recent run. Confirmed working through the static-webapp
-// proxy under PIPELINES_READ alone.
+// with its most recent runs and their config (to spot report-only runs).
+// Confirmed working through the static-webapp proxy under PIPELINES_READ alone,
+// config included (spike S4).
 var STATUS_QUERY =
   "query ($ws: String!) {" +
   "  pipelines(workspaceSlug: $ws, page: 1, perPage: 100) {" +
   "    items {" +
   "      id" +
   "      code" +
-  "      runs(orderBy: EXECUTION_DATE_DESC, page: 1, perPage: 1) {" +
-  "        items { id status executionDate duration }" +
+  "      runs(orderBy: EXECUTION_DATE_DESC, page: 1, perPage: " +
+  STATUS_RUNS_PER_PIPELINE +
+  ") {" +
+  "        items { id status executionDate duration config }" +
   "      }" +
   "    }" +
   "  }" +
@@ -120,11 +132,12 @@ var STOP_MUTATION =
   "  stopPipeline(input: $input) { success errors }" +
   "}";
 
-// Poll one run for its live status (PIPELINES_READ).
+// Poll one run for its live status (PIPELINES_READ). `config` tells a finished
+// report-only run apart (applyRunToNode).
 var RUN_POLL_QUERY =
   "query ($id: UUID!) {" +
   "  pipelineRun(id: $id) {" +
-  "    id status executionDate duration" +
+  "    id status executionDate duration config" +
   "  }" +
   "}";
 
@@ -1222,7 +1235,7 @@ var APP = {
   // selectedId == the focused step's (member) node id. Used by the shared
   // run/poll/outputs helpers (setRunStatusLine, loadOutputs, finishRun).
   selectedId: null,
-  statusByUuid: null, // uuid -> { code, run }
+  statusByUuid: null, // uuid -> { code, run, fullRun } (see liveRunOf / fullRunOf)
   connections: null, // ConnectionType -> [{slug, name}]
   activeRun: {}, // node id -> run id being polled
   stopping: {}, // run id -> true once stopPipeline accepted it (until terminal)
@@ -1268,20 +1281,45 @@ function hardChildren(id) {
 /* ================================================================== *
  * Live state: run status, cockpit state, locking
  * ================================================================== */
+// The run the step shows: the newest full run, or a report-only run while it is
+// still in flight (so it can be watched and stopped).
 function liveRunOf(node) {
   var e =
     node && node.uuid && APP.statusByUuid ? APP.statusByUuid[node.uuid] : null;
   return e ? e.run : null;
 }
 
+// The newest full (not report-only) run, finished or not. Completion reads this.
+function fullRunOf(node) {
+  var e =
+    node && node.uuid && APP.statusByUuid ? APP.statusByUuid[node.uuid] : null;
+  return e ? e.fullRun || null : null;
+}
+
+function isReportOnlyRun(run) {
+  var cfg = run && run.config;
+  if (typeof cfg === "string") {
+    try {
+      cfg = JSON.parse(cfg);
+    } catch (e) {
+      return false;
+    }
+  }
+  if (!cfg || typeof cfg !== "object") return false;
+  return REPORT_ONLY_KEYS.some(function (k) {
+    return cfg[k] === true;
+  });
+}
+
 // Collapse the live run status into the cockpit's visual state vocabulary.
 //   missing  = not installed in this workspace
-//   none     = installed, never run
+//   none     = installed, never fully run
 //   ok       = latest run succeeded
 //   fail     = latest run failed
 //   stop     = latest run stopped / skipped
 //   queue    = latest run queued
 //   run      = latest run running / terminating
+// "Latest run" = liveRunOf: finished report-only runs are skipped (D-12).
 // "locked" is not returned here: it is a display state layered on "none"
 // (installed, never run) by the renderers — never on "missing".
 function cockpitState(node) {
@@ -1296,10 +1334,13 @@ function cockpitState(node) {
   return "run"; // running / terminating
 }
 
+// Completed = the newest full run succeeded. A report-only run, finished or in
+// flight, neither completes a step nor undoes its completion (D-12).
 function isSuccess(id) {
   var n = APP.nodeById[id];
-  if (!n) return false;
-  return cockpitState(n) === "ok";
+  if (!n || !n.available) return false;
+  var run = fullRunOf(n);
+  return !!(run && run.status === "success");
 }
 
 /* Why a node is locked: every *hard* prerequisite must have a completed
@@ -1505,11 +1546,24 @@ async function loadStatuses() {
   var items = (data.pipelines && data.pipelines.items) || [];
   var byUuid = {};
   items.forEach(function (p) {
-    var run =
-      p.runs && p.runs.items && p.runs.items.length ? p.runs.items[0] : null;
-    byUuid[p.id] = { code: p.code, run: run };
+    var runs = (p.runs && p.runs.items) || [];
+    byUuid[p.id] = {
+      code: p.code,
+      run: firstRun(runs, function (r) {
+        return !isReportOnlyRun(r) || !isRunFinished(r.status);
+      }),
+      fullRun: firstRun(runs, function (r) {
+        return !isReportOnlyRun(r);
+      }),
+    };
   });
   APP.statusByUuid = byUuid;
+}
+
+// The first run (newest first) that passes `keep`, or null.
+function firstRun(runs, keep) {
+  for (var i = 0; i < runs.length; i++) if (keep(runs[i])) return runs[i];
+  return null;
 }
 
 async function loadConnections() {
@@ -3328,12 +3382,20 @@ function runPageUrl(node, run) {
 }
 
 // Fold a fresh run into the status snapshot, track successes for mutual
-// exclusion, then refresh the live (non-form) parts of the UI.
+// exclusion, then refresh the live (non-form) parts of the UI. A report-only run
+// is shown while in flight; once finished, the step falls back to its newest
+// full run (D-12).
 function applyRunToNode(node, run) {
   if (!APP.statusByUuid) APP.statusByUuid = {};
   var prev = APP.statusByUuid[node.uuid] || {};
-  APP.statusByUuid[node.uuid] = { code: prev.code || null, run: run };
-  if (run && run.status === "success") {
+  var reportOnly = isReportOnlyRun(run);
+  var fullRun = reportOnly ? prev.fullRun || null : run;
+  APP.statusByUuid[node.uuid] = {
+    code: prev.code || null,
+    run: reportOnly && run && isRunFinished(run.status) ? fullRun : run,
+    fullRun: fullRun,
+  };
+  if (!reportOnly && run && run.status === "success") {
     var d = parseRunDate(run.executionDate);
     APP.lastSuccessAt[node.id] = d ? d.getTime() : Date.now();
   }
@@ -3553,6 +3615,7 @@ async function runNode(node) {
     status: rp.run.status || "queued",
     executionDate: null,
     duration: null,
+    config: built.config,
   };
   applyRunToNode(node, run);
   setRunStatusLine(
@@ -3644,6 +3707,7 @@ function watchRun(runId, h) {
           status: pr.status,
           executionDate: pr.executionDate,
           duration: pr.duration,
+          config: pr.config,
         };
         h.update(run);
         if (isRunFinished(pr.status)) h.done(run);
@@ -3750,8 +3814,7 @@ function seedGroupSuccessFromStatus() {
   if (!APP.statusByUuid) return;
   APP.nodes.forEach(function (n) {
     if (!(n.available && n.type === "alternative" && n.group)) return;
-    var entry = APP.statusByUuid[n.uuid];
-    var run = entry ? entry.run : null;
+    var run = fullRunOf(n);
     if (run && run.status === "success") {
       var d = parseRunDate(run.executionDate);
       APP.lastSuccessAt[n.id] = d ? d.getTime() : 0;
