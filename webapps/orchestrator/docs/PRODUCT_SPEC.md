@@ -174,6 +174,12 @@ boundaries.
   by slug. _(Who owns connections is shifting — see §10. The PM's steer is that users should
   eventually set their own connections, so "BLSQ always creates every connection first" is not
   assumed as a permanent truth.)_
+- **Run a report on its own.** The pipelines' report-only flag (`run_report_only`, or
+  `run_reports_only` in `snt_dhs_indicators`) is hidden from the parameter form, so every run
+  started from the app is a full run. The flag is a developer tool for testing changes to a
+  report notebook without re-running the whole pipeline; to a user, a report only means
+  something after a real run. Developers keep it in the OpenHEXA UI, and report-only runs started
+  there never count as completing a step (F1). _(Decided by Giulia, 2026-11-17.)_
 - **Proactively diagnose setup gaps.** It is **acceptable not to check readiness up front**: if a
   connection, config, or pipeline is missing, the user finds out when a run fails like any other
   error. _(If we ever add readiness checks, the app would only explain the problem in plain
@@ -191,10 +197,10 @@ roadmap builds on. Technical detail: [`OPENHEXA_WEBAPP_RUNTIME.md`](../../../doc
 | F1  | **Live, persistent status board** | On every load, each pipeline shows its real last-run status; true for the whole team, across reloads and days. A finished report-only run is skipped: the status is that of the last full run. | `pipelines(workspaceSlug:)` → `runs(orderBy: EXECUTION_DATE_DESC, perPage:5) { … config }`, under `PIPELINES_READ`. | ✅ |
 | F2  | **Missing-pipeline detection** | Pipelines not installed here are greyed; a panel explains they're standard and deep-links to the templates page. Once installed, the step goes live as soon as the catalog is regenerated — no redeploy. | A step is available iff its `id` is in the workspace's catalog (with a `uuid`); otherwise greyed. | ✅ |
 | F3  | **Pipeline detail panel** | Name/code/type, a description of what the pipeline does, and its README for the installed version in a collapsible **Documentation** box. | Static content from the map, descriptions and catalog; the README is copied from the deployed version by the generator and read from the bucket when the box is opened ([ADR 0025](../../../docs/decisions/0025-readmes-from-deployed-version.md)). | ✅ |
-| F4  | **Parameter form + config preview** | A typed input per parameter (checkbox, number, dropdown, multi-select, **connection dropdown**), help text, sensible defaults; a "preview config" toggle shows the exact package to be sent. | Form generated from the catalog; connection dropdown from `workspace { connections }` (`USER_READ`, else a text fallback; the proxy currently refuses it, so the text fallback shows — [OH-5](../../../docs/BACKLOG.md#oh-5)). | ✅ |
+| F4  | **Parameter form + config preview** | A typed input per parameter (checkbox, number, dropdown, multi-select, **connection dropdown**), help text, sensible defaults; a "preview config" toggle shows the exact package to be sent. | Form generated from the catalog, minus the report-only flag (§5); connection dropdown from `workspace { connections }` (`USER_READ`, else a text fallback; the proxy currently refuses it, so the text fallback shows — [OH-5](../../../docs/BACKLOG.md#oh-5)). | ✅ |
 | F5  | **Run + poll** | A Run button launches the pipeline and polls it to completion, live-updating the step. | `runPipeline` mutation, params as a `config` object (connections passed by **slug**). Needs `PIPELINES_RUN`. | ✅ |
 | F6  | **Outputs & report links** | After a run, links to its output **datasets** and **files**; the **HTML report** opens via a signed URL. | `pipelineRun.outputs` (union) + `prepareObjectDownload` signed URL. Needs `FILES_READ`. | ✅ |
-| F7  | **Mutual exclusion (alt. groups)** | For a choose-one method group, shows which member is **in use** (holds the latest success) and marks the others superseded. | Derived client-side from run history + the map's `group`. Only a _succeeding_ run moves the "in use" mark. | ✅ |
+| F7  | **Mutual exclusion (alt. groups)** | For a choose-one method group, shows which member is **in use** (holds the latest success) and marks the others superseded. | Derived client-side from run history + the map's `group`. Only a _succeeding full_ run moves the "in use" mark. | ✅ |
 | F8  | **Dependency lists** | Each step lists what it **requires**, what it **unlocks next**, and what it **uses if available**; hard and optional links are told apart. | Derived client-side from the map's `edges`. No layout library / CDN. | ✅ |
 | F9  | **Dependency hard-locking** | A step is locked (Run disabled) until every hard prerequisite has completed; unlocks live. Group-aware; optional links don't gate. | Computed client-side from map edges + the F1 status board. | ✅ |
 | F10 | **Deep links out to OpenHEXA** | Jump to the live run (logs/messages), output datasets, or the templates page. | Links to `app.openhexa.org` pages built client-side. | ✅ |

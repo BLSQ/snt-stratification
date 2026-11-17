@@ -366,6 +366,17 @@ async function loadData() {
  * otherwise it renders as "not installed" (greyed / missing). Description text
  * comes from the shared, hand-authored pipeline_descriptions.json (one
  * copy across all workspaces), not from the map or the cards. */
+/* The parameters the form shows and the run config may carry. The report-only
+ * flag is hidden: it is a developer tool for testing a report notebook without
+ * a full run, and to a user a report only means something after a real run
+ * (PRODUCT_SPEC §5). Every pipeline defaults it to False and none requires it,
+ * so leaving it out of the config starts a full run. */
+function userParameters(params) {
+  return (params || []).filter(function (p) {
+    return REPORT_ONLY_KEYS.indexOf(p.key) === -1;
+  });
+}
+
 function mergeNodes(map, cards, descriptions) {
   var cardsById = {};
   var pipelines = (cards && cards.pipelines) || [];
@@ -388,7 +399,7 @@ function mergeNodes(map, cards, descriptions) {
       col: node.col,
       track: node.track,
       uuid: card ? card.uuid : null,
-      parameters: card ? card.parameters || [] : [],
+      parameters: card ? userParameters(card.parameters) : [],
       available: !!(card && card.uuid),
     };
   });

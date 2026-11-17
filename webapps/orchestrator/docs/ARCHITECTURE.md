@@ -152,7 +152,9 @@ Three independent axes per node:
   `snt_dhs_indicators`, set in the run's own `config`) processes no data, so it never completes a
   step and never undoes a completion (migration plan D-12). The status board fetches each
   pipeline's last 5 runs (`STATUS_RUNS_PER_PIPELINE`) to find the newest full one; if all 5 are
-  report-only, the step counts as never fully run.
+  report-only, the step counts as never fully run. The app itself never starts one: the parameter
+  form hides the report-only flag (`userParameters()`), so such runs come from the OpenHEXA UI.
+  Why: [`PRODUCT_SPEC.md` §5](PRODUCT_SPEC.md#5-what-the-app-does-not-do).
 - **locked vs unlocked** — dynamic, from `edges`. A node unlocks once every **hard** prerequisite
   (an edge whose `to` is this node and whose `type` is `"solid"` or omitted) is completed.
   `type: "optional"` edges are soft: listed as "uses if available", never gating (the downstream
