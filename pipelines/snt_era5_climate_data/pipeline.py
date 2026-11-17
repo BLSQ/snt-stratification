@@ -20,7 +20,7 @@ from openhexa.toolbox.era5.utils import get_variables
 from snt_lib.snt_pipeline_utils import (
     add_files_to_dataset,
     get_file_from_dataset,
-    load_configuration_snt,
+    load_configuration_snt_from_dataset,
     pull_scripts_from_repository,
     run_report_notebook,
     save_pipeline_parameters,
@@ -112,7 +112,7 @@ def snt_era5_climate_data(
         except Exception as e:
             current_run.log_warning(f"Could not pull snt_era5_climate_data scripts: {e}")
 
-    snt_config = load_configuration_snt(config_path=root_path / "configuration" / "SNT_config.json")
+    snt_config, snt_config_version = load_configuration_snt_from_dataset()
     validate_config(snt_config)
     country_code = snt_config["SNT_CONFIG"]["COUNTRY_CODE"]
     if not run_report_only:
@@ -216,6 +216,10 @@ def snt_era5_climate_data(
             },
             output_path=output_dir,
             country_code=country_code,
+            extra_metadata={
+                "SNT_CONFIG_VERSION": snt_config_version.name,
+                "SNT_CONFIG_VERSION_ID": snt_config_version.id,
+            },
         )
         file_paths_to_upload.append(params_file)
 

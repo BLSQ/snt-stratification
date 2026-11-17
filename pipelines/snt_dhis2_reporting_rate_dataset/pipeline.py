@@ -6,7 +6,7 @@ from openhexa.sdk import current_run, pipeline, workspace, parameter
 from snt_lib.snt_pipeline_utils import (
     pull_scripts_from_repository,
     add_files_to_dataset,
-    load_configuration_snt,
+    load_configuration_snt_from_dataset,
     run_notebook,
     run_report_notebook,
     validate_config,
@@ -55,7 +55,7 @@ def snt_dhis2_reporting_rate_dataset(run_report_only: bool, pull_scripts: bool):
 
     try:
         # Load configuration
-        snt_config = load_configuration_snt(config_path=root_path / "configuration" / "SNT_config.json")
+        snt_config, snt_config_version = load_configuration_snt_from_dataset()
         validate_config(snt_config)
     except Exception as e:
         current_run.log_error(f"Loading configuration failed: {e}")
@@ -70,7 +70,7 @@ def snt_dhis2_reporting_rate_dataset(run_report_only: bool, pull_scripts: bool):
             current_run.log_warning(
                 f"Reporting rates file {rr_file} was not found in dataset {formatted_ds_id}. "
                 "Perhaps the reporting rates were not extracted from DHIS2 "
-                f"(see: configuration/SNT_config_{country_code}.json)."
+                "(see DHIS2_DATA_DEFINITIONS.DHIS2_REPORTING_RATES in SNT_config.json)."
             )
             return
 
@@ -90,6 +90,10 @@ def snt_dhis2_reporting_rate_dataset(run_report_only: bool, pull_scripts: bool):
                 parameters=nb_parameters,
                 output_path=data_path,
                 country_code=country_code,
+                extra_metadata={
+                    "SNT_CONFIG_VERSION": snt_config_version.name,
+                    "SNT_CONFIG_VERSION_ID": snt_config_version.id,
+                },
             )
             current_run.log_info(f"Saved pipeline parameters to {params_file}")
         except Exception as e:
@@ -168,7 +172,7 @@ def validate_reporting_rate_product_uid(snt_config: dict) -> list[str]:
     product_uids = [uid.strip() for uid in product_uids if isinstance(uid, str) and uid.strip()]
     if not product_uids:
         raise ValueError(
-            "SNT_CONFIG.REPORTING_RATE_PRODUCT_UID is not set in configuration/SNT_config.json. "
+            "SNT_CONFIG.REPORTING_RATE_PRODUCT_UID is not set in SNT_config.json. "
             "List the DHIS2 product UIDs to compute the reporting rate from: the dataset UIDs when "
             "reporting rates are extracted with REPORTING_DATASETS, or both indicator UIDs (actual and "
             "expected reports) when extracted with REPORTING_INDICATORS."

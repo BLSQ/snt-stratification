@@ -47,7 +47,7 @@ the repo path of every file that lands in a workspace equals its workspace path
                                            ▼
  ┌───────────────────── one OpenHEXA workspace (one country) ─────────────────────┐
  │                                                                                │
- │  configuration/SNT_config.json ◄── operator by hand / config editor (planned)  │
+ │  SNT_CONFIGURATION dataset ◄── operator by hand / config editor (planned)      │
  │          │ read by every pipeline                                              │
  │          ▼                                                                     │
  │  SNT pipelines ── run ──► pipelines/<name>/code/*.ipynb + shared/r/*.r         │
@@ -164,10 +164,10 @@ uploads a zipped copy of the pipeline's code into OpenHEXA's database, and a run
 
 | Part | What it holds | Where you see it |
 |---|---|---|
-| **Files** (the bucket) | Data, notebooks, R scripts, outputs, `configuration/SNT_config.json` | The Files tab, and Jupyter |
+| **Files** (the bucket) | Data, notebooks, R scripts, outputs | The Files tab, and Jupyter |
 | **Pipelines registry** (a database) | One record per pipeline (e.g. `snt-dhis2-extract`), each with a list of versions | The Pipelines tab |
 | **Pipeline version** | One zip of the code, plus its parameters and timeout | A pipeline's version list |
-| **Datasets** | Versioned published outputs: the contract between pipelines | The Datasets tab |
+| **Datasets** | Versioned published outputs: the contract between pipelines. Also the config, `SNT_config.json` in `SNT_CONFIGURATION` | The Datasets tab |
 | **Connections** | Stored credentials (DHIS2, a workspace token, …) | Settings → Connections |
 | **Runner** | A temporary container that runs one pipeline run, then stops | The run logs |
 

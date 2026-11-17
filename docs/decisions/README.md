@@ -65,6 +65,7 @@ who made it move on. Format after Michael Nygard's
 | [0040](0040-templates-kept-alongside-the-deployer.md) | Templates stay as a deploy route, alongside the deployer | Accepted, amended by 0042 | 2026-11-02 |
 | [0041](0041-new-templates-publishing-workspace.md) | The new templates are published from their own workspace | Accepted | 2026-11-02 |
 | [0042](0042-bootstrap-pipelines-as-templates-on-release.md) | Bootstrap pipelines are published as templates on each full release | Accepted | 2026-11-12 |
+| [0043](0043-config-read-from-snt-configuration-dataset.md) | Every consumer reads `SNT_config.json` from the `SNT_CONFIGURATION` dataset | Accepted | 2026-11-16 |
 
 ## Imported ADRs: old number → new number
 

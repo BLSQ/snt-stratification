@@ -3,7 +3,7 @@ from pathlib import Path
 from openhexa.sdk import current_run, pipeline, workspace, parameter
 from snt_lib.snt_pipeline_utils import (
     add_files_to_dataset,
-    load_configuration_snt,
+    load_configuration_snt_from_dataset,
     validate_config,
     run_report_notebook,
     run_notebook,
@@ -110,7 +110,7 @@ def snt_seasonality_rainfall(
 
     try:
         # Load configuration
-        snt_config = load_configuration_snt(config_path=root_path / "configuration" / "SNT_config.json")
+        snt_config, snt_config_version = load_configuration_snt_from_dataset()
         validate_config(snt_config)
         country_code = snt_config["SNT_CONFIG"]["COUNTRY_CODE"]
     except Exception as e:
@@ -152,6 +152,10 @@ def snt_seasonality_rainfall(
             parameters=input_params,
             output_path=data_path,
             country_code=country_code,
+            extra_metadata={
+                "SNT_CONFIG_VERSION": snt_config_version.name,
+                "SNT_CONFIG_VERSION_ID": snt_config_version.id,
+            },
         )
 
         add_files_to_dataset(

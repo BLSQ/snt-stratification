@@ -17,7 +17,7 @@ it.
 | # | Question | Blocks | Status |
 |---|---|---|---|
 | 1 | All-`NA` guard in `snt_dhis2_incidence` | W4 severity | ❓ open |
-| 2 | R gate equivalent to the Python one | §5.1 completeness | ❓ open |
+| 2 | ~~R gate equivalent to the Python one~~ | §5.1 completeness | ✅ answered 2026-11-17: there is no R gate |
 | 3 | Upstream `POP_PREGNANT_WOMEN` fix | CLAUDE.md rule 3 | ❓ open, ongoing |
 | 4 | OpenHEXA workspace write mechanism | §7 step 2 | ❓ open |
 | 5 | OpenHEXA user identity in the page | §11 q4 | ❓ open |
@@ -52,7 +52,13 @@ column into a run-time error anyway.
 **Cheapest way to answer:** grep the incidence pipeline for `is.na`, `drop_na`, `complete.cases`
 and the error string itself, then read the ~30 lines around the column-composition step.
 
-## 2. Is the R gate equivalent to the Python one?
+## 2. ~~Is the R gate equivalent to the Python one?~~
+
+**Answered 2026-11-17: there is no R gate.** `validate_required_config_keys()` is defined nowhere,
+neither in this repo's R code (`shared/r/`, `pipelines/*/utils/`) nor in `snt_utils`. Notebooks load
+the config with `load_snt_config_from_dataset()` and run no shared check, so `snt_lib`'s
+`validate_config()`, which the SNT pipelines run at startup, is the only gate this app must match.
+[`PRODUCT_SPEC.md`](PRODUCT_SPEC.md) §12.1 is corrected. The original question follows.
 
 **Where to look:** `validate_required_config_keys()` in the SNT pipelines R helpers, against
 `snt_lib.validate_config()` in `snt_utils`.

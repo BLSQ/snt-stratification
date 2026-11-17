@@ -58,7 +58,7 @@ This pipeline estimates **monthly** and **yearly** reporting rates (routine data
 
 * **Routine file** selected by **`routine_data_choice`** (see Parameters), on **`DHIS2_DATASET_FORMATTED`** or **`DHIS2_OUTLIERS_IMPUTATION`**. Required. Columns used: **`OU_ID`**, **`PERIOD`**, **`YEAR`**, **`MONTH`**, **`ADM2_ID`**, and the indicators **`CONF`**, **`PRES`**, **`SUSP`**, **`TEST`** that are present.
 * **`[COUNTRY_CODE]_pyramid.parquet`** on **`DHIS2_DATASET_FORMATTED`**. Required. Columns used: the facility level **`LEVEL_[n]_ID`** / **`LEVEL_[n]_NAME`**, the admin columns named by **`DHIS2_ADMINISTRATION_1`** / **`DHIS2_ADMINISTRATION_2`** and their **`_ID`** counterparts, **`OPENING_DATE`**, **`CLOSED_DATE`**.
-* **`configuration/SNT_config.json`** for **`COUNTRY_CODE`**, **`DHIS2_ADMINISTRATION_1`**, **`DHIS2_ADMINISTRATION_2`**, **`ANALYTICS_ORG_UNITS_LEVEL`**, and the dataset identifiers **`DHIS2_DATASET_FORMATTED`**, **`DHIS2_OUTLIERS_IMPUTATION`**, **`DHIS2_REPORTING_RATE`**.
+* **`SNT_config.json`** from the latest version of **`SNT_CONFIGURATION`** (required) for **`COUNTRY_CODE`**, **`DHIS2_ADMINISTRATION_1`**, **`DHIS2_ADMINISTRATION_2`**, **`ANALYTICS_ORG_UNITS_LEVEL`**, and the dataset identifiers **`DHIS2_DATASET_FORMATTED`**, **`DHIS2_OUTLIERS_IMPUTATION`**, **`DHIS2_REPORTING_RATE`**.
 
 ## Outputs
 
@@ -66,7 +66,7 @@ This pipeline estimates **monthly** and **yearly** reporting rates (routine data
 
 * **`data/dhis2/reporting_rate/[COUNTRY_CODE]_reporting_rate_dataelement.parquet`** and **`.csv`** (monthly)
 * **`data/dhis2/reporting_rate/[COUNTRY_CODE]_reporting_rate_dataelement_yearly.parquet`** and **`.csv`** (yearly)
-* **`data/dhis2/reporting_rate/[COUNTRY_CODE]_parameters.json`**
+* **`data/dhis2/reporting_rate/[COUNTRY_CODE]_parameters.json`**, with **`SNT_CONFIG_VERSION`** and **`SNT_CONFIG_VERSION_ID`**, the name and id of the **`SNT_CONFIGURATION`** version read
 * Intermediate tables in **`pipelines/snt_dhis2_reporting_rate_dataelement/intermediate_results/`** (written, **not published**):
   * **`[COUNTRY_CODE]_reports_dataelement_fosa_monthly.parquet`**: facility × month flags and weights.
   * **`[COUNTRY_CODE]_reports_dataelement_monthly.parquet`** and **`.csv`**: ADM2 × month counts and every reporting rate variant.

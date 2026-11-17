@@ -146,7 +146,9 @@ init_snt_workspace <- function(
 #'
 #' Reads and parses the SNT configuration JSON file at the given path,
 #' logging a message on success and stopping with a clear error if loading
-#' fails.
+#' fails. The notebooks in this repo read the config from the
+#' `SNT_CONFIGURATION` dataset instead, with load_snt_config_from_dataset()
+#' (ADR 0043); this file-based loader is kept for code that still reads a file.
 #'
 #' @param snt_config_path Character. Full path to the SNT configuration JSON file.
 #' @return List. The parsed configuration.
@@ -154,6 +156,83 @@ init_snt_workspace <- function(
 #' @export
 load_snt_config <- function(snt_config_path) {
     load_json(snt_config_path, label = "SNT configuration")
+}
+
+
+#' Load the SNT Configuration from the SNT_CONFIGURATION Dataset
+#'
+#' Reads `SNT_config.json` from the latest version of the OpenHEXA dataset
+#' `SNT_CONFIGURATION` (slug `snt-configuration`, fixed by convention, ADR 0043)
+#' and logs the version's name and id. The file is parsed exactly as
+#' load_json() parses a file on disk, so the config list has the same shape as
+#' with load_snt_config(). The R twin of `snt_lib`'s
+#' `load_configuration_snt_from_dataset()`, with the same log and error
+#' messages.
+#'
+#' Uses the `openhexa` SDK object if the notebook has created it (as
+#' init_snt_workspace() does), and imports `openhexa.sdk` otherwise.
+#'
+#' @param dataset_id Character. Slug of the dataset. Default: "snt-configuration",
+#'   fixed by convention.
+#' @return List. The parsed configuration.
+#' @section Errors: If the dataset, its latest version or the file is missing,
+#'   the download fails, or the file is not valid JSON, logs an `[ERROR]` that
+#'   says what is missing and links to the how-to, then stops.
+#'
+#' @export
+load_snt_config_from_dataset <- function(dataset_id = "snt-configuration") {
+    filename <- "SNT_config.json"
+    howto_url <- paste0(
+        "https://github.com/BLSQ/snt-stratification/blob/main/",
+        "contracts/snt_config/README.md#snt-configuration-dataset"
+    )
+    source_label <- paste0("dataset SNT_CONFIGURATION (", dataset_id, ")")
+
+    fail <- function(reason) {
+        msg <- paste0(
+            "[ERROR] No usable ", filename, " in the latest version of ", source_label, ": ", reason, ". ",
+            "Provide a valid ", filename, " file. See ", howto_url
+        )
+        log_msg(msg, "error")
+        stop(msg, call. = FALSE)
+    }
+
+    sdk <- if (exists("openhexa", envir = .GlobalEnv)) {
+        get("openhexa", envir = .GlobalEnv)
+    } else {
+        reticulate::import("openhexa.sdk")
+    }
+
+    # The SDK raises when the dataset does not exist (older versions return None)
+    dataset <- tryCatch(sdk$workspace$get_dataset(dataset_id), error = function(e) NULL)
+    if (is.null(dataset)) fail("the dataset does not exist")
+
+    version <- dataset$latest_version
+    if (is.null(version)) fail("the dataset has no version")
+
+    # The SDK raises when the file is not in the version
+    dataset_file <- tryCatch(version$get_file(filename), error = function(e) NULL)
+    if (is.null(dataset_file)) fail(paste0("version '", version$name, "' has no file ", filename))
+
+    response <- httr::GET(dataset_file$download_url)
+    if (httr::status_code(response) != 200) {
+        fail(paste0(
+            "downloading it from version '", version$name, "' failed with HTTP ", httr::status_code(response)
+        ))
+    }
+
+    # Parse from a file, as load_json() does, so the list keeps the same shape
+    tmp_json <- tempfile(fileext = ".json")
+    on.exit(unlink(tmp_json), add = TRUE)
+    writeBin(httr::content(response, as = "raw"), tmp_json)
+    config_json <- tryCatch(jsonlite::fromJSON(tmp_json), error = function(e) {
+        fail(paste0("the file in version '", version$name, "' is not valid JSON (", conditionMessage(e), ")"))
+    })
+
+    log_msg(paste0(
+        "SNT configuration loaded from ", source_label, ", version '", version$name, "' (id ", version$id, ")."
+    ))
+    return(config_json)
 }
 
 

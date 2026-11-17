@@ -59,7 +59,7 @@ Each proportion is applied to **`POPULATION`** (after scaling) and written to th
 ## Functionality Overview
 
 1. Ensure `pipelines/snt_dhis2_population_transformation` and `data/dhis2/population_transformed` exist; optionally pull the code and report notebooks from the repository.
-2. Load and validate `configuration/SNT_config.json` and read **`COUNTRY_CODE`**. Steps 3–9 are skipped when **`run_report_only`** is set.
+2. Load and validate **`SNT_config.json`** from the latest version of **`SNT_CONFIGURATION`** and read **`COUNTRY_CODE`**. Steps 3–9 are skipped when **`run_report_only`** is set.
 3. Load the population table of the selected **`pop_source`** from its dataset; abort with an error if the dataset, its latest version or the file cannot be found or downloaded, or if the table is empty.
 4. If a **`disaggregation_file`** is supplied: abort if the file does not exist on disk, and validate its header — abort if **`ADM2_ID`** is missing or **`YEAR`** / **`POPULATION`** are present.
 5. Read the years available in the **`YEAR`** column of the population table (abort if the column is missing), then resolve **`tot_pop_reference_year`** (only if **`tot_pop_reference`** is set) and **`growth_reference_year`** (only if **`growth_factor`** is set) against them.
@@ -77,7 +77,7 @@ Each proportion is applied to **`POPULATION`** (after scaling) and written to th
 
 ## Inputs
 
-* **`configuration/SNT_config.json`**: **`SNT_CONFIG.COUNTRY_CODE`** and the dataset identifiers **`DHIS2_DATASET_FORMATTED`**, **`SNT_POPULATION_USER_PROVIDED`** and **`DHIS2_POPULATION_TRANSFORMATION`** under **`SNT_DATASET_IDENTIFIERS`**.
+* **`SNT_config.json`** from the latest version of **`SNT_CONFIGURATION`** (required): **`SNT_CONFIG.COUNTRY_CODE`** and the dataset identifiers **`DHIS2_DATASET_FORMATTED`**, **`SNT_POPULATION_USER_PROVIDED`** and **`DHIS2_POPULATION_TRANSFORMATION`** under **`SNT_DATASET_IDENTIFIERS`**.
 * **`pop_source` = `DHIS2`:** **`{COUNTRY_CODE}_population.parquet`** from **`DHIS2_DATASET_FORMATTED`**, produced by **`snt_dhis2_formatting`** (required).
 * **`pop_source` = `User-provided`:** **`{COUNTRY_CODE}_population.parquet`** from **`SNT_POPULATION_USER_PROVIDED`**, produced by **`snt_user_population`** (required).
 * **Optional `disaggregation_file`**: operator-uploaded CSV with ADM2-level proportion columns. Start from **`uploads/{COUNTRY_CODE}_population_disaggregation_template.csv`**, written by **`snt_dhis2_formatting`**.
@@ -88,7 +88,7 @@ Written to the workspace filesystem, in `data/dhis2/population_transformed/`:
 
 * **`{COUNTRY_CODE}_population.parquet`**
 * **`{COUNTRY_CODE}_population.csv`**
-* **`{COUNTRY_CODE}_parameters.json`** (pipeline parameters, from `save_pipeline_parameters`)
+* **`{COUNTRY_CODE}_parameters.json`** (pipeline parameters, from `save_pipeline_parameters`), with **`SNT_CONFIG_VERSION`** and **`SNT_CONFIG_VERSION_ID`**, the name and id of the **`SNT_CONFIGURATION`** version read
 
 Published to **`DHIS2_POPULATION_TRANSFORMATION`**: the same three files.
 

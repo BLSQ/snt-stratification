@@ -35,7 +35,7 @@ The **SNT Map Extracts** pipeline downloads Malaria Atlas Project (MAP) rasters 
 * **`[COUNTRY_CODE]_shapes.geojson`** on **`DHIS2_DATASET_FORMATTED`** — required; produced by **`snt_dhis2_formatting`**.
 * **MAP rasters** downloaded from the Malaria Atlas Project — required per indicator; a missing indicator is skipped.
 * **WorldPop population rasters** (2015–2030) — cached under **`data/worldpop/rasters/`**, a cache shared with the other WorldPop-based pipelines, or downloaded from WorldPop. A failed download stops the run.
-* **`configuration/SNT_config.json`**: **`SNT_CONFIG.COUNTRY_CODE`**, and under **`SNT_DATASET_IDENTIFIERS`**: **`DHIS2_DATASET_FORMATTED`** and **`SNT_MAP_EXTRACTS`**.
+* **`SNT_config.json`** from the latest version of **`SNT_CONFIGURATION`** (required): **`SNT_CONFIG.COUNTRY_CODE`**, and under **`SNT_DATASET_IDENTIFIERS`**: **`DHIS2_DATASET_FORMATTED`** and **`SNT_MAP_EXTRACTS`**.
 
 ## Outputs
 
@@ -44,7 +44,7 @@ The **SNT Map Extracts** pipeline downloads Malaria Atlas Project (MAP) rasters 
 * **`data/map/formatted_snt/[COUNTRY_CODE]_map_data.parquet`** and **`.csv`** — the wide table
 * **`data/map/formatted/[COUNTRY_CODE]_map_data_[YEAR].parquet`** and **`.csv`** — one long table per year (not published), with all three statistics (**`MEDIAN`**, **`LCI`**, **`UCI`**), each with its value (**`VALUE`**) and population-weighted value (**`POPULATION_WEIGHTED`**)
 * **`data/map/aggregated_populations/[COUNTRY_CODE]_worldpop_population_[YEAR].parquet`** — ADM2 total population per year (not published, not used by the rest of the pipeline)
-* **`data/map/[COUNTRY_CODE]_parameters.json`**
+* **`data/map/[COUNTRY_CODE]_parameters.json`**, with **`SNT_CONFIG_VERSION`** and **`SNT_CONFIG_VERSION_ID`**, the name and id of the **`SNT_CONFIGURATION`** version read
 * **Cached MAP rasters** under **`data/map/raster_files/[COUNTRY_CODE]/`** and **WorldPop rasters** under **`data/worldpop/rasters/`**
 * **Report outputs** under **`pipelines/snt_map_extracts/reporting/outputs/`**, maps as **`figures/[COUNTRY_CODE]_map_[INDICATOR]_[YEAR].png`**
 

@@ -28,11 +28,15 @@ change both files together, by hand, until the real app replaces them.
   app wrote* is different and is in scope.)
 - **No DHIS2 connection in v1.** No UID → name resolution, no pyramid validation.
 - **An OpenHEXA web app CAN write to the workspace filesystem.** v1 ships in two steps: step 1 is
-  download-only (proof of concept), step 2 writes into `/configuration`. Both are v1. Spec §7.
+  download-only (proof of concept), step 2 saves into the workspace. Both are v1. Spec §7. **The save target is now the `SNT_CONFIGURATION` dataset**, not
+  `/configuration`: the pipelines read the latest version of that dataset
+  ([ADR 0043](../../docs/decisions/0043-config-read-from-snt-configuration-dataset.md); note at the
+  top of spec §6). How step 2 writes is decided when it is built.
 - **All persistence goes through the `ConfigStore` interface** (spec §7). No form or validation code
   may touch `localStorage`, `fetch`, or a path directly.
-- **`SNT_config.json` is written only when valid.** Drafts live in `snt_config_history/` and
-  `snt_config_draft.json`. Spec §6.
+- **`SNT_config.json` is published only when valid**, as a new version of `SNT_CONFIGURATION`.
+  Drafts never reach that dataset. Where they live is decided with step 2; spec §6 designed them as
+  `snt_config_history/` and `snt_config_draft.json` beside the old disk path.
 - **Metadata placement:** `_EDITOR_METADATA` inline in drafts, stripped on promotion and written to a
   `.log.json` sidecar for valid files. Spec §6.3.
 - **Indicator keys:** the skeleton's 18, plus a free-text "other key" escape hatch that warns.

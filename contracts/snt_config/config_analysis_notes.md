@@ -15,11 +15,13 @@ the contract; §2–4 the per-field rules; §5 the validation the app can do tha
 
 ### 1.1 One file, one path, one country
 
-Pipelines load exactly `<workspace>/configuration/SNT_config.json` via
-`load_configuration_snt()`, then call `validate_config()` (Python) or
-`validate_required_config_keys()` (R). One file, one country, one workspace. The committed
-`configuration/SNT_config_<CC>.json` copies are **reference only** — in a workspace the file is
-renamed by hand to drop the `_<CC>` suffix.
+Pipelines load exactly `SNT_config.json` from the latest version of the dataset
+`SNT_CONFIGURATION` (slug `snt-configuration`) via `load_configuration_snt_from_dataset()`, then
+call `validate_config()`; notebooks load the same file via `load_snt_config_from_dataset()` (R).
+One file, one country, one workspace
+([ADR 0043](../../docs/decisions/0043-config-read-from-snt-configuration-dataset.md); how to
+upload it: [`README.md`](README.md#snt-configuration-dataset)). The archived
+`SNT_config_<CC>.json` copies are **reference only** — never loaded under that name.
 
 **Consequence for the app:** whatever it stores internally, it must **emit a single merged
 document**. Splitting the fixed and variable halves into two files is a sound *storage* idea — the
@@ -503,5 +505,5 @@ Ordered by how much they block the app.
 | The `POP_PREGNANT_WOMAN` defect, traced | `docs/DATA_ARCHITECTURE.md` §6.1 |
 | Indicator vocabulary, French etymology, confidence flags | `docs/GLOSSARY.md` §2 |
 | Admin-level rules, naming and schema conventions | `CLAUDE.md` → Schema, Configuration |
-| `validate_config()` — the universal gate | external: `github.com/BLSQ/snt_utils`, `snt_pipeline_utils` (unpinned) |
+| `validate_config()` — the universal gate | external: `github.com/BLSQ/snt_utils`, `snt_pipeline_utils`; the pipelines pin a commit (`docs/DATA_ARCHITECTURE.md` §7.1) |
 | The five reference configs this analysis is based on | `configuration/SNT_config_<CC>.json` |

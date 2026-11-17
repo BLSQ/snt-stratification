@@ -5,7 +5,7 @@ from snt_lib.snt_pipeline_utils import (
     pull_scripts_from_repository,
     add_files_to_dataset,
     dataset_file_exists,
-    load_configuration_snt,
+    load_configuration_snt_from_dataset,
     run_notebook,
     run_report_notebook,
     validate_config,
@@ -61,9 +61,7 @@ def snt_dhis2_formatting(run_report_only: bool, pull_scripts: bool):
 
     try:
         # Load configuration (needed for report and for main run)
-        snt_config_dict = load_configuration_snt(
-            config_path=snt_root_path / "configuration" / "SNT_config.json"
-        )
+        snt_config_dict, snt_config_version = load_configuration_snt_from_dataset()
         validate_config(snt_config_dict)
         country_code = snt_config_dict["SNT_CONFIG"].get("COUNTRY_CODE", None)
     except Exception as e:
@@ -101,6 +99,10 @@ def snt_dhis2_formatting(run_report_only: bool, pull_scripts: bool):
                 parameters={"run_report_only": run_report_only, "pull_scripts": pull_scripts},
                 output_path=snt_dhis2_formatted_path,
                 country_code=country_code,
+                extra_metadata={
+                    "SNT_CONFIG_VERSION": snt_config_version.name,
+                    "SNT_CONFIG_VERSION_ID": snt_config_version.id,
+                },
             )
         except Exception as e:
             current_run.log_error(f"Error in saving pipeline parameters: {e}")

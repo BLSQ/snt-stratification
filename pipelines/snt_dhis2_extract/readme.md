@@ -37,7 +37,7 @@ The **SNT DHIS2 Extract** pipeline pulls raw DHIS2 analytics, population, organi
 
 ## Inputs
 
-* **`SNT_config.json`**: Country code, org-unit levels, **`DHIS2_DATA_DEFINITIONS`**, dataset IDs, and reporting-rate definitions.
+* **`SNT_config.json`** from the latest version of **`SNT_CONFIGURATION`** (required): Country code, org-unit levels, **`DHIS2_DATA_DEFINITIONS`**, dataset IDs, and reporting-rate definitions.
 * **Live DHIS2 instance** reachable via **`dhis2_connection`**.
 
 ---
@@ -49,7 +49,7 @@ The **SNT DHIS2 Extract** pipeline pulls raw DHIS2 analytics, population, organi
 * **`data/dhis2/extracts_raw/shapes_data/[COUNTRY_CODE]_dhis2_raw_shapes.parquet`**
 * **`data/dhis2/extracts_raw/pyramid_data/[COUNTRY_CODE]_dhis2_raw_pyramid.parquet`**
 * **`data/dhis2/extracts_raw/reporting_data/[COUNTRY_CODE]_dhis2_raw_reporting.parquet`**
-* **Parameters JSON** under `extracts_raw/`
+* **Parameters JSON** under `extracts_raw/`, with **`SNT_CONFIG_VERSION`** and **`SNT_CONFIG_VERSION_ID`**, the name and id of the **`SNT_CONFIGURATION`** version read
 * **Published copies** of the above (where present) plus parameters to **`DHIS2_DATASET_EXTRACTS`**
 
 ---

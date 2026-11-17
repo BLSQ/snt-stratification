@@ -97,7 +97,7 @@ Not owned by any one pipeline; a change here affects many.
 | Asset | Responsible | Note |
 |---|---|---|
 | `code/snt_utils.r`, `code/snt_report.r`, `code/snt_palettes.r` | `_TBD_` | Sourced by most notebooks. A signature change breaks pipelines silently. |
-| `deprecated/configuration/SNT_config_<CC>.json` | `_TBD_` | Archived reference copies, examples only. The live file is renamed by hand inside each workspace. |
+| `deprecated/configuration/SNT_config_<CC>.json` | `_TBD_` | Archived reference copies, examples only. The live file is `SNT_config.json` in each workspace's `SNT_CONFIGURATION` dataset. |
 | `deprecated/configuration/SNT_metadata.json` | `_TBD_` | Old-format column list. Its only reader, `snt_assemble_results`, is retired. |
 | `.github/workflows/push_snt_*.yaml` | `_TBD_` | Never change `workspace: "snt-development"`. |
 | `CLAUDE.md`, `.claude/` | @sPuntinG | Agent guardrails and the rule Register. |

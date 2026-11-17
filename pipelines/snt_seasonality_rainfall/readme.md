@@ -24,14 +24,14 @@ This pipeline quantifies **rainfall seasonality** at **ADM2** using **monthly** 
 
 ## Inputs
 
-- **`configuration/SNT_config.json`**: Includes **`ERA5_DATASET_CLIMATE`** and country metadata consumed inside the notebook.
+- **`SNT_config.json`** from the latest version of **`SNT_CONFIGURATION`** (required): Includes **`ERA5_DATASET_CLIMATE`** and country metadata consumed inside the notebook.
 - **`{COUNTRY_CODE}_total_precipitation_monthly.parquet`**: Monthly rainfall totals per `ADM2_ID` with `YEAR`, `MONTH`, and `MEAN`.
 - **ADM2 geometries** (loaded via configured dataset helpers in the notebook) for district names/IDs attached to outputs.
 
 ## Outputs
 
 - **`{COUNTRY_CODE}_rainfall_seasonality.parquet`** and **`.csv`**: Wide ADM2 table with seasonality classification, block duration, onset month, and rainfall proportion columns produced by the notebook.
-- **Pipeline parameters JSON** under `data/seasonality_rainfall/`.
+- **Pipeline parameters JSON** under `data/seasonality_rainfall/`, with **`SNT_CONFIG_VERSION`** and **`SNT_CONFIG_VERSION_ID`**, the name and id of the **`SNT_CONFIGURATION`** version read.
 - **Papermill output** in `papermill_outputs/` and **static report assets** in `reporting/outputs/`.
 
 > **Notes for the Data Analyst:**

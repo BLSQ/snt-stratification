@@ -1097,9 +1097,21 @@ dataset **before** building the editor's write step (`WorkspaceStore`), so it is
 the final contract. The form and validation (`LocalStore`, download only) can proceed in parallel.
 
 **Before `v1.0.0`, in this order:**
-- [ ] **Config as dataset `SNT_CONFIGURATION`** (CFG-4), with a fixed slug by convention (it can't
-      be looked up in itself). The editor writes through a validating pipeline. Needs a pinned
-      `snt_lib` release (D-3): config loading changes.
+- [x] **Config as dataset `SNT_CONFIGURATION`** (CFG-4): every `pipeline.py` and notebook reads
+      `SNT_config.json` from the dataset's latest version, uploaded by hand until the editor writes
+      it; no validating pipeline. Decided as [ADR 0043](decisions/0043-config-read-from-snt-configuration-dataset.md).
+      `snt_lib` changes on a branch off `release-v1` that the pipelines pin.
+      Commits 1–4, 2026-11-16, on `phase-5/cfg-4-config-dataset`: (1) `snt_utils` branch
+      `cfg-4-config-from-dataset` at `44f5946`, `load_configuration_snt_from_dataset()`; (2) the R
+      helper `load_snt_config_from_dataset()`, the 46 notebooks and the
+      [how-to](../contracts/snt_config/README.md#snt-configuration-dataset); (3) the 21
+      `pipeline.py`, pinned to `44f5946`, the 20 that publish `{CC}_parameters.json` adding
+      `SNT_CONFIG_VERSION` and `SNT_CONFIG_VERSION_ID`; (4) docs. Tested so far in a test
+      workspace: `snt_dhis2_formatting` only, its `{CC}_parameters.json` holding both keys with the
+      right values. Still to verify at the next pre-release cut (`release` skill): a run without
+      the dataset (the `[ERROR]`), the full DHIS2 chain against the baseline, the version in each
+      `{CC}_parameters.json`, one notebook run by hand. Country variants (`*_<CC>.ipynb`) keep
+      reading the disk file ([`pipelines/CLAUDE.md`](../pipelines/CLAUDE.md#country-specific-notebook-variants)).
 - [ ] **Orchestrator:** implement D-12 (count only full runs as "processed", reading the run's own
       `run_report_only` through the proxy; OD-7 was settled on 2026-11-03), fix `ohName` drift
       (APP-9) and the `create_pipeline_cards` README raw-URL docs.
@@ -1112,7 +1124,7 @@ the final contract. The form and validation (`LocalStore`, download only) can pr
       the map stays in `SNT_config.json`. Decided and fully planned (key table, `snt_lib` branch route,
       four commits, verification) in [BACKLOG CFG-1](BACKLOG.md#cfg-1); start there. Cheapest item
       to do now, most annoying later: after `v1.0.0` it also touches the editor's write step and
-      CFG-4's validating pipeline.
+      every config already uploaded to a workspace's `SNT_CONFIGURATION` dataset.
 
 **Deferred past `v1.0.0`.** A config-shape change after `v1.0.0` is a major version or a migration
 step for every country config installed from this repo; accepted. Each item lives in the BACKLOG,
@@ -1214,7 +1226,8 @@ not here:
   but Phase 4 still adds `repo` to the marker.
 - **Config editor ↔ pipelines duplication:** `validate_config()` lives in Python (`snt_lib`) and in
   the editor's JS, and nothing keeps them in agreement. Handled by the conformance fixtures (Phase 3).
-  Server-side validation (editor spec §12.2 option 4) arrives naturally with CFG-4's validating pipeline.
+  Server-side validation (editor spec §12.2 option 4) is not planned: ADR 0043 decided against a
+  validating pipeline for now, and how the editor validates and writes is decided when it is built.
 - **The editor writes to the workspace, but the orchestrator only has `FILES_READ`.** The write
   mechanism and scopes are unverified (editor EXTERNAL_CHECKS item 4). Fold this into S5.
 - **`snt_lib@release-v1` is unpinned** (tag or branch is unverified). D-3 pins it.
@@ -1260,7 +1273,9 @@ not here:
 | 2026-11-13 | Phase 4 commits 6–7, CI green through 5a. Checker: `stands_for` names template-created pipelines (old `snt-development` codes matched on the title, step number ignored; the `-<6 hex>` suffix), `+redeploy-` stripped, a bare `v<N>` claims nothing; BOOT-1 closed, BOOT-5 opened (deployers keep exact-code lookup). **S3 corrected:** a template-created code is the slug of the source pipeline's display name, not its code (read from `snt-development`, `snt-testing`, the sandbox and a workshop workspace). Manifest v1 deleted; bootstrap docs, the three readmes and `pipelines/CLAUDE.md` brought in line (D-18 included). `pytest` 118 passed, 16 skipped locally | Commit 7a (this log + hand-off), then commit 8 in a new session: CI on 6–7a, then three questions (BOOT-4, tag the branch or merge first, the test workspace) — see the [commit 8 hand-off](#phase-4--bootstrap-adapted-to-the-monorepo) |
 | 2026-11-13 → 16 | Phase 4 commit 8. Commits 1–7b merged first (PR #6); `v0.1.0` tagged on `main` as a pre-release. Verified in two fresh BFA workspaces, old templates against the deployer: checker `match` on all 259 entries; 26 tables from formatting to quality of care identical. Attribution mode correctly finds no best fit for a pre-release (ADR 0034). The DHIS2 extract was not verified: the BFA DHIS2's organisation-units response was invalid JSON in every workspace, old code included; a shared extract dataset was used instead. Details in [Phase 4 results](#phase-4-results) | Commit 9, the `release` skill, in a new session: start from "Learned for the `release` skill" in [Phase 4 results](#phase-4-results) |
 | 2026-11-16 | Phase 4 commit 9: the `release` skill (`.claude/skills/release/`), built on the commit 8 runbook, with the two dataset-comparison scripts; `CLAUDE.md` and `README.md` list it. **D-19**: a new test workspace per candidate, with the previous release's kept as baseline; the full DHIS2 chain compared every time; promotion = a new full release on the verified rc's commit. `release_strategy.md` open point 4 settled by it | Close Phase 4: CI on 8–9a, PR, merge. Then Phase 5 — see the [closing hand-off](#phase-4--bootstrap-adapted-to-the-monorepo) |
-| 2026-11-16 | Phase 4 merged. Phase 5 opened on `phase-5/cfg-1-dataset-keys`. CFG-1 analysed and **decided** (key = slug uppercased, map stays in the config, `snt_lib` validator changed on a branch off `release-v1`), then **deferred**: the full plan is in [BACKLOG CFG-1](BACKLOG.md#cfg-1). **Phase 5 re-scoped**: before `v1.0.0` only CFG-4, the orchestrator items (D-12, APP-9, README docs) and the cut; CFG-1 optional at the pre-cut checklist; the rest deferred past `v1.0.0` with its cost stated. Nothing implemented | CFG-4, in a new session: start from [BACKLOG CFG-4](BACKLOG.md#cfg-4), the editor spec §6–7 and `snt_lib`'s `load_configuration_snt` |
+| 2026-11-16 | Phase 4 merged. Phase 5 opened on `phase-5/cfg-1-dataset-keys`. CFG-1 analysed and **decided** (key = slug uppercased, map stays in the config, `snt_lib` validator changed on a branch off `release-v1`), then **deferred**: the full plan is in [BACKLOG CFG-1](BACKLOG.md#cfg-1). **Phase 5 re-scoped**: before `v1.0.0` only CFG-4, the orchestrator items (D-12, APP-9, README docs) and the cut; CFG-1 optional at the pre-cut checklist; the rest deferred past `v1.0.0` with its cost stated. Nothing implemented | CFG-4, in a new session: start from BACKLOG CFG-4 (since done: [ADR 0043](decisions/0043-config-read-from-snt-configuration-dataset.md)), the editor spec §6–7 and `snt_lib`'s `load_configuration_snt` |
+| 2026-11-16 | CFG-4 opened on `phase-5/cfg-4-config-dataset`. **Decided** (ADR 0043): every `pipeline.py` and notebook reads `SNT_config.json` from the latest version of `SNT_CONFIGURATION` (`snt-configuration`); upload by hand in the UI until the editor writes it; no validating pipeline; the version recorded in `{CC}_parameters.json`, not passed to notebooks; a missing dataset is an `[ERROR]` linking to a how-to. Found: 46 notebooks read the disk file, not only the 21 `pipeline.py`. BOOT-7 opened (checker). Commit 0 (decision + plan) written | Commit 1, the `snt_utils` branch: see BACKLOG CFG-4 (since done: [ADR 0043](decisions/0043-config-read-from-snt-configuration-dataset.md)) |
+| 2026-11-16 → 17 | CFG-4 commits 2–6 on `phase-5/cfg-4-config-dataset`: the R helper `load_snt_config_from_dataset()`, the 46 notebooks and the how-to (2); the 21 `pipeline.py` on `load_configuration_snt_from_dataset()`, pinned to `snt_utils@44f5946`, the 20 that publish `{CC}_parameters.json` adding `SNT_CONFIG_VERSION` and `SNT_CONFIG_VERSION_ID` (3); docs, CFG-4 ticked and removed from the BACKLOG (4); the `release` skill's `dataset_summary.py` reads the dataset, falling back to the disk file for an older baseline (5); facts left stale (6): no validating pipeline, `snt_lib` pinned to a commit, no R config validator (config editor EXTERNAL_CHECKS item 2 answered). Tested in a test workspace: `snt_dhis2_formatting` only, both version keys right; a first attempt failed `validate_config()` on a missing `SNT_POPULATION_USER_PROVIDED`, so the docs now say the file must pass it. Left as is: on a failed load, 20 pipelines log the `[ERROR]` twice | Commit 7 (this log), CI, PR, merge. Then, in a new session, the orchestrator items of [Phase 5](#phase-5--breaking-change-window-before-the-first-production-tag) (D-12, APP-9, README docs). CFG-4's full verification is at the next pre-release cut (its tick lists the steps) |
 
 ---
 

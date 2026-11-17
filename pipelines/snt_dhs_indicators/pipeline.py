@@ -4,7 +4,7 @@ from openhexa.sdk import current_run, pipeline, parameter, workspace
 from snt_lib.snt_pipeline_utils import (
     pull_scripts_from_repository,
     add_files_to_dataset,
-    load_configuration_snt,
+    load_configuration_snt_from_dataset,
     run_notebook,
     run_report_notebook,
     validate_config,
@@ -73,7 +73,7 @@ def dhs_indicators(run_reports_only: bool, pull_scripts: bool) -> None:
 
     try:
         # Load configuration
-        snt_config_dict = load_configuration_snt(snt_root_path / "configuration" / "SNT_config.json")
+        snt_config_dict, snt_config_version = load_configuration_snt_from_dataset()
         validate_config(snt_config_dict)
     except Exception as e:
         current_run.log_error(f"Error loading or validating configuration: {e}")
@@ -189,6 +189,10 @@ def dhs_indicators(run_reports_only: bool, pull_scripts: bool) -> None:
         parameters={"run_reports_only": run_reports_only, "pull_scripts": pull_scripts},
         output_path=data_output_path,
         country_code=country_code,
+        extra_metadata={
+            "SNT_CONFIG_VERSION": snt_config_version.name,
+            "SNT_CONFIG_VERSION_ID": snt_config_version.id,
+        },
     )
 
     # add files to a new dataset version

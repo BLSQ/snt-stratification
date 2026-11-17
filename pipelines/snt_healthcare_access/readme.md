@@ -20,7 +20,7 @@ This pipeline estimates, for each **ADM2**, the share of the population living w
 1. Validation:
   - If an **`input_fosa_file`** is supplied: check that it exists and has a **`.csv`** extension. A failed check is logged as a warning and the run continues; the notebook then falls back to the DHIS2 pyramid.
   - Stop the run if **`wpop_year`** is outside 2015–2030.
-2. Load **`configuration/SNT_config.json`**, determine **`COUNTRY_CODE`**, and retrieve the **ADM2** shapes (**`{COUNTRY_CODE}_shapes.geojson`** from **`DHIS2_DATASET_FORMATTED`**), dropping units with missing or empty geometry; the run stops if no valid shapes remain.
+2. Load **`SNT_config.json`** from the latest version of **`SNT_CONFIGURATION`**, determine **`COUNTRY_CODE`**, and retrieve the **ADM2** shapes (**`{COUNTRY_CODE}_shapes.geojson`** from **`DHIS2_DATASET_FORMATTED`**), dropping units with missing or empty geometry; the run stops if no valid shapes remain.
 3. Save the parameters JSON, download the WorldPop raster for **`wpop_year`** into **`data/worldpop/rasters/`** if it is not already there (the run stops if it cannot be retrieved), and run **`pipelines/snt_healthcare_access/code/snt_healthcare_access.ipynb`** via Papermill with **`INPUT_FOSA_FILE`** and **`WORLDPOP_YEAR`**.
 4. Inside the notebook: load **ADM2** polygons, facility coordinates, population raster, build buffers in the metric CRS used in the notebook (see notebook for EPSG), rasterize inclusion masks, and compute zonal sums of total versus covered population per **`ADM2_ID`**.
 5. Upload **`{COUNTRY_CODE}_population_covered_health`** parquet and CSV plus the parameters JSON to **`SNT_HEALTHCARE_ACCESS`**; the run fails if that dataset identifier is missing from the configuration.
@@ -28,7 +28,7 @@ This pipeline estimates, for each **ADM2**, the share of the population living w
 
 ## Inputs
 
-* **`configuration/SNT_config.json`**: Country code and dataset identifiers for DHIS2 extracts.
+* **`SNT_config.json`** from the latest version of **`SNT_CONFIGURATION`** (required): Country code and dataset identifiers for DHIS2 extracts.
 * **Facility coordinates**: Either **`input_fosa_file`** or **`{COUNTRY_CODE}_pyramid.parquet`** from **`DHIS2_DATASET_FORMATTED`**. For **NER** only, **`data/dhis2/extracts_raw/organisation_unit_groups/NER_organisation_unit_groups.parquet`** (if present) is also read to drop closed facilities.
 * **Population raster**: The corresponding population data, **`{country_code.lower()}_pop_{wpop_year}_CN_100m_*.tif`**, under **`data/worldpop/rasters/`**.
 * **ADM2 polygons**: **`{COUNTRY_CODE}_shapes.geojson`** from **`DHIS2_DATASET_FORMATTED`**.
@@ -36,7 +36,7 @@ This pipeline estimates, for each **ADM2**, the share of the population living w
 ## Outputs
 
 * **`{COUNTRY_CODE}_population_covered_health.parquet`** and **`.csv`**: one row per **ADM2** with the ADM1/ADM2 IDs and names, total population (**`POP_TOTAL`**), covered population (**`POP_COVERED`**) and the coverage percentage (**`PCT_HEALTH_ACCESS`**, 0–100).
-* **Pipeline parameters JSON** saved under **`data/healthcare_access/`**.
+* **Pipeline parameters JSON** saved under **`data/healthcare_access/`**, with **`SNT_CONFIG_VERSION`** and **`SNT_CONFIG_VERSION_ID`**, the name and id of the **`SNT_CONFIGURATION`** version read.
 * **Intermediate files** under **`pipelines/snt_healthcare_access/intermediate_results/`**: the filtered facility points and coverage buffers (**`{COUNTRY_CODE}_FOSA_filtered.gpkg`**, **`{COUNTRY_CODE}_health_coverage_buffers.gpkg`**, both read by the reporting notebook) and the covered-population raster (**`.pop_covered_healthcare.tif`**).
 * **Reporting artefacts** under **`reporting/outputs/`**.
 

@@ -24,14 +24,14 @@ This pipeline measures **malaria case seasonality** at **ADM2** using **monthly*
 
 ## Inputs
 
-- **`configuration/SNT_config.json`**: Supplies dataset identifiers (DHIS2 formatted routine) and geometry references.
+- **`SNT_config.json`** from the latest version of **`SNT_CONFIGURATION`** (required): Supplies dataset identifiers (DHIS2 formatted routine) and geometry references.
 - **`{COUNTRY_CODE}_routine.parquet`**: Monthly DHIS2 extract containing `CONF`, `ADM2_ID`, `YEAR`, and `MONTH` (plus other routine columns ignored by this pipeline’s seasonality math).
 - **`{COUNTRY_CODE}_shapes.geojson`** (from **`DHIS2_DATASET_FORMATTED`**): ADM2 boundary attributes (IDs and names) attached to the outputs.
 
 ## Outputs
 
 - **`{COUNTRY_CODE}_cases_seasonality.parquet`** and **`.csv`**: Wide ADM2 table with case-based seasonality indicators.
-- **Pipeline parameters JSON** under `data/seasonality_cases/`.
+- **Pipeline parameters JSON** under `data/seasonality_cases/`, with **`SNT_CONFIG_VERSION`** and **`SNT_CONFIG_VERSION_ID`**, the name and id of the **`SNT_CONFIGURATION`** version read.
 - **Papermill output** (`papermill_outputs/`) and **reporting outputs** (`reporting/outputs/`).
 
 > **Notes for the Data Analyst:**

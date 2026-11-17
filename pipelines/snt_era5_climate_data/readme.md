@@ -33,7 +33,7 @@ The **SNT ERA5 Climate Data** pipeline synchronizes **ERA5-Land** reanalysis fro
 
 ## Inputs
 
-* **`SNT_config.json`**: **`COUNTRY_CODE`**, **`DHIS2_DATASET_FORMATTED`**, **`ERA5_DATASET_CLIMATE`**.
+* **`SNT_config.json`** from the latest version of **`SNT_CONFIGURATION`** (required): **`COUNTRY_CODE`**, **`DHIS2_DATASET_FORMATTED`**, **`ERA5_DATASET_CLIMATE`**.
 * **`cds_connection`**: Valid CDS API key for programmatic access.
 * **Formatted shapes** file in the DHIS2 formatted dataset.
 
@@ -43,7 +43,7 @@ The **SNT ERA5 Climate Data** pipeline synchronizes **ERA5-Land** reanalysis fro
 
 * **Zarr stores:** `data/era5/raw/{variable}.zarr` (rebuilt each run for deterministic outputs).
 * **Parquet aggregates:** under `data/era5/aggregate/{variable}/` for daily, weekly, epidemic-weekly, and monthly resolutions.
-* **Published monthly** Parquet (per configured variable) and **parameters JSON** on **`ERA5_DATASET_CLIMATE`**.
+* **Published monthly** Parquet (per configured variable) and **parameters JSON** on **`ERA5_DATASET_CLIMATE`**. The parameters JSON records **`SNT_CONFIG_VERSION`** and **`SNT_CONFIG_VERSION_ID`**, the name and id of the **`SNT_CONFIGURATION`** version read.
 * **Report notebook** outputs under `pipelines/snt_era5_climate_data/reporting/outputs/`.
 
 ---

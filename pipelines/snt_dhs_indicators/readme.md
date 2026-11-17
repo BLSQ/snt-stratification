@@ -22,7 +22,7 @@ In report-only mode, steps 2–6 run only the report notebooks on the existing o
 
 * **DHS recode zips** in **`data/dhs/raw/`** (latest SPSS **`SV`** issue): **`HR`** for every indicator, plus **`PR`** (bed nets, prevalence), **`KR`** (care seeking, vaccination) or **`BR`** (mortality). A notebook stops if its two recodes are not from the same survey version.
 * **`[COUNTRY_CODE]_shapes.geojson`** from **`DHIS2_DATASET_FORMATTED`** (written by **`snt_dhis2_formatting`**): the ADM1/ADM2 pyramid. A notebook stops if the DHS region names do not match the DHIS2 **`ADM1_NAME`** values exactly.
-* **`configuration/SNT_config.json`**: **`SNT_CONFIG.COUNTRY_CODE`**, and **`DHIS2_DATASET_FORMATTED`** and **`DHS_INDICATORS`** under **`SNT_DATASET_IDENTIFIERS`**.
+* **`SNT_config.json`** from the latest version of **`SNT_CONFIGURATION`** (required): **`SNT_CONFIG.COUNTRY_CODE`**, and **`DHIS2_DATASET_FORMATTED`** and **`DHS_INDICATORS`** under **`SNT_DATASET_IDENTIFIERS`**.
 
 ## Outputs
 
@@ -33,7 +33,7 @@ All paths are under **`data/dhs/indicators/`** with **`{COUNTRY_CODE}_DHS_ADM2_`
 * **`mortality/`**: **`U5MR_PERMIL`**
 * **`prevalence/`**: **`PCT_U5_PREV_RDT`**
 * **`vaccination/`**: **`PCT_DTP1`**, **`PCT_DTP2`**, **`PCT_DTP3`**, **`PCT_DROPOUT_DTP`**
-* **Pipeline parameters JSON** (saved next to outputs when computation runs)
+* **Pipeline parameters JSON** (saved next to outputs when computation runs), with **`SNT_CONFIG_VERSION`** and **`SNT_CONFIG_VERSION_ID`**, the name and id of the **`SNT_CONFIGURATION`** version read
 * **Published copies** on the **`DHS_INDICATORS`** OpenHEXA dataset
 * **Reports** in **`pipelines/snt_dhs_indicators/reporting/outputs/`** (executed report notebooks and their HTML), with the map and confidence-interval PNGs in its **`figures/`** subfolder. The reports plot at ADM1.
 

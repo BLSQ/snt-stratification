@@ -9,7 +9,7 @@ from rasterstats import zonal_stats
 from snt_lib.snt_pipeline_utils import (
     add_files_to_dataset,
     get_file_from_dataset,
-    load_configuration_snt,
+    load_configuration_snt_from_dataset,
     pull_scripts_from_repository,
     run_report_notebook,
     save_pipeline_parameters,
@@ -66,7 +66,7 @@ def snt_worldpop_extract(year_start: int, year_end: int, run_report_only: bool, 
         )
 
     # get configuration
-    snt_config_dict = load_configuration_snt(config_path=snt_root_path / "configuration" / "SNT_config.json")
+    snt_config_dict, snt_config_version = load_configuration_snt_from_dataset()
     validate_config(snt_config_dict)
 
     # get country identifier for file naming
@@ -97,6 +97,10 @@ def snt_worldpop_extract(year_start: int, year_end: int, run_report_only: bool, 
         },
         output_path=data_path,
         country_code=country_code,
+        extra_metadata={
+            "SNT_CONFIG_VERSION": snt_config_version.name,
+            "SNT_CONFIG_VERSION_ID": snt_config_version.id,
+        },
     )
 
     periods = get_extract_periods(start=str(year_start), end=str(year_end))

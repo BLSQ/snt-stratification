@@ -123,12 +123,16 @@ The fix is to name a fixed point instead of a moving branch: a tag (`…/snt_uti
 commit SHA. Upgrades then become a reviewable, revertible one-line PR. The cost is that someone has
 to bump the refs. Tags are the usual compromise.
 
-**Current repo state (checked 2026-10-16), which the reference docs do not yet reflect:** all 20
-files reference `snt_utils.git@release-v1`. **`release-v1` is a branch** (checked 2026-11-12 in a
-local clone), so the problem above is unchanged. A real tag exists for its head that day:
-annotated tag `v1.0.2` → `23b8340`, which the config conformance test already pins
-(`tests/requirements-conformance.txt`); `v1.0.0` and `v1.0.1` are older. `openhexa.toolbox @main`
-remains in 13 files. See [DOC-3](#doc-3).
+**Current repo state (checked 2026-11-17):** the 21 files that install `snt_lib` pin one commit,
+`snt_utils.git@44f59462846ecbb35e86c4daa8b2f434584036b3`, on the `snt_utils` branch
+`cfg-4-config-from-dataset` off `release-v1`
+([ADR 0043](decisions/0043-config-read-from-snt-configuration-dataset.md)). For `snt_lib`, (a)–(c)
+no longer hold, but the pin is not a tag, and that commit is reachable only through that branch:
+deleting or rewriting the branch can break every install. `release-v1` itself is a branch
+(checked 2026-11-12 in a local clone); annotated tag `v1.0.2` → `23b8340` was its head that day,
+and the config conformance test pins it (`tests/requirements-conformance.txt`).
+`openhexa.toolbox @main` remains in 13 files, so (a)–(c) still hold for it. Left: a tag for the
+`snt_lib` pin, and a fixed ref for `openhexa.toolbox`. See [DOC-3](#doc-3).
 
 Related: the workspace image pins `openhexa.toolbox=2.11.3`, which `@main` overrides at pipeline
 run time, so a notebook run interactively and the same notebook run by the pipeline can see
@@ -206,8 +210,9 @@ outdated example config and are **ignored**. Related: [META-5](#meta-5).
 15 current key names as required and fails every pipeline at startup if one is missing. Nothing
 else in `snt_lib` uses the keys. The validator must change **before** the keys do. `snt_lib` is
 maintained by a colleague; the agreed route while they are unavailable: a branch of
-`BLSQ/snt_utils` off `release-v1` (e.g. `release-v1-CFG1`), and this repo's pipelines pin that
-branch, so the change is easy to undo. `snt_development` is left untouched.
+`BLSQ/snt_utils` off `release-v1` (e.g. `cfg-1-dataset-keys`; names starting with `release-v1`
+are blocked by the `snt_utils` ruleset `protect-release-branches`), and this repo's pipelines pin
+that branch, so the change is easy to undo. `snt_development` is left untouched.
 
 **Where the old keys appear** (84 files mention `SNT_DATASET_IDENTIFIERS`): 20 `pipeline.py`;
 about 25 notebooks under `code/` and `.r` files under `utils/` (`config_json$SNT_DATASET_IDENTIFIERS$<KEY>`);
@@ -262,25 +267,6 @@ per-field rules are in
 [`contracts/snt_config/config_analysis_notes.md`](../contracts/snt_config/config_analysis_notes.md).
 
 **Owner:** Giulia. **Source:** the `snt_development` version of [`contracts/snt_config/README.md`](../contracts/snt_config/README.md).
-
-### <a id="cfg-4"></a>CFG-4 · `SNT_CONFIGURATION` dataset and an editing webapp
-
-Planned, none of it exists yet: a new OpenHEXA dataset, `SNT_CONFIGURATION`, holding
-**`SNT_config.json` only**, with a fixed slug by convention (it cannot be looked up in itself), and
-the config editor ([`webapps/config_editor/`](../webapps/config_editor/CLAUDE.md), spec §6–7)
-writing to it through a Python pipeline that validates the structure first. That is where the
-schemas in `contracts/` become an executable gate rather than documentation. Pipelines then read
-the config from the dataset instead of `configuration/SNT_config.json`, which changes `snt_lib`'s
-`load_configuration_snt()` and needs a pinned `snt_lib` release (D-3).
-
-Not part of it: the Explorer metadata. There is no `SNT_metadata.json` any more; the
-`snt_metadata_json_trim` pipeline derives `SNT_metadata_trimmed.json` from the master list and
-publishes it to its own dataset, `SNT_METADATA` (`snt-metadata`), which it creates on first run.
-
-First item of Phase 5 ([MIGRATION_PLAN.md](MIGRATION_PLAN.md#phase-5--breaking-change-window-before-the-first-production-tag)).
-
-**Owner:** Giulia. **Source:** `contracts/snt_metadata_json/README.md` (pre-2026-10-27 version),
-corrected 2026-11-16.
 
 ### <a id="cfg-5"></a>CFG-5 · Per-dataset output contracts
 
@@ -387,7 +373,7 @@ selector? If so, which column does it expect (`MONTH`, `PERIOD`)? Affects ERA5, 
 The example does not point at its own schema, so an editor does not validate it automatically, and
 nothing records which format version a file follows. Worth adding once the shape settles, as a
 `$schema` property, a `FORMAT_VERSION` field, or through the `SNT_CONFIGURATION` dataset version
-([CFG-4](#cfg-4)).
+([ADR 0043](decisions/0043-config-read-from-snt-configuration-dataset.md)).
 
 ### <a id="meta-9"></a>META-9 · Year-independent layers
 
@@ -556,14 +542,6 @@ Each needs a deliberate decision: harden it, or accept it and say so.
 
 **Source:** DATA_ARCHITECTURE §6.2.
 
-### <a id="pipe-7"></a>PIPE-7 · Stale config path in an error message
-
-`snt_dhis2_reporting_rate_dataset/pipeline.py:73` says `(see: configuration/SNT_config_{country_code}.json)`,
-which points at the old per-country copies, now archived in `deprecated/configuration/`. One-line fix,
-but keep it in a separate PR: changing a `pipeline.py` triggers that pipeline's CI deploy on merge.
-
-**Owner:** Giulia. **Source:** docs restructure plan, 2026-10.
-
 ### <a id="pipe-8"></a>PIPE-8 · Post-merge review of the `snt_dhis2_incidence` changes from PR #138
 
 [PR #138](https://github.com/BLSQ/snt_development/pull/138) was merged on 2026-10-05, before
@@ -643,6 +621,17 @@ adopt the copy (and what to do with several), warn, or leave it. Change both dep
 (`tests/test_pipeline_deployer.py`).
 
 **Source:** Migration Phase 4 commit 6, 2026-11-13 (deferred: the checker only, for now).
+
+### <a id="boot-7"></a>BOOT-7 · The checker reports a missing `SNT_CONFIGURATION` dataset
+
+Every SNT pipeline stops with an `[ERROR]` if the dataset `SNT_CONFIGURATION`
+(`snt-configuration`), its latest version or its `SNT_config.json` is missing
+([ADR 0043](decisions/0043-config-read-from-snt-configuration-dataset.md)). The checker could
+report this before anyone runs a pipeline. It reads no config today and takes no country code; it
+would only check that the file exists, not validate it. Changes the checker's report, so its schema
+in `contracts/` too (R22).
+
+**Source:** Phase 5 discussion (CFG-4), 2026-11-16.
 
 ---
 
@@ -958,9 +947,6 @@ owns the fact:
 - **`configuration/readme.txt` does not exist** in the repo, but
   [`DATA_ARCHITECTURE.md` §5.4](DATA_ARCHITECTURE.md#54-configuration-schema-snt_configjson) and
   [§6.1](DATA_ARCHITECTURE.md#61-confirmed-defect--pop_pregnant_woman-vs-pop_pregnant_women) cite it.
-- **The requirements description is stale.** `DATA_ARCHITECTURE.md` §7.1 and `CLAUDE.md` say every
-  `requirements.txt` is the same two lines with `snt_lib` on no ref. Today `snt_lib` is on
-  `@release-v1` everywhere, and 7 of the 20 files have no `openhexa.toolbox` line. See [DEP-1](#dep-1).
 
 **Owner:** Giulia.
 
