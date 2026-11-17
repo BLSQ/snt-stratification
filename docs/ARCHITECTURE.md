@@ -94,7 +94,7 @@ because OpenHEXA runs Python pipelines but not R ([Part 2](#part-2--openhexa-in-
 | Bootstrap pipelines (`kind: bootstrap`, pure Python) | **Templates on each full release**, from the new publishing workspace, installed once per workspace; plus the **deployer**, which updates them only when the target tag is the latest full release or newer ([ADR 0042](decisions/0042-bootstrap-pipelines-as-templates-on-release.md)) | Templates: [`release.yaml`](../.github/workflows/release.yaml)'s bootstrap-templates job written, disabled until Phase 6; deployer: Phase 4; pushed by hand until then |
 | R half: notebooks, `utils/*.r`, `shared/r/` | **`Pull scripts` = ON** in a run: `snt_lib` copies them from GitHub (R6) | **Live**, old repo only (`snt_lib` hardcodes it) |
 | | **Deployer**: copies them to the workspace filesystem | Built; installed `v0.1.0` in a test workspace (Phase 4), no country workspace yet |
-| | **Self-sync**: a pipeline copies its bundled R half on start | Proven in a spike; not built (OD-9) |
+| | **Self-sync**: a pipeline copies its bundled notebooks and `utils/*.r` on start, not `shared/r/` ([ADR 0044](decisions/0044-self-sync-replaces-pull-scripts.md)) | Decided, being built in Phase 5; `shared/r/` gap: [REL-6](BACKLOG.md#rel-6) |
 | Country variants `<name>_<CC>.ipynb` | None: edited in the country's workspace only | By design ([ADR 0003](decisions/0003-country-variants-outside-pull-scripts.md)) |
 | Webapp bundle `webapps/<name>/app/` | Uploaded by hand (drag-and-drop or MCP), scopes set separately ([`DEPLOYMENT.md`](../webapps/orchestrator/docs/DEPLOYMENT.md)) | **Live**; release zips in Phase 7 |
 | `catalogs/*.json` | Downloaded at run time from a GitHub release by the pipeline that needs it | **Live**, from the old repo |

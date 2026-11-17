@@ -684,6 +684,18 @@ so this is about a readable per-release summary for users. Natural place: `relea
 
 **Source:** docs restructure plan, 2026-10.
 
+### <a id="rel-6"></a>REL-6 · `shared/r/` does not reach a template-installed workspace
+
+Self-sync ([ADR 0044](decisions/0044-self-sync-replaces-pull-scripts.md)) copies each pipeline's
+own notebooks and `utils/*.r` from its zip, but not the shared R library `shared/r/`, which
+almost every notebook `source()`s. Only the deployer installs it. A workspace built from the new
+templates (Phase 6) therefore has no `shared/r/`, and its notebooks fail. Options: ship
+`shared/r/` in every pipeline zip and sync it (spike S2b tested this; several pipelines then
+write the same files), let one pipeline own it, or an R package (migration plan §10). Settle
+before relying on the template route ([`MIGRATION_PLAN.md`](MIGRATION_PLAN.md) Phase 6).
+
+**Source:** self-sync discussion, 2026-11-17.
+
 ---
 
 ## Orchestrator webapp
