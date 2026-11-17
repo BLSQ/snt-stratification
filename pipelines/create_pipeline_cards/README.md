@@ -3,10 +3,11 @@
 An OpenHEXA pipeline that generates a workspace's `pipeline_cards.json` for the SNT Pipelines
 Orchestrator, straight from live data — no manual GitHub scraping needed.
 
-This is a **utility pipeline that supports the orchestrator webapp**, not one of the ~18 SNT
-process pipelines the orchestrator lets users run (those live in the separate
-[`snt_development`](https://github.com/BLSQ/snt_development) repo). It belongs in
-`pipelines/` alongside any future pipelines that support the webapp itself.
+This is a **utility pipeline that supports the orchestrator webapp** (kind `support` in
+[`pipelines/registry.json`](../registry.json)), not one of the ~18 SNT process pipelines the
+orchestrator lets users run. Those are the `snt` pipelines beside it in [`pipelines/`](../); live
+country workspaces still install them from the old
+[`snt_development`](https://github.com/BLSQ/snt_development) repo.
 
 ## What it does
 
@@ -32,7 +33,7 @@ For the workspace it runs in, it:
    (from its deployed version, matched case-insensitively) there as `<id>.md`. A pipeline with no
    README is logged as a warning and skipped.
 
-The output matches the contract in `contracts/pipeline_cards.schema.json`. **It is consumed in place:**
+The output matches the contract in [`contracts/orchestrator/pipeline_cards.schema.json`](../../contracts/orchestrator/pipeline_cards.schema.json). **It is consumed in place:**
 the orchestrator webapp fetches it straight out of the workspace's file storage at page load, so
 running this pipeline is all that's needed to update a workspace's configuration — nothing to copy,
 commit, or redeploy. The full picture is in [`docs/ARCHITECTURE.md`](../../webapps/orchestrator/docs/ARCHITECTURE.md#the-pipeline-catalog);
@@ -118,9 +119,11 @@ The generator reads parameters from the deployed version through the API, so you
 this — except to read pipeline source on GitHub, or to diagnose a pipeline that comes out with
 `id: null`.
 
-Source: `https://raw.githubusercontent.com/BLSQ/snt_development/main/{pipeline_id}/pipeline.py` —
-each pipeline is a folder at the **root** of `snt_development` named after its Python function name
-(not under its `pipelines/` folder). The `id` is the first argument of `@pipeline("...")`.
+Source: `pipelines/{pipeline_id}/pipeline.py` in this repo
+(`https://raw.githubusercontent.com/BLSQ/snt-stratification/main/pipelines/{pipeline_id}/pipeline.py`)
+— each pipeline is a folder under `pipelines/` named after its Python function name. The `id` is
+the first argument of `@pipeline("...")`. A workspace may run another version (an older release,
+or the old `snt_development` templates); the generator always reads the deployed one.
 
 Parameters are `@parameter` decorators stacked above the function; top-to-bottom is the display
 order. Each maps to one entry of the card's `parameters` array:
