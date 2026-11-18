@@ -1,7 +1,7 @@
 # 0041. The new templates are published from their own workspace
 
 Date: 2026-11-02
-Status: Accepted (amends [0004](0004-publish-only-from-snt-development.md))
+Status: Accepted (amends [0004](0004-publish-only-from-snt-development.md); amended by [0045](0045-how-the-new-templates-are-published.md): the workspace is `snt-templates`, publishing on full releases and by hand)
 
 ## Context
 

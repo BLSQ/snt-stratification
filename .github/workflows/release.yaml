@@ -9,17 +9,14 @@
 #                      attaches them to the release. A manual run ("Run workflow", only offered once
 #                      this file is on main) builds the same files under a test version name and keeps
 #                      them as a download on the run's page; it creates and changes no release.
-# bootstrap-templates: on full releases only ("released" skips pre-releases). Pushes each registry
-#                      kind: bootstrap pipeline to the new templates publishing workspace, which
-#                      publishes their template versions (ADR 0042). DISABLED until that workspace
-#                      exists (ADR 0041); until then maintainers push by hand.
 #
-# A full release created directly fires both "published" and "released": two runs, one job each.
+# The template versions of every pipeline, bootstrap ones included, are published by
+# push_templates.yaml on full releases (ADR 0045).
 name: release
 
 on:
   release:
-    types: [published, released]
+    types: [published]
   workflow_dispatch:
     inputs:
       version:
@@ -79,32 +76,3 @@ jobs:
           name: release-assets-${{ env.VERSION }}
           path: dist/
           retention-days: 7
-
-  bootstrap-templates:
-    # To enable, once the publishing workspace exists: set the repository variable
-    # OH_TEMPLATES_WORKSPACE (its slug) and the secret OH_TEMPLATES_TOKEN (a token for it), then
-    # remove "false &&". Read R5 first: every push from that workspace publishes a template version.
-    if: false && github.event.action == 'released'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          ref: ${{ github.event.release.tag_name }}
-      - uses: actions/setup-python@v6
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: Configure the OpenHEXA CLI
-        uses: blsq/openhexa-cli-action@v1
-        with:
-          workspace: ${{ vars.OH_TEMPLATES_WORKSPACE }}
-          token: ${{ secrets.OH_TEMPLATES_TOKEN }}
-      - name: Push each bootstrap pipeline (publishes its template version)
-        env:
-          RELEASE_URL: ${{ github.event.release.html_url }}
-        # The version is named after the tag, as the deployer names the versions it registers.
-        run: |
-          for name in $(jq -r '.pipelines | to_entries[] | select(.value.kind == "bootstrap") | .key' \
-              pipelines/registry.json); do
-            openhexa pipelines push "pipelines/$name" --code "${name//_/-}" --name "$VERSION" \
-              --description "Release $VERSION" --link "$RELEASE_URL" --yes
-          done
