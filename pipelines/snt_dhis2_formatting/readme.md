@@ -16,7 +16,7 @@ None. `pipeline.py` defines no domain parameters. The standard flags **`run_repo
 6. **Routine (analytics):** When **`[COUNTRY_CODE]_dhis2_raw_analytics.parquet`** exists, run **`snt_dhis2_formatting_routine.ipynb`** to write **`[COUNTRY_CODE]_routine.parquet`** and **`.csv`** (monthly facility-level rows with administrative keys).
 7. **Population:** When **`[COUNTRY_CODE]_dhis2_raw_population.parquet`** exists, run **`snt_dhis2_formatting_population.ipynb`** to write **`[COUNTRY_CODE]_population.parquet`** and **`.csv`**. The same notebook writes two blank CSV templates (one row per ADM2) to the workspace **`uploads/`** folder for operators to fill in.
 8. **Reporting rates:** When **`[COUNTRY_CODE]_dhis2_raw_reporting.parquet`** exists, run **`snt_dhis2_formatting_reporting_rates.ipynb`** to write **`[COUNTRY_CODE]_reporting.parquet`** and **`.csv`**.
-9. **Publish:** Save **`[COUNTRY_CODE]_parameters.json`** and upload the formatted files plus the parameters file to **`DHIS2_DATASET_FORMATTED`** via **`add_files_to_dataset`**. A file missing from the filesystem is skipped with a `[WARNING]`.
+9. **Publish:** Save **`[COUNTRY_CODE]_parameters.json`** and upload the formatted files plus the parameters file to **`DHIS2_DATASET_FORMATTED`** via **`add_files_to_dataset`**. A file missing from the filesystem is skipped with a warning.
 10. **Reporting:** Run **`snt_dhis2_formatting_report.ipynb`** (or its custom or country version, chosen as in step 3) to refresh the report outputs.
 
 With **`run_report_only`**, steps 4–9 are skipped: nothing is formatted or published. Steps 1–3 and 10 still run.

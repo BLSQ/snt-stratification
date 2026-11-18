@@ -69,11 +69,13 @@ calling each other.
 values. The repo is **public**, and this is health data for real districts. Do not add `.gitignore`
 exceptions for data, do not `git add -f`.
 
-**2. Merging here deploys nothing.** CI only runs checks, and `Pull scripts` = ON still pulls notebooks
-and shared R from the **old** `snt_development` repo (`snt_lib` hardcodes it). The routes from this
-repo — the deployer installing a release, a new template set, self-sync of the R half — are built in
-Phases 3–6 ([ADR 0040](docs/decisions/0040-templates-kept-alongside-the-deployer.md)). Live
-countries run the old repo, which is maintenance-only. Say this in every handover.
+**2. Merging here deploys nothing.** CI only runs checks. The routes from this repo — the deployer
+installing a release, a new template set — are built in Phases 3–6
+([ADR 0040](docs/decisions/0040-templates-kept-alongside-the-deployer.md)); once installed, a
+pipeline copies its own notebooks and `utils/*.r` to the workspace on every run
+([ADR 0044](docs/decisions/0044-self-sync-replaces-pull-scripts.md)). Live countries run the old
+`snt_development` repo, which is maintenance-only, and whose `Pull scripts` = ON pulls notebooks and
+shared R from there. Say this in every handover.
 
 **3. `pipeline.py` orchestrates; it must not compute.** Load config, resolve paths, call tasks and
 notebooks, publish to datasets. Business logic belongs in the R notebook (or, for the Python-only
@@ -102,7 +104,7 @@ the rule, never half-convert a violator. **Old ID** (where it changed): o = orch
 | [**R3**](docs/CONVENTIONS.md#r3) | `pipeline.py` orchestrates, never computes | `convention` | |
 | [**R4**](docs/CONVENTIONS.md#r4) | An output only exists if it is passed to `add_files_to_dataset(...)` | `convention` | |
 | [**R5**](docs/CONVENTIONS.md#r5) | Each template set is published from exactly one workspace; never push a pipeline from this repo to `snt-development` | `convention` | |
-| [**R6**](docs/CONVENTIONS.md#r6) | Every notebook listed in `pull_scripts_from_repository(...)`; a `.r` file with a non-derived name in `extra_util_scripts` | `convention` | |
+| [**R6**](docs/CONVENTIONS.md#r6) | Every notebook a pipeline runs listed in its `get_notebook_overrides(nb_paths=[...])` call; country variants never | `convention` | |
 | [**R7**](docs/CONVENTIONS.md#r7) | Every data file prefixed `{CC}_`, uppercase country code | `⚠ exceptions` — `data/worldpop/rasters/{cc_lower}_pop_*.tif` | |
 | [**R8**](docs/CONVENTIONS.md#r8) | Parquet is the machine contract; write the `.csv` twin beside it | `convention` | |
 | [**R9**](docs/CONVENTIONS.md#r9) | `{CC}_parameters.json` published beside the data, via `save_pipeline_parameters(...)` | `⚠ exceptions` — ERA5, healthcare_access | |
@@ -110,7 +112,7 @@ the rule, never half-convert a violator. **Old ID** (where it changed): o = orch
 | [**R11**](docs/CONVENTIONS.md#r11) | All **notebook parameter** globals UPPERCASE, injected side and `exists()` side alike | `⚠ exceptions` — [PIPE-3](docs/BACKLOG.md#pipe-3) | |
 | [**R12**](docs/CONVENTIONS.md#r12) | Every injected parameter has a matching `if (!exists("X")) X <- …` fallback, spelled identically | `convention` | |
 | [**R13**](docs/CONVENTIONS.md#r13) | Admin levels read from config, never hardcoded | `convention` | |
-| [**R14**](docs/CONVENTIONS.md#r14) | Standard flags named `run_report_only` / `pull_scripts` / `overwrite` | `⚠ exceptions` — `run_reports_only` in `snt_dhs_indicators` | |
+| [**R14**](docs/CONVENTIONS.md#r14) | Standard flags named `run_report_only` / `use_custom_notebooks` / `overwrite` | `⚠ exceptions` — `run_reports_only` in `snt_dhs_indicators` | |
 | [**R15**](docs/CONVENTIONS.md#r15) | One vocabulary per concept in operator-facing `choices=[...]` | `⚠ exceptions` — [PIPE-2](docs/BACKLOG.md#pipe-2) | |
 | [**R16**](docs/CONVENTIONS.md#r16) | `readme.md` updated in the same PR as the `pipeline.py` change it describes | `convention` | |
 | [**R17**](docs/CONVENTIONS.md#r17) | Failure messages a run surfaces (R or Python) start `[ERROR]` or `[WARNING]`, chosen deliberately | `convention` | b R17 |
@@ -167,8 +169,9 @@ defects): [`pipelines/CLAUDE.md`](pipelines/CLAUDE.md#pipeline-traps). Webapp tr
   (`pipelines/registry.json`, `contracts/**/*.json`, `webapps/*/app/**/*.json`, …). `git add` skips
   a matching file without error. Test with `git add --dry-run <file>`; `git check-ignore -v` exits 0
   on a `!` negation too, so it misleads. A new JSON file needs a deliberate negation, never `-f`.
-- **A country may not be running the notebook you edit.** A `<generic>_<CC>.ipynb` variant runs
-  instead, and none is in this repo (D-13) →
+- **A country may not be running the notebook you edit.** A `<generic>_<CC>.ipynb` variant, or
+  with `use_custom_notebooks` on a copy in `custom/`, runs instead, and none is in this repo
+  (D-13) →
   [`pipelines/CLAUDE.md`](pipelines/CLAUDE.md#country-specific-notebook-variants).
 - **Pipelines are not a DAG.** A results table can mix data vintages. Never assume your upstream ran
   today.

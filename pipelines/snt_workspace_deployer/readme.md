@@ -17,15 +17,14 @@ the deployment mechanism is documented in
 > test plan in [`docs/deployer.md`](../../docs/bootstrap/deployer.md) §6.7 (a newer tag, rollback,
 > hand edits, existing files, error messages) is not yet tested.** The first version, which read manifest
 > v1 from the old repository, was verified end to end on 2026-09-16 in `snt-development-sandbox` for
-> `snt_dhis2_extract` and `snt_map_extracts` only. It replaces the per-pipeline
+> `snt_dhis2_extract` and `snt_map_extracts` only. It replaces the old repository's per-pipeline
 > `Pull scripts` toggle and the Template auto-update subscription, so do not run it against a
 > country workspace until the open items in the two documents above are settled.
 
 ## Parameters
 
 This pipeline does not read `SNT_config.json` and has no country-specific parameters. None of the
-standard SNT flags (`run_report_only`, `pull_scripts`, `overwrite`) apply — `pull_scripts` in
-particular is the mechanism this pipeline replaces.
+standard SNT flags (`run_report_only`, `use_custom_notebooks`, `overwrite`) apply.
 
 * **`github_repo`** (str, Required):
   * **Name:** GitHub repository

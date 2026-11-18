@@ -1127,15 +1127,22 @@ the final contract. The form and validation (`LocalStore`, download only) can pr
       a report-only run started from the OpenHEXA UI leaves the step's completion unchanged, the
       form shows no report-only flag (C.1 included), the "OpenHEXA:" line for an installed and a
       not-installed step, and whether the proxy returns `config` as an object.
-- [ ] **Self-sync of the R half, replacing `Pull scripts`** (D-20,
+- [x] **Self-sync of the R half, replacing `Pull scripts`** (D-20,
       [ADR 0044](decisions/0044-self-sync-replaces-pull-scripts.md)), on `phase-5/self-sync`, one
       commit at a time: (1) ADR, this plan, BACKLOG REL-6; (2) `snt_utils`: the sync, notebook
       resolution (custom → `_<CC>` → repo) with its `[WARNING]`s, `_CUSTOM_OUTPUT_` names, the
-      `NOTEBOOK_OVERRIDES` record, test-first, on a branch off `cfg-4-config-from-dataset`
-      (`44f5946`); (3) pilot `snt_dhis2_formatting` (pin, `use_custom_notebooks` replaces
-      `pull_scripts`, readme), tested in a test workspace before the rest; (4) the other 19 SNT
-      pipelines and their readmes; (5) rules and docs (R6, R14, `pipelines/CLAUDE.md`, rule 2,
-      the README standard, `DATA_ARCHITECTURE.md`, the handover skill), then this tick.
+      `NOTEBOOK_OVERRIDES` record, test-first, on branch `self-sync-r-half` (`ca74b54`) off
+      `cfg-4-config-from-dataset`; (3) pilot `snt_dhis2_formatting` (pin, `use_custom_notebooks`
+      replaces `pull_scripts`, readme); (4) the other 19 SNT pipelines and their readmes; (5) rules
+      and docs (R6, R14, `pipelines/CLAUDE.md`, rule 2, the README standard, `DATA_ARCHITECTURE.md`,
+      the handover and release skills, REL-6). Tested 2026-11-17/18 in the test workspace
+      `snt-testing`: the pilot through every step of the plan (sync, archive, custom notebook,
+      empty `custom/`, country variant, checker); all 19 others stop with the `[ERROR]` when the
+      switch is on with no `custom/`; four full runs record `"NOTEBOOK_OVERRIDES": []`, and three
+      report-only runs succeed. `snt_dhis2_extract`, `snt_map_extracts` and
+      `snt_healthcare_access` check their run parameters before the sync, so a run they reject
+      syncs nothing. Still to verify at the next pre-release cut: the full DHIS2 chain against the
+      baseline (`release` skill).
 - [ ] Cut **`v1.0.0`** (first production release). Note: the templates publishing workspace does not
       exist before Phase 6, so `v1.0.0` ships without templates and both template jobs stay disabled
       (D-17); the deployer route does not need them.

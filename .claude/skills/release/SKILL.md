@@ -182,8 +182,10 @@ marker written". Nothing changes.
 
 **3.9 The DHIS2 chain, in both workspaces.** Run each step in both workspaces before the next one,
 with identical parameters. Start the two extracts within minutes of each other, because DHIS2 data
-moves. **`Pull scripts` OFF in both workspaces, every run.** ON pulls notebooks from the *old*
-`snt_development` repo (root rule 2) and overwrites the release under test.
+moves. **Use custom notebooks OFF in both workspaces, every run**, so each runs its release's own
+notebooks. A previous release older than the self-sync ([ADR 0044](../../../docs/decisions/0044-self-sync-replaces-pull-scripts.md),
+`v0.1.0` included) shows **`Pull scripts`** instead: keep it OFF, because ON pulls notebooks from
+the *old* `snt_development` repo (root rule 2) and overwrites that release.
 
 | # | Pipeline | Parameters used at `v0.1.0` (Burkina Faso) |
 |---|---|---|
