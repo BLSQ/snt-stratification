@@ -1197,8 +1197,12 @@ skipped; manifest 25 pipelines, 259 checker entries).
       the push makes a plain pipeline; "Publish as template" then makes template version `1`, from
       pipeline version "v0.2.0 [v1]". OpenHEXA numbers template versions; the tag is in the
       pipeline version name.
-- [ ] Run `push_templates.yaml` by hand against `v0.2.0` with `allow_prerelease` ticked. Expected:
-      25 green jobs, template version `2` on each, from pipeline version "v0.2.0 [v2]".
+- [ ] Run `push_templates.yaml` by hand against `v0.2.0` with `allow_prerelease` ticked. First run
+      (2026-11-18, run 44334748057): all 25 push jobs failed, `The pipeline version name is
+      already used`: the hand push had already named a version `v0.2.0`. Fixed by the deployers'
+      fallback names (D22): `<tag>+redeploy-<date>`. Expected on the re-run: 25 green jobs, each
+      logging the `[WARNING]` for `v0.2.0`, then template version `2` on each, from pipeline
+      version "v0.2.0+redeploy-<date> [v2]".
 - [ ] R half for template users: each pipeline's own R half arrives by self-sync (D-20, built in
       Phase 5). `shared/r/` does not: settle [REL-6](BACKLOG.md#rel-6) before relying on the
       template route.
