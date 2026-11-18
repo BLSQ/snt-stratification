@@ -87,8 +87,13 @@ All in one folder, `pipelines/<name>/`, where `<name>` is the `@pipeline` id (R2
 6. Add the dataset id to `SNT_DATASET_IDENTIFIERS` in the config, and to the lineage tables in
    [`DATA_ARCHITECTURE.md`](DATA_ARCHITECTURE.md).
 
-There is no deploy workflow to add yet: Phase 3 of the migration generates them from
-`registry.json`.
+7. Before the next full release, push it once by hand to `snt-templates` and publish it as a
+   template, named after its `@pipeline` id
+   ([ADR 0045](decisions/0045-how-the-new-templates-are-published.md)). Until then
+   [`push_templates.yaml`](../.github/workflows/push_templates.yaml) fails on it: `--code` only
+   selects an existing pipeline.
+
+There is no per-pipeline workflow to add: `push_templates.yaml` reads `registry.json`.
 
 ## Publishing and releases
 
@@ -108,7 +113,9 @@ There are two template sets ([ADR 0041](decisions/0041-new-templates-publishing-
   only. Countries are subscribed to it. **Never push a pipeline from this repo to
   `snt-development`**: it would publish this repo's code to every subscribed country.
 - The **new** set (Phase 6, [ADR 0040](decisions/0040-templates-kept-alongside-the-deployer.md))
-  is published from its own dedicated workspace, not created yet.
+  is published from its own dedicated workspace, **`snt-templates`**, by
+  [`push_templates.yaml`](../.github/workflows/push_templates.yaml) only
+  ([ADR 0045](decisions/0045-how-the-new-templates-are-published.md)).
 
 Never run `openhexa pipelines push` for an SNT pipeline from a country or personal workspace. A
 manual push from this repo goes to a test workspace only. In the old repo's workflows,

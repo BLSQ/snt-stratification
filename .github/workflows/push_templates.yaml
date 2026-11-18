@@ -1,59 +1,88 @@
-# Publishes the new SNT template set (ADRs 0040, 0041). Pushes each registry kind: snt and
-# kind: support pipeline to the new templates publishing workspace, where every push to a template's
-# source pipeline publishes a template version (spike S6, docs/MIGRATION_PLAN.md "Phase 3
-# findings"). Subscribed workspaces with auto-update on then receive it.
+# Publishes the new SNT template set (ADRs 0040, 0041, 0042, 0045). Pushes every registry kind: snt,
+# kind: support and kind: bootstrap pipeline to the templates publishing workspace (repository
+# variable OH_TEMPLATES_WORKSPACE, snt-templates), where every push to a template's source pipeline
+# publishes a template version (spike S6, docs/MIGRATION_PLAN.md "Phase 3 findings"). Subscribed
+# workspaces with auto-update on then receive it.
 #
-# On full releases only ("released" skips pre-releases), like release.yaml's bootstrap-templates
-# job, so every template version matches a tag and is described "Release <tag>". Every pipeline is
-# pushed on every full release, changed or not (decided 2026-11-13): OpenHEXA does not compare
-# contents, so an unchanged pipeline gets a new template version too.
+# Two triggers:
+# - "released": a full release. Pre-releases do not fire it, so templates follow full releases only.
+# - "Run workflow" (manual): input tag, which must be a published GitHub release. A pre-release tag
+#   is refused unless allow_prerelease is ticked, so an untested tag cannot reach subscribers by a
+#   slip. Used to publish a pre-release for a demo, or to re-publish a tag.
+# Every pipeline is pushed on every run, changed or not (decided 2026-11-13): OpenHEXA does not
+# compare contents, so an unchanged pipeline gets a new template version too. Template versions are
+# numbered by OpenHEXA (1, 2, …); the pipeline version behind each is named after the tag.
 #
-# pipelines: lists the pipelines from pipelines/registry.json, so no hand-written per-pipeline list
-#            or path filter can go stale.
+# pipelines: checks the tag (manual run), then lists the pipelines from pipelines/registry.json at
+#            that tag, so no hand-written per-pipeline list or path filter can go stale.
 # push:      one matrix job per pipeline; one failed push does not stop the others and can be
 #            re-run alone ("Re-run failed jobs").
 #
-# DISABLED until Phase 6 (docs/MIGRATION_PLAN.md). Deploys nothing until then (root CLAUDE.md,
-# rule 2); the old repo's push_snt_*.yaml keep publishing the old templates from snt-development.
+# Read R5 first: every push from the publishing workspace publishes a template version. A pipeline
+# new to the registry must be pushed and published as a template by hand once before this workflow
+# can push it (ADR 0045): --code only selects an existing pipeline.
 name: push_templates
 
 on:
   release:
     types: [released]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to publish as template versions (must be a published GitHub release)
+        required: true
+      allow_prerelease:
+        description: Allow a pre-release tag (publishes untested code to every auto-updating workspace)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
 concurrency:
-  group: push-templates-${{ github.event.release.tag_name }}
+  group: push-templates-${{ github.event.release.tag_name || inputs.tag }}
   cancel-in-progress: false
 
 env:
   # As in ci.yaml.
   PYTHON_VERSION: "3.13"
   # Read through the environment, never pasted into a script, so a tag cannot inject shell.
-  VERSION: ${{ github.event.release.tag_name }}
+  VERSION: ${{ github.event.release.tag_name || inputs.tag }}
 
 jobs:
   pipelines:
-    # To enable, in Phase 6: create the publishing workspace, set the repository variable
-    # OH_TEMPLATES_WORKSPACE (its slug) and the secret OH_TEMPLATES_TOKEN (a token for it), as for
-    # release.yaml's bootstrap-templates job, then remove "false". The push job follows, since it
-    # needs this one. Read R5 first: every push from that workspace publishes a template version.
-    if: false
     runs-on: ubuntu-latest
     outputs:
       names: ${{ steps.list.outputs.names }}
     steps:
+      - name: Check the tag is a published release (manual run)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ALLOW_PRERELEASE: ${{ inputs.allow_prerelease }}
+        run: |
+          if ! release=$(gh release view "$VERSION" --repo "$GITHUB_REPOSITORY" --json isDraft,isPrerelease); then
+            echo "[ERROR] No GitHub release for tag '$VERSION'. Publish the release first."
+            exit 1
+          fi
+          if [ "$(jq -r .isDraft <<< "$release")" = "true" ]; then
+            echo "[ERROR] Release '$VERSION' is a draft. Publish it first."
+            exit 1
+          fi
+          if [ "$(jq -r .isPrerelease <<< "$release")" = "true" ] && [ "$ALLOW_PRERELEASE" != "true" ]; then
+            echo "[ERROR] '$VERSION' is a pre-release. Tick allow_prerelease to publish it to every" \
+              "auto-updating workspace anyway."
+            exit 1
+          fi
       - uses: actions/checkout@v5
         with:
-          ref: ${{ github.event.release.tag_name }}
-      - name: List the registry's snt and support pipelines
+          ref: ${{ env.VERSION }}
+      - name: List the registry's snt, support and bootstrap pipelines
         id: list
         run: >-
           echo "names=$(jq -c '[.pipelines | to_entries[]
-          | select(.value.kind == "snt" or .value.kind == "support") | .key]'
-          pipelines/registry.json)" >> "$GITHUB_OUTPUT"
+          | select(.value.kind == "snt" or .value.kind == "support" or .value.kind == "bootstrap")
+          | .key]' pipelines/registry.json)" >> "$GITHUB_OUTPUT"
 
   push:
     needs: pipelines
@@ -66,7 +95,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ env.VERSION }}
       - uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
@@ -78,10 +107,10 @@ jobs:
       - name: Push the pipeline (publishes its template version)
         env:
           NAME: ${{ matrix.name }}
-          RELEASE_URL: ${{ github.event.release.html_url }}
-        # --code sets the code on the first push only, and template-created pipelines take it from
-        # here (spike S3): snt-<name> for the snt_* pipelines, as tools/build_manifest.py writes it.
-        # The version is named after the tag, as the deployer names the versions it registers.
+          RELEASE_URL: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ env.VERSION }}
+        # --code selects the source pipeline, which must already exist (published by hand once, ADR
+        # 0045); its code is snt-<name> with "-" for "_", as tools/build_manifest.py writes it. The
+        # version is named after the tag, as the deployer names the versions it registers.
         run: >-
           openhexa pipelines push "pipelines/$NAME" --code "${NAME//_/-}" --name "$VERSION"
           --description "Release $VERSION" --link "$RELEASE_URL" --yes

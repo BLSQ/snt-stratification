@@ -96,8 +96,9 @@ bundle files in `pytest` like the other contracts.
 
 Decide which GitHub merge buttons stay enabled. Proposal: squash-only, with the PR title and
 description as the commit message, and branches required to be up to date. It no longer reaches
-OpenHEXA from this repo: its template pushes (`release.yaml`'s bootstrap-templates job,
-[`push_templates.yaml`](../.github/workflows/push_templates.yaml)) run on full releases and describe
+OpenHEXA from this repo: its template pushes
+([`push_templates.yaml`](../.github/workflows/push_templates.yaml)) run on full releases or by hand
+for a tag, and describe
 each version "Release `<tag>`". It still does in the old repo, whose template-push workflows stamp
 the head commit's message into each published version
 ([ADR 0004](decisions/0004-publish-only-from-snt-development.md)), so a merge commit publishes

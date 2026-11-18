@@ -58,7 +58,7 @@ calling each other.
 | Scheduler / DAG engine | **deliberate** ([ADR 0001](docs/decisions/0001-no-dag-engine.md)) | Nothing enforces run order; pipelines may run against stale upstreams |
 | dbt | **permanent** | Analytics are R, not SQL |
 | Tests for the SNT pipelines and webapps | **debt** | `pytest` covers only the bootstrap pipelines, contracts and `tools/`. Verify by reading; say what you could not verify |
-| CI that deploys | **debt** (`release.yaml`'s bootstrap-templates job and `push_templates.yaml` written, disabled until Phase 6) | [`ci.yaml`](.github/workflows/ci.yaml) checks each PR and push to `main` (ruff, pytest, R1/R2, links, registry, Explorer list); [`release.yaml`](.github/workflows/release.yaml) attaches the manifest and assets to a GitHub release; nothing deploys to a workspace |
+| CI that deploys | **partial** (templates only) | [`ci.yaml`](.github/workflows/ci.yaml) checks each PR and push to `main` (ruff, pytest, R1/R2, links, registry, Explorer list); [`release.yaml`](.github/workflows/release.yaml) attaches the manifest and assets to a GitHub release; [`push_templates.yaml`](.github/workflows/push_templates.yaml) publishes template versions to `snt-templates` on each full release or by hand ([ADR 0045](docs/decisions/0045-how-the-new-templates-are-published.md)); nothing pushes into a country workspace |
 | Full local runtime | **debt** | R runs on the workspace kernel — [`dev/README.md`](dev/README.md) |
 
 ---
@@ -69,9 +69,11 @@ calling each other.
 values. The repo is **public**, and this is health data for real districts. Do not add `.gitignore`
 exceptions for data, do not `git add -f`.
 
-**2. Merging here deploys nothing.** CI only runs checks. The routes from this repo — the deployer
-installing a release, a new template set — are built in Phases 3–6
-([ADR 0040](docs/decisions/0040-templates-kept-alongside-the-deployer.md)); once installed, a
+**2. Merging here deploys nothing.** On a merge CI only runs checks. The routes from this repo are
+the deployer installing a release, and the new template set, published from `snt-templates` on a
+full release or a manual run
+([ADR 0040](docs/decisions/0040-templates-kept-alongside-the-deployer.md),
+[0045](docs/decisions/0045-how-the-new-templates-are-published.md)); once installed, a
 pipeline copies its own notebooks and `utils/*.r` to the workspace on every run
 ([ADR 0044](docs/decisions/0044-self-sync-replaces-pull-scripts.md)). Live countries run the old
 `snt_development` repo, which is maintenance-only, and whose `Pull scripts` = ON pulls notebooks and

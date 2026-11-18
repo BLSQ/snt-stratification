@@ -129,7 +129,7 @@ Use two workspaces, and run every comparison step in both:
    ([`openhexa_deployment.md`](../../../docs/bootstrap/openhexa_deployment.md) §7.3b).
 
 **3.2 Push the deployer by hand, from the release's tarball.** A fresh workspace has no deployer,
-and templates are not published yet (Phase 6).
+and its template carries the last published tag, not this candidate.
 ```bash
 cd /tmp/snt-<tag>-check
 conda activate snt-stratification
@@ -251,7 +251,11 @@ pre-release, on **the exact commit of that rc**. Don't untick "pre-release" on t
    gh release create vX.Y.Z --repo BLSQ/snt-stratification --target <rc sha> --title "vX.Y.Z" --notes "Promotes vX.Y.Z-rc.N (same commit). <changes since the previous full release>"
    ```
    A full release fires `published`, which runs the assets job as in §2, and `released`, which runs
-   the bootstrap-templates job. That job is disabled until Phase 6, so it is skipped.
+   [`push_templates.yaml`](../../../.github/workflows/push_templates.yaml): one job per pipeline,
+   each publishing a new template version from `snt-templates` to every auto-updating workspace
+   ([ADR 0045](../../../docs/decisions/0045-how-the-new-templates-are-published.md)). Expect every
+   job green; re-run a failed one alone ("Re-run failed jobs"). A pipeline new since the last
+   release fails until it is published as a template by hand once.
 3. **Same files as the rc.** Download both manifests into separate folders. Their `files` must be
    equal, and only `version` may differ:
    ```bash
@@ -268,5 +272,5 @@ pre-release, on **the exact commit of that rc**. Don't untick "pre-release" on t
    latest full release. Then run the checker twice. With an empty tag, expect `match` on all E
    entries. With `none`, expect best fit `vX.Y.Z`: this is the first time attribution can score a
    release, so check it.
-5. Record the promotion as in 3.11. Until Phase 6 no templates are published, and until Phase 8 no
-   country runs from this repo, so nothing else changes anywhere.
+5. Record the promotion as in 3.11, with the `push_templates` run's result. Until Phase 8 no
+   country runs from this repo, so only workspaces subscribed to the new templates change.

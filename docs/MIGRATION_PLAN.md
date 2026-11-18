@@ -81,6 +81,7 @@ and documented separately:
 | D-18 | **Releases are tested as pre-releases of this repo** (was OD-6). A test release is a GitHub release of `BLSQ/snt-stratification` marked pre-release (`v0.x.y`, or `vX.Y.Z-rc.N` before a full release), deployed into a test workspace by typing its tag. `snt_development_sandbox` is no longer used for testing releases, and the bootstrap pipelines' `github_repo` default becomes `BLSQ/snt-stratification`. The deployer and the checker already leave pre-releases out unless one is typed or is the target (D27) | 2026-11-13 |
 | D-19 | **How a release is verified and promoted** (Phase 4, commit 9). (1) Each candidate, a pre-release named `v0.x.y` or, from `v1.0.0` on, `vX.Y.Z-rc.N` (rc = release candidate), is deployed into a **new test workspace of its own**. The previous release's test workspace is kept untouched as the baseline. (2) Verification always runs the **full DHIS2 chain**, extract to quality of care, in both workspaces with the same parameters, and compares every output. Each difference must be explained by a change in the release. (3) A verified rc is promoted by creating a **new full release `vX.Y.Z` on the rc's commit**; the rc itself stays a pre-release. `v0.x.y` releases are never promoted. The procedure is the `release` skill (`.claude/skills/release/`) | 2026-11-16 |
 | D-20 | **Self-sync replaces Pull scripts** (was OD-9), before `v1.0.0` because removing the flag is a breaking change and, left in, it pulls the old repo's notebooks over a release. Each SNT pipeline copies its bundled notebooks and `utils/*.r` to the workspace on every run when the sha256 differs, archiving the replaced copy under `archive/self_sync/<stamp>/`. Escape hatch: edited notebooks in `pipelines/<name>/custom/`, run when the new flag `use_custom_notebooks` is on; `_<CC>` variants stay automatic; every non-repo notebook logs a `[WARNING]` and is recorded in `{CC}_parameters.json` (`NOTEBOOK_OVERRIDES`). `shared/r/` is not synced (REL-6). Recorded as [ADR 0044](decisions/0044-self-sync-replaces-pull-scripts.md) | 2026-11-17 |
+| D-21 | **How the new templates are published** (Phase 6). Publishing workspace **`snt-templates`**. Source pipeline display name = template name = `@pipeline` id, so template-created codes are `snt-<name>` (S3 corrected). Each pipeline is pushed and published as a template by hand once. **One workflow**, `push_templates.yaml`, pushes every `snt`, `support` and `bootstrap` pipeline (`release.yaml`'s bootstrap job removed), on each full release and **by hand** for a published release tag; a pre-release tag needs the `allow_prerelease` box. Shown to colleagues first with a manual run of pre-release `v0.2.0`; no fake full release (a permanent tag that would become GitHub "latest", feeding untested code to the deployer's blank tag, its bootstrap guard and the checker's attribution). Recorded as [ADR 0045](decisions/0045-how-the-new-templates-are-published.md) | 2026-11-18 |
 
 ## 3. Open decisions (owner: Giulia unless stated)
 
@@ -113,9 +114,9 @@ snt-stratification/
 ├── .github/
 │   ├── workflows/
 │   │   ├── ci.yaml                     ← PR: ruff, pytest, schema validation, link check (TOOL-2/3/5)
-│   │   ├── release.yaml                ← on release: build manifest v2, slim release tarball, stamped webapp zips;
-│   │   │                                 on a FULL release only: bootstrap pipelines → templates (D-17)
-│   │   └── push_templates.yaml         ← SNT + support pipelines → NEW templates workspace; ONE matrix job (replaces 20 copies)
+│   │   ├── release.yaml                ← on release: build manifest v2, slim release tarball, stamped webapp zips
+│   │   └── push_templates.yaml         ← SNT + support + bootstrap pipelines → snt-templates, on a FULL release or by
+│   │                                     hand; ONE matrix job (replaces 20 copies) (D-17, D-21)
 │   └── pull_request_template.md
 │
 ├── pipelines/                ← flat: one folder per pipeline, folder name = @pipeline id (ADR 0015 join key)
@@ -1147,9 +1148,9 @@ the final contract. The form and validation (`LocalStore`, download only) can pr
       `self-sync-r-half` (`ca74b54`) into `release-v1` and tag it; point the 21
       `requirements.txt` here at that tag, in one PR. Then the `v1.0.0` release candidate tests
       what ships.
-- [ ] Cut **`v1.0.0`** (first production release). Note: the templates publishing workspace does not
-      exist before Phase 6, so `v1.0.0` ships without templates and both template jobs stay disabled
-      (D-17); the deployer route does not need them.
+- [ ] Cut **`v1.0.0`** (first production release). Phase 6 ran first, so promoting it fires
+      `push_templates.yaml` and publishes a template version of all 25 pipelines from
+      `snt-templates` (D-21).
 
 **Optional before `v1.0.0`, decided at the pre-cut checklist:**
 - [ ] **CFG-1 dataset keys:** key = dataset slug in uppercase (`SNT_DHIS2_EXTRACTS: snt-dhis2-extracts`),
@@ -1173,32 +1174,43 @@ not here:
   map knowing.
 
 ### Phase 6 — New template set (for teams not using the deployer)
-- [ ] Create a dedicated publishing workspace for the new templates (it does **not** replace
+Decisions: D-21, [ADR 0045](decisions/0045-how-the-new-templates-are-published.md). Shown first
+with pre-release `v0.2.0` (cut 2026-11-18 from `main` `9bda3cd`, not verified: `release` skill §3
+skipped; manifest 25 pipelines, 259 checker entries).
+
+- [x] Create a dedicated publishing workspace for the new templates (it does **not** replace
       `snt-development`, which keeps publishing the old templates from the old repo, D-4).
-- [ ] Name the templates according to the S3 result, so template-created codes = `snt-<name>`.
+      **`snt-templates`**, 2026-11-18; repository variable `OH_TEMPLATES_WORKSPACE` and secret
+      `OH_TEMPLATES_TOKEN` set (the token is a maintainer's own).
+- [x] Name the templates according to the S3 result, so template-created codes = `snt-<name>`.
       Per the S3 correction ([Phase 0 findings](#phase-0-findings)), the code comes from the source
-      pipeline's **display name**: name each source pipeline after its `@pipeline` id
-      (`snt_map_extracts` slugs to `snt-map-extracts`), as the pipelines the deployer creates
-      already are. ADR 0040 ("source pipelines carry the code `snt-<name>`") and ADR 0041 say
-      "code"; their decisions stand, the mechanism differs. Decide then whether that needs a short
-      ADR of its own (R24: the two are not edited).
-- [ ] Enable `push_templates.yaml` (written in Phase 3 commit 9: full releases only, every pipeline
-      on each, decided 2026-11-13).
-- [ ] Publish each pipeline as a template by hand once in the publishing workspace, and each
-      pipeline added later, before relying on either template workflow (`push_templates.yaml`,
-      `release.yaml`'s bootstrap job). A push is expected to publish a template version only onto a
-      pipeline that is already a template's source, so a first push only creates a plain pipeline.
-      Spike S6 tested only the template-source case: check the first-push behaviour when enabling.
+      pipeline's **display name**: each source pipeline and each template is named after its
+      `@pipeline` id. All 25 codes are `snt-<name>` (`create-pipeline-cards` for that one), no
+      random suffix. The short ADR is 0045, which amends 0040 and 0041.
+- [x] Enable `push_templates.yaml`: on full releases, and by hand for a published release tag,
+      pre-releases behind an `allow_prerelease` box; every `snt`, `support` and `bootstrap` pipeline
+      on each run. First run: the manual run against `v0.2.0` (below).
+- [x] Publish each pipeline as a template by hand once in the publishing workspace, and each
+      pipeline added later, before relying on `push_templates.yaml` (now step 7 of "Adding a
+      pipeline" in [`CONVENTIONS.md`](CONVENTIONS.md)). Done 2026-11-18 for all 25, pushed from the
+      `v0.2.0` tarball. First-push behaviour checked: without `--code` the CLI asks to create, and
+      the push makes a plain pipeline; "Publish as template" then makes template version `1`, from
+      pipeline version "v0.2.0 [v1]". OpenHEXA numbers template versions; the tag is in the
+      pipeline version name.
+- [ ] Run `push_templates.yaml` by hand against `v0.2.0` with `allow_prerelease` ticked. Expected:
+      25 green jobs, template version `2` on each, from pipeline version "v0.2.0 [v2]".
 - [ ] R half for template users: each pipeline's own R half arrives by self-sync (D-20, built in
       Phase 5). `shared/r/` does not: settle [REL-6](BACKLOG.md#rel-6) before relying on the
       template route.
-- [ ] Bootstrap pipelines as templates (D-17): enable the bootstrap job of `release.yaml` once the
-      publishing workspace exists. That solves the chicken-and-egg problem (bootstrap roadmap §3). The
-      new-workspace guide must say to switch **auto-update on** for each bootstrap pipeline: it is
-      off by default (S6).
+- [ ] Bootstrap pipelines as templates (D-17): published with the others by `push_templates.yaml`
+      (D-21; `release.yaml`'s bootstrap job removed), all 3 published by hand 2026-11-18. That
+      solves the chicken-and-egg problem (bootstrap roadmap §3). Left: the new-workspace guide must
+      say to switch **auto-update on** for each bootstrap pipeline: it is off by default (S6).
 - [ ] Verify: a fresh workspace built from the new templates, then the checker run against the
       matching tag, gives `match`. Then switch it to the deployer and check it adopts the pipelines
-      without duplicates.
+      without duplicates. For the `v0.2.0` demo: R image, `SNT_CONFIGURATION` dataset, `shared/r/`
+      uploaded by hand from the tarball (REL-6), pipelines from the templates with auto-update on,
+      the checker with tag `v0.2.0`, one pipeline run.
 
 ### Phase 7 — Webapps on the release train (D-2)
 - [ ] The orchestrator reads `version.json` from its bundle and shows it in the footer (REL-1). The
@@ -1309,6 +1321,7 @@ not here:
 | 2026-11-16 → 17 | CFG-4 commits 2–6 on `phase-5/cfg-4-config-dataset`: the R helper `load_snt_config_from_dataset()`, the 46 notebooks and the how-to (2); the 21 `pipeline.py` on `load_configuration_snt_from_dataset()`, pinned to `snt_utils@44f5946`, the 20 that publish `{CC}_parameters.json` adding `SNT_CONFIG_VERSION` and `SNT_CONFIG_VERSION_ID` (3); docs, CFG-4 ticked and removed from the BACKLOG (4); the `release` skill's `dataset_summary.py` reads the dataset, falling back to the disk file for an older baseline (5); facts left stale (6): no validating pipeline, `snt_lib` pinned to a commit, no R config validator (config editor EXTERNAL_CHECKS item 2 answered). Tested in a test workspace: `snt_dhis2_formatting` only, both version keys right; a first attempt failed `validate_config()` on a missing `SNT_POPULATION_USER_PROVIDED`, so the docs now say the file must pass it. Left as is: on a failed load, 20 pipelines log the `[ERROR]` twice | Commit 7 (this log), CI, PR, merge. Then, in a new session, the orchestrator items of [Phase 5](#phase-5--breaking-change-window-before-the-first-production-tag) (D-12, APP-9, README docs). CFG-4's full verification is at the next pre-release cut (its tick lists the steps) |
 | 2026-11-17 | Orchestrator items of Phase 5 on `phase-5/orchestrator`, commits 1–4: D-12 (status board reads the last 5 runs with `config`; completion from the newest full run; `run_reports_only` in `snt_dhs_indicators` handled too); the report-only flag hidden from the form (Giulia's call, recorded in the orchestrator `PRODUCT_SPEC.md` §5); APP-9 (live name from the catalog, `ohName` = template name as fallback; the 5 listed values corrected, the other 13 not re-checked); the `create_pipeline_cards` README. Checked offline only. Known effect left as is: after a report-only run finishes in the session, the Outputs box shows the last full run's outputs | Commit 5 (tick, BACKLOG, this log), CI, PR, merge. Test the app against a test workspace (steps in the Phase 5 tick). Then the `v1.0.0` pre-cut checklist with the `release` skill, CFG-1 decided there |
 | 2026-11-17 | Self-sync opened on `phase-5/self-sync`. **OD-9 settled as D-20** (ADR 0044), placed in Phase 5 rather than 6: removing `Pull scripts` is a breaking change, and left in a release it pulls the old repo's notebooks. Escape hatch chosen: a `custom/` folder plus `use_custom_notebooks`, over a file-picker parameter (a pipeline runs several notebooks); `_<CC>` variants stay automatic but are now logged and recorded. OD-10 narrowed to versioning; REL-6 opened (`shared/r/` on the template route). Commit 1 written | Commit 2, the `snt_utils` branch `self-sync-r-half`: see the [Phase 5 item](#phase-5--breaking-change-window-before-the-first-production-tag) |
+| 2026-11-18 | Phase 6 opened before `v1.0.0`, to show colleagues the new templates. Pre-release `v0.2.0` cut from `main` (not verified). Workspace `snt-templates` created; all 25 pipelines pushed from the tarball and published as templates by hand, codes `snt-<name>`, no suffixes. **D-21** (ADR 0045): names = `@pipeline` id; one workflow, `push_templates.yaml`, for every kind, with a manual trigger and an `allow_prerelease` box; `release.yaml`'s bootstrap job removed. On `phase-6/templates`: commit 1 (workflows, ADR, R23 fixes), commit 2 (this file) | CI, PR, merge. Then run `push_templates` by hand against `v0.2.0`, build the demo workspace from the templates, checker `match` — see the [Phase 6 items](#phase-6--new-template-set-for-teams-not-using-the-deployer) |
 
 ---
 

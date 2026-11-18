@@ -1,7 +1,7 @@
 # 0042. Bootstrap pipelines are published as templates on each full release
 
 Date: 2026-11-12
-Status: Accepted (supersedes [0029](0029-no-deployment-workflow-for-bootstrap-pipelines.md), amends [0040](0040-templates-kept-alongside-the-deployer.md))
+Status: Accepted (supersedes [0029](0029-no-deployment-workflow-for-bootstrap-pipelines.md), amends [0040](0040-templates-kept-alongside-the-deployer.md); amended by [0045](0045-how-the-new-templates-are-published.md): `push_templates.yaml` pushes them, not `release.yaml`)
 
 ## Context
 
