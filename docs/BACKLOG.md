@@ -123,12 +123,16 @@ The fix is to name a fixed point instead of a moving branch: a tag (`…/snt_uti
 commit SHA. Upgrades then become a reviewable, revertible one-line PR. The cost is that someone has
 to bump the refs. Tags are the usual compromise.
 
-**Current repo state (checked 2026-11-17):** the 21 files that install `snt_lib` pin one commit,
-`snt_utils.git@44f59462846ecbb35e86c4daa8b2f434584036b3`, on the `snt_utils` branch
-`cfg-4-config-from-dataset` off `release-v1`
-([ADR 0043](decisions/0043-config-read-from-snt-configuration-dataset.md)). For `snt_lib`, (a)–(c)
-no longer hold, but the pin is not a tag, and that commit is reachable only through that branch:
-deleting or rewriting the branch can break every install. `release-v1` itself is a branch
+**Current repo state (checked 2026-11-18):** of the 21 files that install `snt_lib`, the 20 SNT
+pipelines pin `snt_utils.git@ca74b54aa31601f501f1f8f109c0b9268acadf35`, the head of the
+`snt_utils` branch `self-sync-r-half`
+([ADR 0044](decisions/0044-self-sync-replaces-pull-scripts.md)), and `snt_metadata_json_trim`
+pins its parent line's `44f59462846ecbb35e86c4daa8b2f434584036b3` on `cfg-4-config-from-dataset`
+([ADR 0043](decisions/0043-config-read-from-snt-configuration-dataset.md)). Both branches start
+from `release-v1`, and no tag contains either commit. For `snt_lib`, (a)–(c) no longer hold, but
+each commit is reachable only through its branch: deleting or rewriting the branch can break every
+install. **Before `v1.0.0`:** merge `self-sync-r-half` into `release-v1`, tag it, and point all 21
+files at the tag (a step in [`MIGRATION_PLAN.md`](MIGRATION_PLAN.md) Phase 5). `release-v1` itself is a branch
 (checked 2026-11-12 in a local clone); annotated tag `v1.0.2` → `23b8340` was its head that day,
 and the config conformance test pins it (`tests/requirements-conformance.txt`).
 `openhexa.toolbox @main` remains in 13 files, so (a)–(c) still hold for it. Left: a tag for the
@@ -592,6 +596,44 @@ ported there and a run with `Pull scripts` = ON.
 **Owner:** `snt_healthcare_access` owner (`_TBD_` in [OWNERSHIP.md](OWNERSHIP.md)). **Source:**
 master-list check of the healthcare-access layers, 2026-10-29.
 
+### <a id="pipe-10"></a>PIPE-10 · `snt_healthcare_access`: the report ignores `wpop_year`
+
+The computation notebook gets `WORLDPOP_YEAR` from the `wpop_year` parameter, but
+`run_report_notebook(...)` in `pipeline.py` passes no parameters, so the report notebook falls back
+to `WORLDPOP_YEAR <- current year - 1` (its `exists()` cell). A run with any other year reports on
+a different raster from the one the results were computed on, or fails if that raster was never
+downloaded. Fix: pass `{"WORLDPOP_YEAR": wpop_year}` to the report. For a report-only run, decide
+where the year comes from (the `wpop_year` parameter, or `WPOP_YEAR` in the published
+`{CC}_parameters.json`), then update the readme.
+
+**Owner:** `snt_healthcare_access` owner (`_TBD_` in [OWNERSHIP.md](OWNERSHIP.md)). **Source:**
+self-sync commit 4 review, 2026-11-18.
+
+### <a id="pipe-11"></a>PIPE-11 · `snt_era5_climate_data`: one up-to-date batch ends the download
+
+`sync_variable()` in `pipeline.py` downloads in batches of 50 months. When a batch has no missing
+dates it logs "No missing dates to download." and **returns**, so later batches are never
+requested. With **Force resync** on (the default) the zarr store is deleted first and every batch
+has missing dates, so it does not show. With it off, an extended period whose first 50 months are
+already stored downloads nothing new. Fix: `continue` instead of `return`.
+
+**Owner:** `snt_era5_climate_data` owner (`_TBD_` in [OWNERSHIP.md](OWNERSHIP.md)). **Source:**
+self-sync commit 4 review, 2026-11-18.
+
+### <a id="pipe-12"></a>PIPE-12 · `snt_dhis2_extract`: the try/except around its tasks never catches
+
+The population, shapes, pyramid and analytics downloads are OpenHEXA tasks
+(`@snt_dhis2_extract.task`). Calling a task in the pipeline body only adds it to the task graph,
+so the `try/except` around each call never sees a task's error, and the fallback it sets
+(`pop_ready = False`, with a warning) never applies: a failing task fails the run instead. Decide
+which is wanted. If a failed download should let the others carry on, handle the error inside the
+task and return `False`; otherwise drop the dead `try/except` blocks. Then update
+[`DATA_ARCHITECTURE.md` §4.3](DATA_ARCHITECTURE.md#43-in-pipeline-task-orchestration) and the
+readme.
+
+**Owner:** `snt_dhis2_extract` owner (`_TBD_` in [OWNERSHIP.md](OWNERSHIP.md)). **Source:**
+self-sync commit 4 review, 2026-11-18.
+
 ---
 
 ## Bootstrap pipelines
@@ -956,6 +998,34 @@ owns the fact:
 - **`configuration/readme.txt` does not exist** in the repo, but
   [`DATA_ARCHITECTURE.md` §5.4](DATA_ARCHITECTURE.md#54-configuration-schema-snt_configjson) and
   [§6.1](DATA_ARCHITECTURE.md#61-confirmed-defect--pop_pregnant_woman-vs-pop_pregnant_women) cite it.
+
+Found during the self-sync work, 2026-11-18:
+
+- **`Pull scripts` described as this repo's route for the R half.** [`DATA_ARCHITECTURE.md`
+  §2.1](DATA_ARCHITECTURE.md#21-two-distinct-delivery-channels) (the "Runtime pull" row and the
+  paragraph under the table), [§2.2.1](DATA_ARCHITECTURE.md#221-r-is-outside-this-mechanism--the-core-pain-point)
+  ("the reason `pull_scripts` exists") and the `snt_lib` row of the dependency table in §7
+  (it lists `pull_scripts_from_repository`, not `sync_pipeline_scripts`,
+  `get_notebook_overrides`). Rewrite them: this repo's pipelines self-sync
+  ([ADR 0044](decisions/0044-self-sync-replaces-pull-scripts.md)), and `Pull scripts` is the old
+  repo's route. Also decide whether
+  [`bootstrap/release_strategy.md`](bootstrap/release_strategy.md) ("The problem", lines 10–30) is
+  current truth to update or the deployer's original problem statement to leave, and update the
+  module docstring of `snt_workspace_deployer/pipeline.py` ("Replaces the per-pipeline `Pull
+  scripts` toggle") with that pipeline's next code change.
+- **Paths and details in [`DATA_ARCHITECTURE.md`](DATA_ARCHITECTURE.md)**:
+  - §3.1, the DHS row: `extract_latest_dhs_recode_filename()` is in `shared/r/snt_utils.r`, not
+    `code/snt_utils.r`.
+  - §3.2, `snt_dhis2_extract`: the NER notebook runs from
+    `pipelines/snt_dhis2_extract/NER_transformations/NER_pyramid_format.ipynb`, not `code/`. It is
+    a country notebook, not in this repo, so neither the sync nor the deployer delivers it.
+  - §3.2, outlier imputation: "Each variant also pushes … (`push_db`, default `True`)" — in
+    `snt_dhis2_outliers_imputation_magic_glasses` the default is `False`.
+  - §4.3: the publish task is `add_files_to_dataset_for_extracts_task`; the `try/except` around
+    the tasks is [PIPE-12](#pipe-12).
+  - §5.1, the workspace tree: the shared R files are under `shared/r/`, not `code/`
+    ([ADR 0038](decisions/0038-repo-path-is-workspace-path.md)); add `pipelines/<name>/custom/` and
+    `archive/self_sync/` (ADR 0044).
 
 **Owner:** Giulia.
 
