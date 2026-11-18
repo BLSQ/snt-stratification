@@ -3,7 +3,8 @@ from pathlib import Path
 
 from openhexa.sdk import current_run, parameter, pipeline, workspace, File
 from snt_lib.snt_pipeline_utils import (
-    pull_scripts_from_repository,
+    get_notebook_overrides,
+    sync_pipeline_scripts,
     add_files_to_dataset,
     load_configuration_snt_from_dataset,
     run_notebook,
@@ -169,9 +170,12 @@ from snt_lib.snt_pipeline_utils import (
     required=False,
 )
 @parameter(
-    "pull_scripts",
-    name="Pull scripts",
-    help="Pull the latest scripts from the repository (useful if you want to update the pipeline scripts).",
+    "use_custom_notebooks",
+    name="Use custom notebooks",
+    help=(
+        "Run the edited notebooks in pipelines/snt_dhis2_population_transformation/custom/ "
+        "instead of this pipeline's own"
+    ),
     type=bool,
     default=False,
     required=False,
@@ -191,7 +195,7 @@ def snt_dhis2_population_transformation(
     growth_factor: float,
     growth_reference_year: int,
     run_report_only: bool,
-    pull_scripts: bool,
+    use_custom_notebooks: bool,
 ):
     """Transform the selected population data and publish it to the population transformation dataset.
 
@@ -209,15 +213,10 @@ def snt_dhis2_population_transformation(
     snt_pipeline_path.mkdir(parents=True, exist_ok=True)
     snt_dhis2_pop_transform_path.mkdir(parents=True, exist_ok=True)
 
-    if pull_scripts:
-        current_run.log_info("Pulling pipeline scripts from repository.")
-        pull_scripts_from_repository(
-            pipeline_name="snt_dhis2_population_transformation",
-            report_scripts=["snt_dhis2_population_transformation_report.ipynb"],
-            code_scripts=[
-                "snt_dhis2_population_transformation.ipynb",
-            ],
-        )
+    # Copy this pipeline version's notebooks and utils to the workspace (ADR 0044); stops the run on failure.
+    sync_pipeline_scripts(
+        pipeline_name="snt_dhis2_population_transformation", bundle_path=Path(__file__).parent
+    )
 
     try:
         # Load configuration (needed for report and for main run)
@@ -227,6 +226,17 @@ def snt_dhis2_population_transformation(
     except Exception as e:
         current_run.log_error(f"Failed to load configuration: {e}")
         raise
+
+    # Every notebook this pipeline may run; resolved before any runs, so a missing custom notebook
+    # stops the run up front.
+    notebook_overrides = get_notebook_overrides(
+        nb_paths=[
+            snt_pipeline_path / "code" / "snt_dhis2_population_transformation.ipynb",
+            snt_pipeline_path / "reporting" / "snt_dhis2_population_transformation_report.ipynb",
+        ],
+        country_code=country_code,
+        use_custom_notebooks=use_custom_notebooks,
+    )
 
     if not run_report_only:
         try:
@@ -297,6 +307,7 @@ def snt_dhis2_population_transformation(
             extra_metadata={
                 "SNT_CONFIG_VERSION": snt_config_version.name,
                 "SNT_CONFIG_VERSION_ID": snt_config_version.id,
+                "NOTEBOOK_OVERRIDES": notebook_overrides,
             },
         )
         current_run.log_info(f"Saved pipeline parameters to {params_file}")
@@ -314,6 +325,7 @@ def snt_dhis2_population_transformation(
                 pipeline_root_path=snt_pipeline_path,
                 snt_config=snt_config_dict,
                 nb_parameter=parameters,
+                use_custom_notebooks=use_custom_notebooks,
             )
         except Exception as e:
             current_run.log_error(f"Failed to apply population transformation: {e}")
@@ -339,6 +351,7 @@ def snt_dhis2_population_transformation(
             nb_output_path=snt_pipeline_path / "reporting" / "outputs",
             error_label_severity_map={"[ERROR]": "error", "[WARNING]": "warning"},
             country_code=country_code,
+            use_custom_notebooks=use_custom_notebooks,
         )
     except Exception as e:
         current_run.log_error(f"Failed to run reporting notebook: {e}")
@@ -350,6 +363,7 @@ def dhis2_population_transformation(
     pipeline_root_path: Path,
     snt_config: dict,
     nb_parameter: dict,
+    use_custom_notebooks: bool = False,
 ) -> None:
     """Run the population transformation notebook on the selected population source.
 
@@ -358,6 +372,7 @@ def dhis2_population_transformation(
         pipeline_root_path: Path of the pipeline folder containing the code notebook.
         snt_config: Dictionary containing SNT configuration and dataset identifiers.
         nb_parameter: Parameters injected into the notebook (updated with SNT_ROOT_PATH).
+        use_custom_notebooks: Whether a notebook in `custom/` replaces the pipeline's own.
 
     Raises:
         Exception: If the notebook execution fails.
@@ -374,6 +389,7 @@ def dhis2_population_transformation(
             parameters=nb_parameter,
             error_label_severity_map={"[ERROR]": "error", "[WARNING]": "warning"},
             country_code=snt_config["SNT_CONFIG"]["COUNTRY_CODE"],
+            use_custom_notebooks=use_custom_notebooks,
         )
     except Exception as e:
         raise Exception(f"Error in executing population transformation notebook: {e}") from e

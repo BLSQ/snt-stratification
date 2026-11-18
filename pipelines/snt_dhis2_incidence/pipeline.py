@@ -2,7 +2,8 @@ import time
 from pathlib import Path
 from openhexa.sdk import current_run, parameter, pipeline, workspace, File
 from snt_lib.snt_pipeline_utils import (
-    pull_scripts_from_repository,
+    get_notebook_overrides,
+    sync_pipeline_scripts,
     run_notebook,
     add_files_to_dataset,
     load_configuration_snt_from_dataset,
@@ -75,10 +76,9 @@ from snt_lib.snt_pipeline_utils import (
     required=False,
 )
 @parameter(
-    "pull_scripts",
-    name="Pull notebooks from repository",
-    help="Pull the latest notebooks from the GitHub repository."
-    " Note: this will overwrite any local changes to the notebooks!",
+    "use_custom_notebooks",
+    name="Use custom notebooks",
+    help="Run the edited notebooks in pipelines/snt_dhis2_incidence/custom/ instead of this pipeline's own",
     type=bool,
     default=False,
     required=False,
@@ -90,16 +90,11 @@ def snt_dhis2_incidence(
     disaggregation_selection: str,
     careseeking_file_path: File,
     run_report_only: bool,
-    pull_scripts: bool,
+    use_custom_notebooks: bool,
 ):
     """Pipeline entry point for running the SNT DHIS2 incidence notebook with specified parameters."""
-    if pull_scripts:
-        current_run.log_info("Pulling pipeline scripts from repository.")
-        pull_scripts_from_repository(
-            pipeline_name="snt_dhis2_incidence",
-            report_scripts=["snt_dhis2_incidence_report.ipynb"],
-            code_scripts=["snt_dhis2_incidence.ipynb"],
-        )
+    # Copy this pipeline version's notebooks and utils to the workspace (ADR 0044); stops the run on failure.
+    sync_pipeline_scripts(pipeline_name="snt_dhis2_incidence", bundle_path=Path(__file__).parent)
 
     current_run.log_info("Starting SNT DHIS2 Incidence pipeline...")
     root_path = Path(workspace.files_path)
@@ -116,6 +111,17 @@ def snt_dhis2_incidence(
     except Exception as e:
         current_run.log_error(f"An error occurred: {e}")
         raise
+
+    # Every notebook this pipeline may run; resolved before any runs, so a missing custom notebook
+    # stops the run up front.
+    notebook_overrides = get_notebook_overrides(
+        nb_paths=[
+            pipeline_path / "code" / "snt_dhis2_incidence.ipynb",
+            pipeline_path / "reporting" / "snt_dhis2_incidence_report.ipynb",
+        ],
+        country_code=country_code,
+        use_custom_notebooks=use_custom_notebooks,
+    )
 
     if not run_report_only:
         # check if it exists otherwise fail
@@ -153,6 +159,7 @@ def snt_dhis2_incidence(
                 extra_metadata={
                     "SNT_CONFIG_VERSION": snt_config_version.name,
                     "SNT_CONFIG_VERSION_ID": snt_config_version.id,
+                    "NOTEBOOK_OVERRIDES": notebook_overrides,
                 },
             )
         except Exception as e:
@@ -174,6 +181,7 @@ def snt_dhis2_incidence(
                 parameters=notebook_params,
                 error_label_severity_map={"[ERROR]": "error", "[WARNING]": "warning"},
                 country_code=country_code,
+                use_custom_notebooks=use_custom_notebooks,
             )
         except Exception as e:
             current_run.log_error(f"Notebook execution failed: {e}")
@@ -199,6 +207,7 @@ def snt_dhis2_incidence(
             nb_output_path=pipeline_path / "reporting" / "outputs",
             error_label_severity_map={"[ERROR]": "error", "[WARNING]": "warning"},
             country_code=country_code,
+            use_custom_notebooks=use_custom_notebooks,
         )
     except Exception as e:
         current_run.log_error(f"Report notebook execution failed: {e}")

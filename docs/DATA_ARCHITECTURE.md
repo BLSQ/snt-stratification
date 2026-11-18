@@ -535,9 +535,9 @@ five `*_ready` flags gate `add_files_to_dataset_for_extracts`.
 
   Note the distinction between the two dicts a pipeline builds: the one passed to `run_notebook()`
   (governed by R11) and the one passed to `save_pipeline_parameters()` (a provenance record, free
-  to use the operator-facing lowercase `@parameter` codes). `snt_healthcare_access` deliberately
-  does both — `INPUT_FOSA_FILE`/`WORLDPOP_YEAR` to the notebook, `input_fosa_file`/`wpop_year` to
-  the JSON.
+  to use the operator-facing `@parameter` codes, which it uppercases). `snt_healthcare_access`
+  does both: `WORLDPOP_YEAR` to the notebook, `wpop_year` to the record, which the JSON stores as
+  `WPOP_YEAR`.
 - The notebook resolves its own inputs — dataset ids come from `SNT_config.json` inside the R
   code (`config_json$SNT_DATASET_IDENTIFIERS$…`), not from `pipeline.py`. **Lineage for
   notebook-driven pipelines is therefore only visible in the `.ipynb`/`.r` files.** The notebook
@@ -589,7 +589,7 @@ country notebook variants ([`pipelines/CLAUDE.md`](../pipelines/CLAUDE.md#countr
 | Per-period intermediate | `{CC}_raw_{family}_{PERIOD}.parquet` (merged then usually deleted) |
 | Formatted | `{CC}_{routine,population,pyramid,reporting}.parquet` + `.csv`; `{CC}_shapes.geojson` |
 | Outliers | `{CC}_routine_outliers_{detected,removed,imputed}.parquet` |
-| Run parameters | `{CC}_parameters.json` (written by `save_pipeline_parameters`, with the config version read: `SNT_CONFIG_VERSION`, `SNT_CONFIG_VERSION_ID`) |
+| Run parameters | `{CC}_parameters.json` (written by `save_pipeline_parameters`, every key uppercased; with the config version read: `SNT_CONFIG_VERSION`, `SNT_CONFIG_VERSION_ID`; and `NOTEBOOK_OVERRIDES`, one `{NOTEBOOK, SOURCE, PATH, SHA256}` entry per notebook that did not run from the pipeline version, `SOURCE` = `custom` or `country_variant` — [ADR 0044](decisions/0044-self-sync-replaces-pull-scripts.md)) |
 | Dataset version | `{CC}_dhis2_level{N}_…` / `{CC}_…` prefix via `get_new_dataset_version()` |
 
 `{CC}` = `SNT_CONFIG.COUNTRY_CODE`, uppercase (`COD`, `BFA`, `NER`, `BDI`, `CMR`).

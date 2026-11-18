@@ -585,7 +585,9 @@ Options, roughly in order of preference:
   one more file to keep in step with the list of countries.
 
 Whatever the choice, apply it to both notebooks, log the projection used, and rerun the pipeline in
-the affected countries. Operators must run with `Pull scripts` = ON to pick up the change.
+the affected countries. A workspace running this repo's pipeline picks up the change with the new
+pipeline version, which syncs its notebooks on the next run; one still on the old repo needs the fix
+ported there and a run with `Pull scripts` = ON.
 
 **Owner:** `snt_healthcare_access` owner (`_TBD_` in [OWNERSHIP.md](OWNERSHIP.md)). **Source:**
 master-list check of the healthcare-access layers, 2026-10-29.
@@ -683,6 +685,22 @@ so this is about a readable per-release summary for users. Natural place: `relea
 ([`MIGRATION_PLAN.md`](MIGRATION_PLAN.md) Phase 3).
 
 **Source:** docs restructure plan, 2026-10.
+
+### <a id="rel-6"></a>REL-6 · `shared/r/` does not reach a template-installed workspace
+
+Self-sync ([ADR 0044](decisions/0044-self-sync-replaces-pull-scripts.md)) copies each pipeline's
+own notebooks and `utils/*.r` from its zip, but not the shared R library `shared/r/`, which
+almost every notebook `source()`s. Only the deployer installs it. A workspace built from the new
+templates (Phase 6) therefore has no `shared/r/`, and its notebooks fail. The same holds for a
+pipeline pushed by hand with `openhexa pipelines push` to a workspace the deployer never ran in, or
+ran in at an older release: its notebooks get an older `shared/r/`, or none (release `v0.1.0`'s
+`snt_utils.r` lacks the `load_snt_config_from_dataset()` the notebooks now call), until someone
+uploads `shared/r/` by hand. Options: ship
+`shared/r/` in every pipeline zip and sync it (spike S2b tested this; several pipelines then
+write the same files), let one pipeline own it, or an R package (migration plan §10). Settle
+before relying on the template route ([`MIGRATION_PLAN.md`](MIGRATION_PLAN.md) Phase 6).
+
+**Source:** self-sync discussion, 2026-11-17; self-sync pilot test in `snt-testing`, 2026-11-17.
 
 ---
 
@@ -988,9 +1006,12 @@ date line, never the decision.
 
 ### <a id="oh-1"></a>OH-1 · Versioning and propagating the R half of each pipeline
 
-OpenHEXA templates carry `pipeline.py` and `requirements.txt` only. Notebooks and `.r` helpers reach a
-workspace only when an operator runs with `Pull scripts` = ON, so a workspace can run the newest
-Python against months-old R with nothing reporting it. Under discussion with the OpenHEXA developers.
+OpenHEXA templates carry `pipeline.py` and `requirements.txt` only. In the old repo, notebooks and
+`.r` helpers reach a workspace only when an operator runs with `Pull scripts` = ON, so a workspace
+can run the newest Python against months-old R with nothing reporting it. This repo's pipelines
+copy their own R half from the pipeline zip on every run
+([ADR 0044](decisions/0044-self-sync-replaces-pull-scripts.md)), except `shared/r/`
+([REL-6](#rel-6)). Under discussion with the OpenHEXA developers.
 Facts: [`DATA_ARCHITECTURE.md` §2.2.1](DATA_ARCHITECTURE.md#221-r-is-outside-this-mechanism--the-core-pain-point).
 
 **Source:** CLAUDE.md rule 2; DATA_ARCHITECTURE §9 #2.

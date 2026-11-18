@@ -103,9 +103,9 @@ Rules:
 - Document **every `choices=[...]` value**, not just that choices exist. Vocabularies differ
   between pipelines for the same concept (see [`CLAUDE.md`](../CLAUDE.md) → Traps), so this is
   load-bearing.
-- **Skip the generic ones.** Do not document `run_report_only` / `pull_scripts` / `overwrite`, and
-  do not describe the loading of `SNT_config.json` as if it were a parameter — they behave
-  identically everywhere and are documented centrally. *Exception:* if a pipeline's variant behaves
+- **Skip the generic ones.** Do not document `run_report_only` / `use_custom_notebooks` /
+  `overwrite`, and do not describe the loading of `SNT_config.json` as if it were a parameter —
+  they behave identically everywhere and are documented centrally. *Exception:* if a pipeline's variant behaves
   differently at all (e.g. a report-only flag that still publishes), say so explicitly instead of
   omitting it.
 - If the pipeline takes no domain parameters, say so in one line rather than deleting the section.
@@ -125,6 +125,17 @@ rather than fail across this codebase:
 
 > When **`[COUNTRY_CODE]_dhis2_raw_shapes.parquet`** exists on **`DHIS2_DATASET_EXTRACTS`**, run
 > `…_shapes.ipynb` to produce **`[COUNTRY_CODE]_shapes.geojson`**.
+
+Every SNT pipeline has two more steps, placed where the code runs them
+([ADR 0044](decisions/0044-self-sync-replaces-pull-scripts.md)): **Sync the R half** (what is
+copied, the `archive/self_sync/` path, the `[ERROR]` on failure) and **Choose each notebook**
+(`custom/` → `_<CC>` variant → generic, the `[WARNING]`, the `[ERROR]` when the switch is on and
+`custom/` holds none of them). This is where `use_custom_notebooks` is described. Name the
+pipeline's own folder and notebooks, and reuse the wording of
+[`snt_dhis2_formatting/readme.md`](../pipelines/snt_dhis2_formatting/readme.md). List
+`pipelines/<name>/custom/*.ipynb` as an optional input, and under **Outputs → Workspace
+filesystem** the synced scripts, the archived copies, and `<stem>_CUSTOM_OUTPUT_<stamp>.ipynb` as
+the executed-notebook name for a custom notebook.
 
 ### `## Inputs`
 

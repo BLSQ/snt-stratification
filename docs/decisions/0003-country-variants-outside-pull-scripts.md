@@ -1,7 +1,7 @@
 # 0003. Country-specific notebook variants live outside `Pull scripts`
 
 Date: not recorded
-Status: Accepted
+Status: Accepted (amended by [0044](0044-self-sync-replaces-pull-scripts.md): `Pull scripts` is replaced by self-sync; variants still run automatically, now logged and recorded)
 
 ## Context
 

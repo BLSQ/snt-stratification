@@ -4,12 +4,13 @@ from pathlib import Path
 from openhexa.sdk import current_run, parameter, pipeline, workspace
 from snt_lib.snt_pipeline_utils import (
     add_files_to_dataset,
+    get_notebook_overrides,
     load_configuration_snt_from_dataset,
     push_data_to_db_table,
-    pull_scripts_from_repository,
     run_notebook,
     run_report_notebook,
     save_pipeline_parameters,
+    sync_pipeline_scripts,
     validate_config,
 )
 
@@ -44,9 +45,12 @@ from snt_lib.snt_pipeline_utils import (
     required=False,
 )
 @parameter(
-    "pull_scripts",
-    name="Pull scripts",
-    help="Pull the latest scripts from the repository before running.",
+    "use_custom_notebooks",
+    name="Use custom notebooks",
+    help=(
+        "Run the edited notebooks in pipelines/snt_dhis2_outliers_imputation_magic_glasses/custom/ "
+        "instead of this pipeline's own"
+    ),
     type=bool,
     default=False,
     required=False,
@@ -55,7 +59,7 @@ def snt_dhis2_outliers_imputation_magic_glasses(
     mode: str,
     push_db: bool,
     run_report_only: bool,
-    pull_scripts: bool,
+    use_custom_notebooks: bool,
 ):
     """Dedicated Magic Glasses outliers detection pipeline for SNT DHIS2 data."""
     mode_clean = (mode or "partial").strip().lower()
@@ -69,13 +73,10 @@ def snt_dhis2_outliers_imputation_magic_glasses(
             "Complete mode selected: seasonal detection is very slow and can take several hours to run."
         )
 
-    if pull_scripts:
-        current_run.log_info("Pulling pipeline scripts from repository.")
-        pull_scripts_from_repository(
-            pipeline_name="snt_dhis2_outliers_imputation_magic_glasses",
-            report_scripts=["snt_dhis2_outliers_imputation_magic_glasses_report.ipynb"],
-            code_scripts=["snt_dhis2_outliers_imputation_magic_glasses.ipynb"],
-        )
+    # Copy this pipeline version's notebooks and utils to the workspace (ADR 0044); stops the run on failure.
+    sync_pipeline_scripts(
+        pipeline_name="snt_dhis2_outliers_imputation_magic_glasses", bundle_path=Path(__file__).parent
+    )
 
     current_run.log_info("Starting SNT DHIS2 outliers imputation Magic Glasses method pipeline...")
 
@@ -95,6 +96,17 @@ def snt_dhis2_outliers_imputation_magic_glasses(
     except Exception as e:
         current_run.log_error(f"Failed to load and validate configuration: {e}")
         raise
+
+    # Every notebook this pipeline may run; resolved before any runs, so a missing custom notebook
+    # stops the run up front.
+    notebook_overrides = get_notebook_overrides(
+        nb_paths=[
+            pipeline_path / "code" / "snt_dhis2_outliers_imputation_magic_glasses.ipynb",
+            pipeline_path / "reporting" / "snt_dhis2_outliers_imputation_magic_glasses_report.ipynb",
+        ],
+        country_code=country_code,
+        use_custom_notebooks=use_custom_notebooks,
+    )
 
     if not run_report_only:
         input_params = {
@@ -120,6 +132,7 @@ def snt_dhis2_outliers_imputation_magic_glasses(
                 parameters=input_params,
                 error_label_severity_map={"[ERROR]": "error", "[WARNING]": "warning"},
                 country_code=country_code,
+                use_custom_notebooks=use_custom_notebooks,
             )
         except Exception as e:
             current_run.log_error(f"Failed to run outliers imputation notebook: {e}")
@@ -136,6 +149,7 @@ def snt_dhis2_outliers_imputation_magic_glasses(
                 extra_metadata={
                     "SNT_CONFIG_VERSION": snt_config_version.name,
                     "SNT_CONFIG_VERSION_ID": snt_config_version.id,
+                    "NOTEBOOK_OVERRIDES": notebook_overrides,
                 },
             )
         except Exception as e:
@@ -171,6 +185,7 @@ def snt_dhis2_outliers_imputation_magic_glasses(
             nb_output_path=pipeline_path / "reporting" / "outputs",
             error_label_severity_map={"[ERROR]": "error", "[WARNING]": "warning"},
             country_code=country_code,
+            use_custom_notebooks=use_custom_notebooks,
         )
     except Exception as e:
         current_run.log_error(f"Failed to run reporting notebook: {e}")

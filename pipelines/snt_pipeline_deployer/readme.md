@@ -45,11 +45,11 @@ This pipeline does not read `SNT_config.json` and has no country-specific parame
 * **`pull_r_scripts`** (bool, Optional):
   * **Name:** Pull R scripts
   * **Description:** Also copy the pipeline's notebooks and R helpers (its `filesystem_files` under
-    `pipelines/<name>/`) from the release. Off: only the pipeline version is registered, and it runs
-    whatever notebooks are already in the workspace. The shared R library in `shared/r/` is never
-    copied either way. Named after the
-    `Pull scripts` toggle of the SNT pipelines, which fetches the same files from the repository at run
-    time and which this deployment mechanism replaces.
+    `pipelines/<name>/`) from the release. Off: only the pipeline version is registered. A pipeline
+    that self-syncs ([ADR 0044](../../docs/decisions/0044-self-sync-replaces-pull-scripts.md))
+    copies its own notebooks and `utils/*.r` on its next run anyway; an older one runs whatever
+    notebooks are already in the workspace. The shared R library in `shared/r/` is never copied
+    either way. Named after the `Pull scripts` toggle of the old repository's SNT pipelines.
   * **Default:** `True`.
 * **`backup_existing`** (bool, Optional):
   * **Name:** Backup existing files

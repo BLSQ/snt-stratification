@@ -80,6 +80,7 @@ and documented separately:
 | D-17 | **Bootstrap pipelines reach a workspace as OpenHEXA templates published on each full release, and the deployer also updates them, never downgrading** (was OD-4). Users never manage a workspace with the `openhexa` CLI (too technical), so templates and the bootstrap pipelines themselves are the only realistic routes (Giulia, 2026-11-12). (1) On a **full** release only (never a pre-release), `release.yaml` pushes `snt_workspace_deployer`, `snt_pipeline_deployer` and `snt_workspace_checker` from the new templates publishing workspace (ADR 0041), which publishes their template versions; a workspace installs them once from the template. So a workspace's deployer is the latest full release, never older than the release it deploys. (2) They are in the release manifest as `kind: bootstrap`. The deployer deploys them **only when the target tag is the latest full release or newer** (an rc); for an older target it skips them with an `[INFO]`, so it never replaces itself with an older, possibly buggy copy. (3) The deployer must read every manifest `schema_version` from 2 on, or refuse an unknown one with a clear `[ERROR]`. (4) ADR 0040's rule ("never the same pipeline from a template and the deployer") is narrowed to `snt` and `support` pipelines, whose R half the deployer installs with them; for bootstrap pipelines both routes deliver the same code from the same tag. Proven by spike S6 ([Phase 3 findings](#phase-3-findings)). Supersedes ADR 0029; ADR 0037 (one release train) stands. Recorded as ADR 0042 (Phase 3, commit 2). Until the publishing workspace exists, maintainers push by hand: there are no users yet, so that is not a gap | 2026-11-12 |
 | D-18 | **Releases are tested as pre-releases of this repo** (was OD-6). A test release is a GitHub release of `BLSQ/snt-stratification` marked pre-release (`v0.x.y`, or `vX.Y.Z-rc.N` before a full release), deployed into a test workspace by typing its tag. `snt_development_sandbox` is no longer used for testing releases, and the bootstrap pipelines' `github_repo` default becomes `BLSQ/snt-stratification`. The deployer and the checker already leave pre-releases out unless one is typed or is the target (D27) | 2026-11-13 |
 | D-19 | **How a release is verified and promoted** (Phase 4, commit 9). (1) Each candidate, a pre-release named `v0.x.y` or, from `v1.0.0` on, `vX.Y.Z-rc.N` (rc = release candidate), is deployed into a **new test workspace of its own**. The previous release's test workspace is kept untouched as the baseline. (2) Verification always runs the **full DHIS2 chain**, extract to quality of care, in both workspaces with the same parameters, and compares every output. Each difference must be explained by a change in the release. (3) A verified rc is promoted by creating a **new full release `vX.Y.Z` on the rc's commit**; the rc itself stays a pre-release. `v0.x.y` releases are never promoted. The procedure is the `release` skill (`.claude/skills/release/`) | 2026-11-16 |
+| D-20 | **Self-sync replaces Pull scripts** (was OD-9), before `v1.0.0` because removing the flag is a breaking change and, left in, it pulls the old repo's notebooks over a release. Each SNT pipeline copies its bundled notebooks and `utils/*.r` to the workspace on every run when the sha256 differs, archiving the replaced copy under `archive/self_sync/<stamp>/`. Escape hatch: edited notebooks in `pipelines/<name>/custom/`, run when the new flag `use_custom_notebooks` is on; `_<CC>` variants stay automatic; every non-repo notebook logs a `[WARNING]` and is recorded in `{CC}_parameters.json` (`NOTEBOOK_OVERRIDES`). `shared/r/` is not synced (REL-6). Recorded as [ADR 0044](decisions/0044-self-sync-replaces-pull-scripts.md) | 2026-11-17 |
 
 ## 3. Open decisions (owner: Giulia unless stated)
 
@@ -89,8 +90,7 @@ blocks, and move it to the Decision log.
 
 | ID | Question | Recommendation / current leaning | Blocks |
 |---|---|---|---|
-| OD-9 | Retiring Pull scripts | **S2b passed (2026-11-03):** self-sync works, so Pull scripts can go for both routes. Still open: the S2b sub-questions (§4.3), in particular the per-run escape hatch | Phase 6 |
-| OD-10 | **How to version country-specific notebooks, and analyst-edited ones** (raised 2026-11-03). Today nothing versions `_<CC>` variants, and no route delivers them to their country. Analysts also edit notebooks in their workspace, and updates (templates, deployer, self-sync) must not silently overwrite those edits. We need one system that keeps good practice (versioned, reviewable, no country data in the public repo) and still lets users run what they edited | No leaning yet. Constraints so far: country variants are not in the public repo (D-13); self-sync skips `_<CC>` files and archives what it replaces (S2b). Inputs: OD-9's escape hatch, and possibly a private per-country repo or dataset | None (not scheduled). Must be settled before Pull scripts is retired (OD-9) |
+| OD-10 | **How to version country-specific notebooks, and analyst-edited ones** (raised 2026-11-03; narrowed 2026-11-17 by D-20). How users *run* an edited notebook is settled: `custom/` plus `use_custom_notebooks`, `_<CC>` variants automatic, both recorded in `{CC}_parameters.json`. Still open: nothing versions or reviews `_<CC>` variants or `custom/` notebooks, and no route delivers them to their country. We need a system that keeps good practice (versioned, reviewable, no country data in the public repo) | No leaning yet. Constraints so far: country variants are not in the public repo (D-13); self-sync never touches `_<CC>` files or `custom/` and archives what it replaces (D-20). Inputs: possibly a private per-country repo or dataset | None (not scheduled) |
 
 ---
 
@@ -1127,6 +1127,22 @@ the final contract. The form and validation (`LocalStore`, download only) can pr
       a report-only run started from the OpenHEXA UI leaves the step's completion unchanged, the
       form shows no report-only flag (C.1 included), the "OpenHEXA:" line for an installed and a
       not-installed step, and whether the proxy returns `config` as an object.
+- [x] **Self-sync of the R half, replacing `Pull scripts`** (D-20,
+      [ADR 0044](decisions/0044-self-sync-replaces-pull-scripts.md)), on `phase-5/self-sync`, one
+      commit at a time: (1) ADR, this plan, BACKLOG REL-6; (2) `snt_utils`: the sync, notebook
+      resolution (custom → `_<CC>` → repo) with its `[WARNING]`s, `_CUSTOM_OUTPUT_` names, the
+      `NOTEBOOK_OVERRIDES` record, test-first, on branch `self-sync-r-half` (`ca74b54`) off
+      `cfg-4-config-from-dataset`; (3) pilot `snt_dhis2_formatting` (pin, `use_custom_notebooks`
+      replaces `pull_scripts`, readme); (4) the other 19 SNT pipelines and their readmes; (5) rules
+      and docs (R6, R14, `pipelines/CLAUDE.md`, rule 2, the README standard, `DATA_ARCHITECTURE.md`,
+      the handover and release skills, REL-6). Tested 2026-11-17/18 in the test workspace
+      `snt-testing`: the pilot through every step of the plan (sync, archive, custom notebook,
+      empty `custom/`, country variant, checker); all 19 others stop with the `[ERROR]` when the
+      switch is on with no `custom/`; four full runs record `"NOTEBOOK_OVERRIDES": []`, and three
+      report-only runs succeed. `snt_dhis2_extract`, `snt_map_extracts` and
+      `snt_healthcare_access` check their run parameters before the sync, so a run they reject
+      syncs nothing. Still to verify at the next pre-release cut: the full DHIS2 chain against the
+      baseline (`release` skill).
 - [ ] Cut **`v1.0.0`** (first production release). Note: the templates publishing workspace does not
       exist before Phase 6, so `v1.0.0` ships without templates and both template jobs stay disabled
       (D-17); the deployer route does not need them.
@@ -1169,10 +1185,9 @@ not here:
       `release.yaml`'s bootstrap job). A push is expected to publish a template version only onto a
       pipeline that is already a template's source, so a first push only creates a plain pipeline.
       Spike S6 tested only the template-source case: check the first-push behaviour when enabling.
-- [ ] Choose the R-half route for template users per OD-9: self-sync, or Pull scripts with `snt_lib`
-      (today `snt_lib` hardcodes the shared `code/` path and the `snt_development` repo name; see the
-      2026-11-09 correction under Phase 1 "Facts checked")
-      accepting repo + ref + path mapping (pinned `snt_lib` release).
+- [ ] R half for template users: each pipeline's own R half arrives by self-sync (D-20, built in
+      Phase 5). `shared/r/` does not: settle [REL-6](BACKLOG.md#rel-6) before relying on the
+      template route.
 - [ ] Bootstrap pipelines as templates (D-17): enable the bootstrap job of `release.yaml` once the
       publishing workspace exists. That solves the chicken-and-egg problem (bootstrap roadmap §3). The
       new-workspace guide must say to switch **auto-update on** for each bootstrap pipeline: it is
@@ -1289,6 +1304,7 @@ not here:
 | 2026-11-16 | CFG-4 opened on `phase-5/cfg-4-config-dataset`. **Decided** (ADR 0043): every `pipeline.py` and notebook reads `SNT_config.json` from the latest version of `SNT_CONFIGURATION` (`snt-configuration`); upload by hand in the UI until the editor writes it; no validating pipeline; the version recorded in `{CC}_parameters.json`, not passed to notebooks; a missing dataset is an `[ERROR]` linking to a how-to. Found: 46 notebooks read the disk file, not only the 21 `pipeline.py`. BOOT-7 opened (checker). Commit 0 (decision + plan) written | Commit 1, the `snt_utils` branch: see BACKLOG CFG-4 (since done: [ADR 0043](decisions/0043-config-read-from-snt-configuration-dataset.md)) |
 | 2026-11-16 → 17 | CFG-4 commits 2–6 on `phase-5/cfg-4-config-dataset`: the R helper `load_snt_config_from_dataset()`, the 46 notebooks and the how-to (2); the 21 `pipeline.py` on `load_configuration_snt_from_dataset()`, pinned to `snt_utils@44f5946`, the 20 that publish `{CC}_parameters.json` adding `SNT_CONFIG_VERSION` and `SNT_CONFIG_VERSION_ID` (3); docs, CFG-4 ticked and removed from the BACKLOG (4); the `release` skill's `dataset_summary.py` reads the dataset, falling back to the disk file for an older baseline (5); facts left stale (6): no validating pipeline, `snt_lib` pinned to a commit, no R config validator (config editor EXTERNAL_CHECKS item 2 answered). Tested in a test workspace: `snt_dhis2_formatting` only, both version keys right; a first attempt failed `validate_config()` on a missing `SNT_POPULATION_USER_PROVIDED`, so the docs now say the file must pass it. Left as is: on a failed load, 20 pipelines log the `[ERROR]` twice | Commit 7 (this log), CI, PR, merge. Then, in a new session, the orchestrator items of [Phase 5](#phase-5--breaking-change-window-before-the-first-production-tag) (D-12, APP-9, README docs). CFG-4's full verification is at the next pre-release cut (its tick lists the steps) |
 | 2026-11-17 | Orchestrator items of Phase 5 on `phase-5/orchestrator`, commits 1–4: D-12 (status board reads the last 5 runs with `config`; completion from the newest full run; `run_reports_only` in `snt_dhs_indicators` handled too); the report-only flag hidden from the form (Giulia's call, recorded in the orchestrator `PRODUCT_SPEC.md` §5); APP-9 (live name from the catalog, `ohName` = template name as fallback; the 5 listed values corrected, the other 13 not re-checked); the `create_pipeline_cards` README. Checked offline only. Known effect left as is: after a report-only run finishes in the session, the Outputs box shows the last full run's outputs | Commit 5 (tick, BACKLOG, this log), CI, PR, merge. Test the app against a test workspace (steps in the Phase 5 tick). Then the `v1.0.0` pre-cut checklist with the `release` skill, CFG-1 decided there |
+| 2026-11-17 | Self-sync opened on `phase-5/self-sync`. **OD-9 settled as D-20** (ADR 0044), placed in Phase 5 rather than 6: removing `Pull scripts` is a breaking change, and left in a release it pulls the old repo's notebooks. Escape hatch chosen: a `custom/` folder plus `use_custom_notebooks`, over a file-picker parameter (a pipeline runs several notebooks); `_<CC>` variants stay automatic but are now logged and recorded. OD-10 narrowed to versioning; REL-6 opened (`shared/r/` on the template route). Commit 1 written | Commit 2, the `snt_utils` branch `self-sync-r-half`: see the [Phase 5 item](#phase-5--breaking-change-window-before-the-first-production-tag) |
 
 ---
 

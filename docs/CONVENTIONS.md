@@ -45,23 +45,27 @@ dataset is invisible downstream. When you add an output, add it to the dataset *
 pipeline's `readme.md`.
 
 <a id="r6"></a>
-### R6 — Every notebook listed in `pull_scripts_from_repository(...)`; other `.r` names in `extra_util_scripts`
+### R6 — Every notebook a pipeline runs listed in `get_notebook_overrides(nb_paths=[...])`
 
-`pull_scripts_from_repository()` (in `snt_lib`) copies only what it is told about:
+Each run, `pipeline.py` copies its own R half to the workspace with `sync_pipeline_scripts(...)`
+(in `snt_lib`, [ADR 0044](decisions/0044-self-sync-replaces-pull-scripts.md)). The copy needs no
+list: it takes every `code/*.ipynb`, `reporting/*.ipynb` and `utils/*.r` in the pipeline zip, so a
+new notebook or `.r` file is delivered once it is in the pipeline folder. `shared/r/` is not
+copied ([REL-6](BACKLOG.md#rel-6)).
 
-- **Notebooks** must be listed: `code_scripts=[...]` for `code/`, `report_scripts=[...]` for
-  `reporting/`. An unlisted notebook never reaches a workspace.
-- **Util files are derived, not listed:** `utils/{pipeline_name}.r` (when `code_scripts` is given),
-  `utils/{pipeline_name}_report.r` (when `report_scripts` is given) and `utils/{stem}.r` for every
-  listed notebook. A missing derived file is skipped quietly.
-- **Any other `.r` name** goes in `extra_util_scripts=[...]`; a listed one that is missing logs a
-  warning.
-- The three shared files (`snt_utils.r`, `snt_report.r`, `snt_palettes.r`) are always pulled.
+The list that matters is the one passed to `get_notebook_overrides(nb_paths=[...])`, the generic
+paths of every notebook the pipeline may run, code and reporting. It decides two things for the
+whole run, before any notebook starts:
 
-Country-specific `_<CC>` variants are deliberately never listed — see
-[`../pipelines/CLAUDE.md`](../pipelines/CLAUDE.md#country-specific-notebook-variants). Today the
-function pulls from the **old** `snt_development` repo and its `code/` folder, whatever this repo
-holds; pointing it here needs a `snt_lib` release (migration plan, Phase 6).
+- **The record.** A custom or `_<CC>` notebook is written to `NOTEBOOK_OVERRIDES` in
+  `{CC}_parameters.json` only if its generic name is listed. An unlisted notebook still runs the
+  override, unrecorded.
+- **The `use_custom_notebooks` check.** With the switch on, the run stops with an `[ERROR]` when
+  `custom/` holds none of the listed names. A custom copy of an unlisted notebook does not count.
+
+List generic names only. Country-specific `_<CC>` variants are never listed: `snt_lib` finds them
+from the generic name — see
+[`../pipelines/CLAUDE.md`](../pipelines/CLAUDE.md#country-specific-notebook-variants).
 
 <a id="r16"></a>
 ### R16 — `readme.md` updated in the same PR as the `pipeline.py` change it describes
@@ -165,13 +169,15 @@ stamps `pipeline_name="snt_era5_aggregate"`; `snt_healthcare_access` stores the 
 `.path`.
 
 <a id="r14"></a>
-### R14 — Standard flags named `run_report_only` / `pull_scripts` / `overwrite`
+### R14 — Standard flags named `run_report_only` / `use_custom_notebooks` / `overwrite`
 
 Keep these names and behaviours identical across pipelines — operators rely on the muscle memory:
 
 - `run_report_only` (bool, default `False`) — skip computation, re-run reporting only.
-- `pull_scripts` (bool, default `False`) — refresh notebooks from this repo. **Overwrites local
-  workspace edits**; the help text must keep saying so.
+- `use_custom_notebooks` (bool, default `False`, label "Use custom notebooks") — run the edited
+  notebooks in `pipelines/<name>/custom/` instead of the pipeline's own; the help text names that
+  folder. Passed to `get_notebook_overrides`, `run_notebook` and `run_report_notebook` alike
+  ([R6](#r6), [ADR 0044](decisions/0044-self-sync-replaces-pull-scripts.md)).
 - `overwrite` (bool) — on extract pipelines, delete existing raw files before download.
 
 Known exception: `run_reports_only` in `snt_dhs_indicators`.

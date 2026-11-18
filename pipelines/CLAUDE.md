@@ -8,7 +8,7 @@ named after its `@pipeline` id; its kind (`snt`, `support`, `bootstrap`) is in
 in the pipeline zip ([ADR 0039](../docs/decisions/0039-docs-placement-rule.md)).
 
 > **Merging a change here deploys nothing** (root rule 2). Live countries run the old
-> `snt_development` repo, and `Pull scripts` = ON pulls notebooks and the shared R library (as
+> `snt_development` repo, whose `Pull scripts` = ON pulls notebooks and the shared R library (as
 > `code/`) from there, not from here. Say so in every handover.
 
 ## Notebook hygiene
@@ -39,9 +39,9 @@ in the pipeline zip ([ADR 0039](../docs/decisions/0039-docs-placement-rule.md)).
   even when added to one of those two, *unless* that would leave a single notebook mixing both —
   converting a violator is an all-at-once change, not a drive-by. A notebook mixing
   `threshold_for_seasonality` and `THRESHOLD_FOR_SEASONALITY` is worse than either.
-- Beware the near-miss in `snt_healthcare_access`: it injects UPPERCASE (`INPUT_FOSA_FILE`,
-  `WORLDPOP_YEAR`) into the notebook but records lowercase keys in its parameters JSON. Both are
-  intentional; only the notebook side is governed by R11.
+- Beware the near-miss in `snt_healthcare_access`: it injects `WORLDPOP_YEAR` into the notebook,
+  but its parameters JSON records the same value as `WPOP_YEAR` (`save_pipeline_parameters`
+  uppercases the `@parameter` code `wpop_year`). Only the notebook side is governed by R11.
 
 ## Editing R notebooks: the VS Code remote-kernel loop
 
@@ -72,30 +72,50 @@ matches that suffix. Everywhere else the generic notebook runs and the variant i
 
 `pipeline.py` never names the variant. It passes `country_code=` to `run_notebook()` /
 `run_report_notebook()` alongside the *generic* `nb_path`, and the substitution happens inside
-`snt_lib` (external repo — do not guess its resolution rules beyond this):
+`snt_lib` (`resolve_notebook()`, pinned in each `requirements.txt`):
 
 ```python
 run_notebook(
     nb_path=pipeline_path / "code" / "snt_seasonality_rainfall.ipynb",  # generic name only
     country_code=country_code,                                          # ← enables the swap
+    use_custom_notebooks=use_custom_notebooks,                          # ← enables custom/
     ...
 )
 ```
 
-**Why it exists.** It lets a country keep a bespoke analysis without that file being clobbered on
-the next `Pull scripts` run ([ADR 0003](../docs/decisions/0003-country-variants-outside-pull-scripts.md)).
-Variants are deliberately **not** listed in `pull_scripts_from_repository(code_scripts=[...])` —
-only generic names are. That single omission is what makes them safe, and it cuts both ways:
+**Custom notebooks, the analyst's escape hatch** ([ADR 0044](../docs/decisions/0044-self-sync-replaces-pull-scripts.md)).
+Every run copies the pipeline's own notebooks and `utils/*.r` over the workspace copies, so a hand
+edit to a generic notebook is moved to `archive/self_sync/<UTC stamp>/…` and replaced, with a
+`[WARNING]`. To run an edited notebook, put it in `pipelines/<name>/custom/` under the generic
+file name (no `_<CC>` suffix) and run with **Use custom notebooks** (`use_custom_notebooks`) on.
+Only notebooks: `utils/*.r` always comes from the pipeline version, and `custom/` is never synced
+or deleted.
 
-| | `Pull scripts` = ON |
+**Which notebook runs**, for each generic notebook, decided once per run:
+
+| `use_custom_notebooks` | Runs, first that exists |
 |---|---|
-| Generic notebook | overwritten from the repo |
-| `_<CC>` variant | **untouched — neither overwritten nor delivered** |
+| off (default) | `<generic>_<CC>.ipynb` beside the generic one → the generic one |
+| on | `custom/<generic>.ipynb` → `<generic>_<CC>.ipynb` → the generic one |
 
-A variant lives only **in its country's workspace**; no mechanism propagates it or reports drift.
-**None is in this repo**, by decision: it is public, so country notebooks were left out of the
-import (migration plan D-13). The few that existed are readable in `snt_development` at the SHA in
-[`../README.md`](../README.md). How variants should be versioned is open (migration plan OD-10).
+- Anything but the generic notebook logs a `[WARNING]` naming the file, and is recorded in
+  `NOTEBOOK_OVERRIDES` in `{CC}_parameters.json` (`NOTEBOOK`, `SOURCE` = `custom` or
+  `country_variant`, `PATH`, `SHA256`). An empty list means every notebook was the pipeline's own.
+- A custom notebook's output is named `<stem>_CUSTOM_OUTPUT_<stamp>.ipynb`.
+- Switch on but `custom/` holds none of the pipeline's notebooks: `[ERROR]`, and nothing runs.
+- Only notebooks listed in `get_notebook_overrides(nb_paths=[...])` are recorded and counted for
+  that check ([R6](../docs/CONVENTIONS.md#r6)).
+
+**Why variants exist.** They let a country keep a bespoke analysis that runs on every run without
+anyone ticking a switch ([ADR 0003](../docs/decisions/0003-country-variants-outside-pull-scripts.md),
+amended by 0044). The sync copies only files in the pipeline zip, and a variant is never in it, so
+it is neither overwritten nor delivered.
+
+A variant or custom notebook lives only **in its workspace**; no mechanism propagates it or reports
+drift, and the checker reports it as `untracked`. **None is in this repo**, by decision: it is
+public, so country notebooks were left out of the import (migration plan D-13). The few that
+existed are readable in `snt_development` at the SHA in [`../README.md`](../README.md). How they
+should be versioned is open (migration plan OD-10).
 
 **Working rules:**
 

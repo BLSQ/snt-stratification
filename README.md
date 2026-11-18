@@ -107,7 +107,7 @@ deliberate; none is a bug to fix.
 
 1. **These pipelines are not a DAG.** Nothing schedules them; a person presses Run, one at a time,
    so a results table can mix data vintages. → [§4](docs/DATA_ARCHITECTURE.md#4-orchestration-model)
-2. **Merging here deploys nothing.** Live countries still run the old `snt_development` repo, and
+2. **Merging here deploys nothing.** Live countries still run the old `snt_development` repo, whose
    `Pull scripts` = ON pulls from there; the routes from this repo are still being built.
    → [`CLAUDE.md` rule 2](CLAUDE.md#the-five-rules-that-matter-most)
 3. **A country may not be running the notebook you are looking at.** A `<generic_name>_<CC>.ipynb`

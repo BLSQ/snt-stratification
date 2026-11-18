@@ -35,8 +35,8 @@ and `.r` files (`pipelines/<name>/…`, `shared/r/*.r`), changed `readme.md`s, a
 | 4 | Injected parameters ↔ fallbacks (R11, R12) | `python3 .claude/skills/handover/check_notebook_params.py <changed pipeline dirs>` — also run it when only a notebook changed (pass that pipeline). ERROR = fail. Resolve every UNVERIFIED line by hand (open the dict and the notebook's `exists()` cell) and say you did. |
 | 5 | New outputs published and documented (R4, R16) | For each `add_files_to_dataset(...)` added or changed: the file is listed in that pipeline's `readme.md` *Outputs → Published* and in [`docs/DATA_ARCHITECTURE.md`](../../../docs/DATA_ARCHITECTURE.md) §3. |
 | 6 | Explorer metadata | A published column added or renamed → its layer in `catalogs/SNT_metadata_master.json` added/updated in the same PR (use the `add-explorer-layer` skill). |
-| 7 | New scripts registered (R6) | Every new notebook filename appears in that pipeline's `pull_scripts_from_repository(code_scripts=[...], report_scripts=[...])` call. Country variants (`_<CC>`) must **not** be registered. A new `utils/*.r` file needs no entry if it is named `{pipeline_name}.r`, `{pipeline_name}_report.r` or `{stem}.r` of a listed notebook; any other name must be in `extra_util_scripts=[...]` ([R6](../../../docs/CONVENTIONS.md#r6)). |
-| 8 | Country variants | For each changed generic notebook `X.ipynb`, list `X_<CC>.ipynb` siblings in the same folder (`code/` or `reporting/`; `country_specific/` folders are inert archives). Name those countries in the note: the change does not reach them. `main` is not a complete record of which variants exist in workspaces — say so. |
+| 7 | New notebooks registered (R6) | Every notebook the pipeline runs, new ones included, is in its `get_notebook_overrides(nb_paths=[...])` call as a generic path (`code/` or `reporting/`). Country variants (`_<CC>`) must **not** be listed. A new notebook or `utils/*.r` file needs nothing else to reach a workspace: the sync copies every file in those folders ([R6](../../../docs/CONVENTIONS.md#r6)). A new notebook call passes `use_custom_notebooks=use_custom_notebooks` (R14). |
+| 8 | Country variants | For each changed generic notebook `X.ipynb`, list `X_<CC>.ipynb` siblings in the same folder (`code/` or `reporting/`; `country_specific/` folders are inert archives). Name those countries in the note: the change does not reach them. `main` is not a complete record of which variants exist in workspaces — say so. Nor does it reach a workspace running a copy of the notebook from `custom/` with `use_custom_notebooks` on; say that too. |
 | 9 | Readme re-verified (R16) | `pipeline.py` parameters, outputs or publication changed → `readme.md` changed too, and checked against the code with the `write-pipeline-readme` skill's §3 table, not patched by memory. |
 | 10 | New pipeline (R26) | Folder `pipelines/<name>/` named after the `@pipeline` id, and an entry with its `kind` in `pipelines/registry.json`. There is no workflow file to add ([`CONVENTIONS.md`](../../../docs/CONVENTIONS.md#adding-or-changing-a-pipeline)). |
 | 11 | Manifest or report shape (R22) | The shape of `release_manifest.json` or the checker's status report changed (a key, a type, or what a value means) → its schema in `contracts/` changed in the same PR, and `pytest tests/` is green. |
@@ -65,8 +65,8 @@ do either — the user pushes and runs. The note contains:
 2. **Checklist results** — the table from §2, one line per item.
 3. **Not verified** — everything you could not check (there is no test suite; R notebooks were not
    executed). Say which country/workspace it was tested in, or that it was not tested.
-4. **Merging deploys nothing** (root rule 2) — say so: CI only runs checks, and `Pull scripts` = ON
-   still pulls notebooks and shared R from the old `snt_development` repo. A fix a live country
+4. **Merging deploys nothing** (root rule 2) — say so: CI only runs checks, and live countries run
+   the old `snt_development` repo, whose `Pull scripts` = ON pulls notebooks and shared R from there. A fix a live country
    needs must be ported to the old repo by hand. Plus the countries from item 8 that need a manual
    fix.
 5. **Push command** — only for changed `pipeline.py` / `requirements.txt`, to test in a **test

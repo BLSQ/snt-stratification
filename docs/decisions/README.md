@@ -25,7 +25,7 @@ who made it move on. Format after Michael Nygard's
 |---|---|---|---|
 | [0001](0001-no-dag-engine.md) | No DAG engine or scheduler: pipelines are launched by hand | Accepted | not recorded |
 | [0002](0002-alternative-methods-last-run-wins.md) | Alternative methods overwrite each other: last run wins | Accepted | not recorded |
-| [0003](0003-country-variants-outside-pull-scripts.md) | Country-specific notebook variants live outside `Pull scripts` | Accepted | not recorded |
+| [0003](0003-country-variants-outside-pull-scripts.md) | Country-specific notebook variants live outside `Pull scripts` | Accepted, amended by 0044 | not recorded |
 | [0004](0004-publish-only-from-snt-development.md) | Publish SNT pipelines only from `snt-development` | Accepted, amended by 0041 | not recorded |
 | [0005](0005-no-codeowners.md) | No `CODEOWNERS` file: review by convention | Accepted | not recorded |
 | [0006](0006-retire-snt-assemble-results.md) | Retire `snt_assemble_results`; the Explorer reads datasets directly | Accepted | 2026-10 |
@@ -66,6 +66,7 @@ who made it move on. Format after Michael Nygard's
 | [0041](0041-new-templates-publishing-workspace.md) | The new templates are published from their own workspace | Accepted | 2026-11-02 |
 | [0042](0042-bootstrap-pipelines-as-templates-on-release.md) | Bootstrap pipelines are published as templates on each full release | Accepted | 2026-11-12 |
 | [0043](0043-config-read-from-snt-configuration-dataset.md) | Every consumer reads `SNT_config.json` from the `SNT_CONFIGURATION` dataset | Accepted | 2026-11-16 |
+| [0044](0044-self-sync-replaces-pull-scripts.md) | Pipelines self-sync their R half; `custom/` is the escape hatch | Accepted | 2026-11-17 |
 
 ## Imported ADRs: old number → new number
 
