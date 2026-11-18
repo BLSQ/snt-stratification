@@ -8,7 +8,8 @@ from snt_lib.snt_pipeline_utils import (
     validate_config,
     run_report_notebook,
     run_notebook,
-    pull_scripts_from_repository,
+    get_notebook_overrides,
+    sync_pipeline_scripts,
     save_pipeline_parameters,
     check_outputs_generated,
 )
@@ -33,9 +34,12 @@ from snt_lib.snt_pipeline_utils import (
     required=False,
 )
 @parameter(
-    "pull_scripts",
-    name="Pull scripts",
-    help="Pull the latest pipeline scripts from the repository.",
+    "use_custom_notebooks",
+    name="Use custom notebooks",
+    help=(
+        "Run the edited notebooks in pipelines/snt_dhis2_quality_of_care/custom/ "
+        "instead of this pipeline's own"
+    ),
     type=bool,
     default=False,
     required=False,
@@ -43,7 +47,7 @@ from snt_lib.snt_pipeline_utils import (
 def snt_dhis2_quality_of_care(
     data_action: str,
     run_report_only: bool,
-    pull_scripts: bool,
+    use_custom_notebooks: bool,
 ):
     """Compute quality-of-care indicators from outliers routine data.
 
@@ -58,13 +62,8 @@ def snt_dhis2_quality_of_care(
     pipeline_path.mkdir(parents=True, exist_ok=True)
     data_path.mkdir(parents=True, exist_ok=True)
 
-    if pull_scripts:
-        current_run.log_info("Pulling pipeline scripts from repository.")
-        pull_scripts_from_repository(
-            pipeline_name="snt_dhis2_quality_of_care",
-            report_scripts=["snt_dhis2_quality_of_care_report.ipynb"],
-            code_scripts=["snt_dhis2_quality_of_care.ipynb"],
-        )
+    # Copy this pipeline version's notebooks and utils to the workspace (ADR 0044); stops the run on failure.
+    sync_pipeline_scripts(pipeline_name="snt_dhis2_quality_of_care", bundle_path=Path(__file__).parent)
 
     try:
         snt_config, snt_config_version = load_configuration_snt_from_dataset()
@@ -73,6 +72,17 @@ def snt_dhis2_quality_of_care(
     except Exception as e:
         current_run.log_error(f"Loading configuration failed: {e}")
         raise
+
+    # Every notebook this pipeline may run; resolved before any runs, so a missing custom notebook
+    # stops the run up front.
+    notebook_overrides = get_notebook_overrides(
+        nb_paths=[
+            pipeline_path / "code" / "snt_dhis2_quality_of_care.ipynb",
+            pipeline_path / "reporting" / "snt_dhis2_quality_of_care_report.ipynb",
+        ],
+        country_code=country_code,
+        use_custom_notebooks=use_custom_notebooks,
+    )
 
     nb_parameters = {
         "DATA_ACTION": data_action,
@@ -87,6 +97,7 @@ def snt_dhis2_quality_of_care(
             extra_metadata={
                 "SNT_CONFIG_VERSION": snt_config_version.name,
                 "SNT_CONFIG_VERSION_ID": snt_config_version.id,
+                "NOTEBOOK_OVERRIDES": notebook_overrides,
             },
         )
 
@@ -104,6 +115,7 @@ def snt_dhis2_quality_of_care(
                 parameters=nb_parameters,
                 error_label_severity_map={"[ERROR]": "error", "[WARNING]": "warning"},
                 country_code=country_code,
+                use_custom_notebooks=use_custom_notebooks,
             )
         except Exception as e:
             current_run.log_error(f"Running notebook failed: {e}")
@@ -130,6 +142,7 @@ def snt_dhis2_quality_of_care(
             nb_output_path=pipeline_path / "reporting" / "outputs",
             error_label_severity_map={"[ERROR]": "error", "[WARNING]": "warning"},
             country_code=country_code,
+            use_custom_notebooks=use_custom_notebooks,
         )
     except Exception as e:
         current_run.log_error(f"Reporting notebook failed: {e}")

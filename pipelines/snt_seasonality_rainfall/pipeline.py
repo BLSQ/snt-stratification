@@ -7,7 +7,8 @@ from snt_lib.snt_pipeline_utils import (
     validate_config,
     run_report_notebook,
     run_notebook,
-    pull_scripts_from_repository,
+    get_notebook_overrides,
+    sync_pipeline_scripts,
     save_pipeline_parameters,
 )
 
@@ -72,9 +73,12 @@ from snt_lib.snt_pipeline_utils import (
     default=False,
 )
 @parameter(
-    "pull_scripts",
-    name="Pull scripts",
-    help="Pull the latest scripts from the repository before execution.",
+    "use_custom_notebooks",
+    name="Use custom notebooks",
+    help=(
+        "Run the edited notebooks in pipelines/snt_seasonality_rainfall/custom/ "
+        "instead of this pipeline's own"
+    ),
     type=bool,
     default=False,
 )
@@ -85,7 +89,7 @@ def snt_seasonality_rainfall(
     get_threshold_proportion_seasonal_years: float,
     use_calendar_year_denominator: bool,
     run_report_only: bool,
-    pull_scripts: bool,
+    use_custom_notebooks: bool,
 ):
     """Compute rainfall seasonality indicators by ADM2 level using ERA5 climate data.
 
@@ -100,13 +104,8 @@ def snt_seasonality_rainfall(
     pipeline_path.mkdir(parents=True, exist_ok=True)
     data_path.mkdir(parents=True, exist_ok=True)
 
-    if pull_scripts:
-        current_run.log_info("Pulling pipeline scripts from repository.")
-        pull_scripts_from_repository(
-            pipeline_name="snt_seasonality_rainfall",
-            report_scripts=["snt_seasonality_rainfall_report.ipynb"],
-            code_scripts=["snt_seasonality_rainfall.ipynb"],
-        )
+    # Copy this pipeline version's notebooks and utils to the workspace (ADR 0044); stops the run on failure.
+    sync_pipeline_scripts(pipeline_name="snt_seasonality_rainfall", bundle_path=Path(__file__).parent)
 
     try:
         # Load configuration
@@ -116,6 +115,17 @@ def snt_seasonality_rainfall(
     except Exception as e:
         current_run.log_error(f"An error occurred while loading configuration: {e}")
         raise
+
+    # Every notebook this pipeline may run; resolved before any runs, so a missing custom notebook
+    # stops the run up front.
+    notebook_overrides = get_notebook_overrides(
+        nb_paths=[
+            pipeline_path / "code" / "snt_seasonality_rainfall.ipynb",
+            pipeline_path / "reporting" / "snt_seasonality_rainfall_report.ipynb",
+        ],
+        country_code=country_code,
+        use_custom_notebooks=use_custom_notebooks,
+    )
 
     # ------------------------------------------------------------------
     # FULL PIPELINE EXECUTION
@@ -142,6 +152,7 @@ def snt_seasonality_rainfall(
                 parameters=input_params,
                 error_label_severity_map={"[ERROR]": "error", "[WARNING]": "warning"},
                 country_code=country_code,
+                use_custom_notebooks=use_custom_notebooks,
             )
         except Exception as e:
             current_run.log_error(f"An error occurred while running the notebook: {e}")
@@ -155,6 +166,7 @@ def snt_seasonality_rainfall(
             extra_metadata={
                 "SNT_CONFIG_VERSION": snt_config_version.name,
                 "SNT_CONFIG_VERSION_ID": snt_config_version.id,
+                "NOTEBOOK_OVERRIDES": notebook_overrides,
             },
         )
 
@@ -180,6 +192,7 @@ def snt_seasonality_rainfall(
             nb_output_path=pipeline_path / "reporting" / "outputs",
             error_label_severity_map={"[ERROR]": "error", "[WARNING]": "warning"},
             country_code=country_code,
+            use_custom_notebooks=use_custom_notebooks,
         )
     except Exception as e:
         current_run.log_error(f"An error occurred while running the report notebook: {e}")

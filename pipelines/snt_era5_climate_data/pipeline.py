@@ -20,10 +20,11 @@ from openhexa.toolbox.era5.utils import get_variables
 from snt_lib.snt_pipeline_utils import (
     add_files_to_dataset,
     get_file_from_dataset,
+    get_notebook_overrides,
     load_configuration_snt_from_dataset,
-    pull_scripts_from_repository,
     run_report_notebook,
     save_pipeline_parameters,
+    sync_pipeline_scripts,
     validate_config,
 )
 
@@ -65,9 +66,9 @@ ERA5_VARIABLES = ["total_precipitation"]
     required=False,
 )
 @parameter(
-    "pull_scripts",
-    name="Pull Scripts",
-    help="Pull the latest scripts from the repository",
+    "use_custom_notebooks",
+    name="Use custom notebooks",
+    help="Run the edited notebooks in pipelines/snt_era5_climate_data/custom/ instead of this pipeline's own",
     type=bool,
     default=False,
     required=False,
@@ -85,7 +86,7 @@ def snt_era5_climate_data(
     end_date: str | None,
     force_resync: bool,
     cds_connection: CustomConnection,
-    pull_scripts: bool,
+    use_custom_notebooks: bool,
     run_report_only: bool,
 ) -> None:
     """Unified ERA5 pipeline for SNT: synchronize raw ERA5 then aggregate to SNT outputs."""
@@ -101,20 +102,21 @@ def snt_era5_climate_data(
     cache_dir.mkdir(parents=True, exist_ok=True)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    if pull_scripts:
-        current_run.log_info("Pulling ERA5 scripts from repository.")
-        try:
-            pull_scripts_from_repository(
-                pipeline_name="snt_era5_climate_data",
-                report_scripts=["snt_era5_climate_data_report.ipynb"],
-                code_scripts=[],
-            )
-        except Exception as e:
-            current_run.log_warning(f"Could not pull snt_era5_climate_data scripts: {e}")
+    # Copy this pipeline version's notebooks and utils to the workspace (ADR 0044); stops the run on failure.
+    sync_pipeline_scripts(pipeline_name="snt_era5_climate_data", bundle_path=Path(__file__).parent)
 
     snt_config, snt_config_version = load_configuration_snt_from_dataset()
     validate_config(snt_config)
     country_code = snt_config["SNT_CONFIG"]["COUNTRY_CODE"]
+
+    # Every notebook this pipeline may run; resolved before any runs, so a missing custom notebook
+    # stops the run up front.
+    notebook_overrides = get_notebook_overrides(
+        nb_paths=[report_nb],
+        country_code=country_code,
+        use_custom_notebooks=use_custom_notebooks,
+    )
+
     if not run_report_only:
         if not is_valid_ymd(start_date):
             raise ValueError(f"Invalid start date format: {start_date}. Expected YYYY-MM-DD.")
@@ -212,13 +214,14 @@ def snt_era5_climate_data(
                 "start_date": start_date,
                 "end_date": end_date,
                 "variables": variables_to_run,
-                "pull_scripts": pull_scripts,
+                "use_custom_notebooks": use_custom_notebooks,
             },
             output_path=output_dir,
             country_code=country_code,
             extra_metadata={
                 "SNT_CONFIG_VERSION": snt_config_version.name,
                 "SNT_CONFIG_VERSION_ID": snt_config_version.id,
+                "NOTEBOOK_OVERRIDES": notebook_overrides,
             },
         )
         file_paths_to_upload.append(params_file)
@@ -237,6 +240,7 @@ def snt_era5_climate_data(
         nb_file=report_nb,
         nb_output_path=report_out,
         country_code=country_code,
+        use_custom_notebooks=use_custom_notebooks,
     )
 
 

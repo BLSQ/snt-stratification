@@ -6,7 +6,8 @@ from snt_lib.snt_pipeline_utils import (
     validate_config,
     run_report_notebook,
     run_notebook,
-    pull_scripts_from_repository,
+    get_notebook_overrides,
+    sync_pipeline_scripts,
     save_pipeline_parameters,
 )
 
@@ -72,9 +73,9 @@ from snt_lib.snt_pipeline_utils import (
     required=False,
 )
 @parameter(
-    "pull_scripts",
-    name="Pull scripts",
-    help="Pull the latest scripts from the repository before execution.",
+    "use_custom_notebooks",
+    name="Use custom notebooks",
+    help="Run the edited notebooks in pipelines/snt_seasonality_cases/custom/ instead of this pipeline's own",
     type=bool,
     default=False,
     required=False,
@@ -86,7 +87,7 @@ def snt_seasonality_cases(
     get_threshold_proportion_seasonal_years: float,
     use_calendar_year_denominator: bool,
     run_report_only: bool,
-    pull_scripts: bool,
+    use_custom_notebooks: bool,
 ):
     """Compute case seasonality indicators by ADM2 level using DHIS2 routine data.
 
@@ -102,13 +103,8 @@ def snt_seasonality_cases(
     pipeline_path.mkdir(parents=True, exist_ok=True)
     data_path.mkdir(parents=True, exist_ok=True)
 
-    if pull_scripts:
-        current_run.log_info("Pulling pipeline scripts from repository.")
-        pull_scripts_from_repository(
-            pipeline_name="snt_seasonality_cases",
-            report_scripts=["snt_seasonality_cases_report.ipynb"],
-            code_scripts=["snt_seasonality_cases.ipynb"],
-        )
+    # Copy this pipeline version's notebooks and utils to the workspace (ADR 0044); stops the run on failure.
+    sync_pipeline_scripts(pipeline_name="snt_seasonality_cases", bundle_path=Path(__file__).parent)
 
     try:
         # config input
@@ -118,6 +114,17 @@ def snt_seasonality_cases(
     except Exception as e:
         current_run.log_error(f"Failed to load configuration: {e!s}")
         raise
+
+    # Every notebook this pipeline may run; resolved before any runs, so a missing custom notebook
+    # stops the run up front.
+    notebook_overrides = get_notebook_overrides(
+        nb_paths=[
+            pipeline_path / "code" / "snt_seasonality_cases.ipynb",
+            pipeline_path / "reporting" / "snt_seasonality_cases_report.ipynb",
+        ],
+        country_code=country_code,
+        use_custom_notebooks=use_custom_notebooks,
+    )
 
     if not run_report_only:
         input_params = {
@@ -140,6 +147,7 @@ def snt_seasonality_cases(
                 parameters=input_params,
                 error_label_severity_map={"[ERROR]": "error", "[WARNING]": "warning"},
                 country_code=country_code,
+                use_custom_notebooks=use_custom_notebooks,
             )
         except Exception as e:
             current_run.log_error(f"Pipeline failed: {e!s}")
@@ -154,6 +162,7 @@ def snt_seasonality_cases(
                 extra_metadata={
                     "SNT_CONFIG_VERSION": snt_config_version.name,
                     "SNT_CONFIG_VERSION_ID": snt_config_version.id,
+                    "NOTEBOOK_OVERRIDES": notebook_overrides,
                 },
             )
         except Exception as e:
@@ -179,6 +188,7 @@ def snt_seasonality_cases(
             nb_output_path=pipeline_path / "reporting" / "outputs",
             error_label_severity_map={"[ERROR]": "error", "[WARNING]": "warning"},
             country_code=country_code,
+            use_custom_notebooks=use_custom_notebooks,
         )
     except Exception as e:
         current_run.log_error(f"Reporting failed: {e!s}")

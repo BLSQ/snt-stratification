@@ -18,7 +18,8 @@ from openhexa.toolbox.dhis2.dataframe import (
 from openhexa.toolbox.dhis2.periods import period_from_string
 from snt_lib.snt_pipeline_utils import (
     handle_rkernel_error_with_labels,
-    pull_scripts_from_repository,
+    get_notebook_overrides,
+    sync_pipeline_scripts,
     run_report_notebook,
     add_files_to_dataset,
     load_configuration_snt_from_dataset,
@@ -68,9 +69,9 @@ from snt_lib.snt_pipeline_utils import (
     required=False,
 )
 @parameter(
-    "pull_scripts",
-    name="Pull Scripts",
-    help="Pull the latest scripts from the repository",
+    "use_custom_notebooks",
+    name="Use custom notebooks",
+    help="Run the edited notebooks in pipelines/snt_dhis2_extract/custom/ instead of this pipeline's own",
     type=bool,
     default=False,
     required=False,
@@ -89,7 +90,7 @@ def snt_dhis2_extract(
     end: int,
     overwrite: bool,
     run_report_only: bool,
-    pull_scripts: bool,
+    use_custom_notebooks: bool,
 ) -> None:
     """SNT extract pipeline for DHIS2 data.
 
@@ -109,14 +110,8 @@ def snt_dhis2_extract(
     dhis2_raw_data_path.mkdir(parents=True, exist_ok=True)
     current_run.log_debug(f"output directory: {dhis2_raw_data_path}")
 
-    # pull pipeline scripts if requested
-    if pull_scripts:
-        current_run.log_info("Pulling pipeline scripts from repository.")
-        pull_scripts_from_repository(
-            pipeline_name="snt_dhis2_extract",
-            report_scripts=["snt_dhis2_extract_report.ipynb"],
-            code_scripts=[],
-        )
+    # Copy this pipeline version's notebooks and utils to the workspace (ADR 0044); stops the run on failure.
+    sync_pipeline_scripts(pipeline_name="snt_dhis2_extract", bundle_path=Path(__file__).parent)
 
     try:
         # Load configuration
@@ -126,6 +121,14 @@ def snt_dhis2_extract(
     except Exception as e:
         current_run.log_error(f"Configuration loading failed: {e}")
         raise
+
+    # Every notebook this pipeline may run; resolved before any runs, so a missing custom notebook
+    # stops the run up front.
+    notebook_overrides = get_notebook_overrides(
+        nb_paths=[pipeline_path / "reporting" / "snt_dhis2_extract_report.ipynb"],
+        country_code=country_code,
+        use_custom_notebooks=use_custom_notebooks,
+    )
 
     if not run_report_only:
         # DHIS2 connection
@@ -204,7 +207,7 @@ def snt_dhis2_extract(
                     "start": start,
                     "end": end,
                     "overwrite": overwrite,
-                    "pull_scripts": pull_scripts,
+                    "use_custom_notebooks": use_custom_notebooks,
                     "run_report_only": run_report_only,
                 },
                 output_path=dhis2_raw_data_path,
@@ -212,6 +215,7 @@ def snt_dhis2_extract(
                 extra_metadata={
                     "SNT_CONFIG_VERSION": snt_config_version.name,
                     "SNT_CONFIG_VERSION_ID": snt_config_version.id,
+                    "NOTEBOOK_OVERRIDES": notebook_overrides,
                 },
             )
         except Exception as e:
@@ -246,6 +250,7 @@ def snt_dhis2_extract(
         nb_output_path=pipeline_path / "reporting" / "outputs",
         country_code=country_code,
         ready=files_ready,
+        use_custom_notebooks=use_custom_notebooks,
     )
 
 
@@ -1480,6 +1485,7 @@ def run_report_notebook_task(
     nb_output_path: Path,
     country_code: str,
     ready: bool = True,
+    use_custom_notebooks: bool = False,
 ) -> None:
     """Execute a Jupyter notebook using Papermill.
 
@@ -1493,6 +1499,8 @@ def run_report_notebook_task(
         The country code to be used in the notebook execution.
     ready : bool, optional
         Whether the notebook should be executed (default is True).
+    use_custom_notebooks : bool, optional
+        Whether a notebook of the same name in `custom/` runs instead (default is False).
     """
     if not ready:
         current_run.log_info("Reporting execution skipped.")
@@ -1504,6 +1512,7 @@ def run_report_notebook_task(
             nb_output_path=nb_output_path,
             error_label_severity_map={"[ERROR]": "error", "[WARNING]": "warning"},
             country_code=country_code,
+            use_custom_notebooks=use_custom_notebooks,
         )
     except Exception as e:
         current_run.log_error(f"Error in running report notebook: {e}")

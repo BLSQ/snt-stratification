@@ -4,6 +4,8 @@ The **SNT DHIS2 Outliers Imputation (Magic Glasses)** pipeline flags outliers in
 
 ## Parameters
 
+The standard flags **`run_report_only`** and **`use_custom_notebooks`** are omitted per project conventions; what `use_custom_notebooks` changes is described in steps 2 and 4 below ([ADR 0044](../../docs/decisions/0044-self-sync-replaces-pull-scripts.md)).
+
 * **`mode`** (str, Optional):
   * **Name:** Detection mode
   * **Description:** Detection passes to run.
@@ -19,17 +21,21 @@ The **SNT DHIS2 Outliers Imputation (Magic Glasses)** pipeline flags outliers in
 ## Functionality Overview
 
 1. **Mode:** Normalise **`mode`**, reject unknown values, and set **`RUN_MAGIC_GLASSES_COMPLETE`** (`true` for `complete`).
-2. **Configuration:** Load and validate **`SNT_config.json`**, resolve **`COUNTRY_CODE`**, and create `pipelines/snt_dhis2_outliers_imputation_magic_glasses/` and `data/dhis2/outliers_imputation/` if missing.
-3. **Detection and imputation** (skipped when `run_report_only`): run **`code/snt_dhis2_outliers_imputation_magic_glasses.ipynb`** with **`ROOT_PATH`**, **`RUN_MAGIC_GLASSES_COMPLETE`** and the fixed thresholds **`DEVIATION_MAD15 = 15`**, **`DEVIATION_MAD10 = 10`**, **`DEVIATION_SEASONAL5 = 5`**, **`DEVIATION_SEASONAL3 = 3`** (the thresholds are not exposed as parameters). The notebook:
-   1. Loads **`[COUNTRY_CODE]_routine.parquet`** from **`DHIS2_DATASET_FORMATTED`** and stops if a configured indicator column is missing.
+2. **Sync the R half (every run, report-only included):** Copy each **`code/*.ipynb`**, **`reporting/*.ipynb`** and **`utils/*.r`** of this pipeline version to **`pipelines/snt_dhis2_outliers_imputation_magic_glasses/`** in the workspace, when the workspace copy is missing or its sha256 differs. A replaced copy is first moved to **`archive/self_sync/<UTC stamp>/pipelines/snt_dhis2_outliers_imputation_magic_glasses/<path>`**, with a `[WARNING]` naming it. Nothing is deleted; **`custom/`** and **`*_[COUNTRY_CODE].ipynb`** variants are never touched. If the sync fails, the run stops with an `[ERROR]`.
+3. **Configuration:** Create `pipelines/snt_dhis2_outliers_imputation_magic_glasses/` and `data/dhis2/outliers_imputation/` if missing, then load and validate **`SNT_config.json`** and resolve **`COUNTRY_CODE`**.
+4. **Choose each notebook (before any runs):** For each of the two notebooks below, run **`custom/<notebook>`** if **`use_custom_notebooks`** is on and the file exists, else **`<notebook stem>_[COUNTRY_CODE].ipynb`** beside the generic notebook if it exists, else the generic notebook. Each notebook that is not the generic one logs a `[WARNING]`. With **`use_custom_notebooks`** on and no file in **`pipelines/snt_dhis2_outliers_imputation_magic_glasses/custom/`** matching either name, the run stops with an `[ERROR]` before any notebook runs.
+5. **Detection and imputation:** run **`snt_dhis2_outliers_imputation_magic_glasses.ipynb`** with **`ROOT_PATH`**, **`RUN_MAGIC_GLASSES_COMPLETE`** and the fixed thresholds **`DEVIATION_MAD15 = 15`**, **`DEVIATION_MAD10 = 10`**, **`DEVIATION_SEASONAL5 = 5`**, **`DEVIATION_SEASONAL3 = 3`** (the thresholds are not exposed as parameters). The notebook:
+   1. Loads **`[COUNTRY_CODE]_routine.parquet`** from **`DHIS2_DATASET_FORMATTED`** and stops with an `[ERROR]` if it cannot be loaded or a configured indicator column is missing.
    2. Reshapes it to long format at **facility (`OU_ID`) × month (`PERIOD`) × `INDICATOR`**, and removes rows duplicated on that key (first row kept; logged).
    3. **MAD15 → MAD10:** flags values outside `median ± k × MAD` (`MAD` with `constant = 1`), computed **per `YEAR` × `OU_ID` × `INDICATOR`**. MAD10 runs only on the values MAD15 did not flag.
    4. **Seasonal5 → seasonal3** (complete mode only): for each **`OU_ID` × `INDICATOR`** monthly series, flags values whose residual from `forecast::tsclean()`, scaled by the series MAD, is at least `k`. Runs only on the values not flagged by the MAD passes, in parallel on (available cores − 1) workers.
    5. Combines the passes into one flag, **`OUTLIER_DETECTED`**, and writes the detected, imputed and removed tables (see Outputs).
-4. **Output check:** stop with an error if any of the three Parquet files is missing or was not rewritten during this run. All outliers imputation pipelines write the same filenames, so this prevents publishing a file left by an earlier run of another method.
-5. **Publish:** save the pipeline parameters JSON (the injected notebook parameters) and upload the three Parquet files plus that JSON to **`DHIS2_OUTLIERS_IMPUTATION`**.
-6. **Database** (only when `push_db`): push the detection table to **`outliers_detected`**.
-7. **Reporting:** run **`reporting/snt_dhis2_outliers_imputation_magic_glasses_report.ipynb`**, in every mode including report-only.
+6. **Output check:** stop with an error if any of the three Parquet files is missing or was not rewritten during this run. All outliers imputation pipelines write the same filenames, so this prevents publishing a file left by an earlier run of another method.
+7. **Publish:** save **`[COUNTRY_CODE]_parameters.json`** and upload the three Parquet files plus the parameters file to **`DHIS2_OUTLIERS_IMPUTATION`** via **`add_files_to_dataset`**.
+8. **Database** (only when `push_db`): push the detection table to **`outliers_detected`**.
+9. **Reporting:** run **`snt_dhis2_outliers_imputation_magic_glasses_report.ipynb`** (or its custom or country version, chosen as in step 4) to refresh the report outputs.
+
+With **`run_report_only`**, steps 5–8 are skipped: nothing is computed, published or pushed, and the report reads the detection table already on **`DHIS2_OUTLIERS_IMPUTATION`**. Steps 1–4 and 9 still run.
 
 ## Inputs
 
@@ -38,7 +44,9 @@ The **SNT DHIS2 Outliers Imputation (Magic Glasses)** pipeline flags outliers in
   * **`SNT_CONFIG.COUNTRY_CODE`** (and **`SNT_CONFIG.COUNTRY_NAME`** in the report)
   * **`DHIS2_DATA_DEFINITIONS.DHIS2_INDICATOR_DEFINITIONS`**: its keys are the indicators screened
   * **`SNT_DATASET_IDENTIFIERS.DHIS2_DATASET_FORMATTED`** and **`SNT_DATASET_IDENTIFIERS.DHIS2_OUTLIERS_IMPUTATION`**
-* The reporting notebook reads **`[COUNTRY_CODE]_routine_outliers_detected.parquet`** back from **`DHIS2_OUTLIERS_IMPUTATION`**.
+* **`[COUNTRY_CODE]_routine_outliers_detected.parquet`** on **`DHIS2_OUTLIERS_IMPUTATION`**, read back by the reporting notebook (the latest version: this run's upload, or the last published one in report-only mode).
+* **`pipelines/snt_dhis2_outliers_imputation_magic_glasses/custom/*.ipynb`** in the workspace (optional), used only when **`use_custom_notebooks`** is on.
+* **`*_[COUNTRY_CODE].ipynb`** beside a generic notebook in the workspace (optional), used whenever present.
 
 ## Outputs
 
@@ -47,12 +55,19 @@ The **SNT DHIS2 Outliers Imputation (Magic Glasses)** pipeline flags outliers in
 * **`data/dhis2/outliers_imputation/[COUNTRY_CODE]_routine_outliers_detected.parquet`**
 * **`data/dhis2/outliers_imputation/[COUNTRY_CODE]_routine_outliers_imputed.parquet`**
 * **`data/dhis2/outliers_imputation/[COUNTRY_CODE]_routine_outliers_removed.parquet`**
-* **Pipeline parameters JSON** in the same directory, with **`SNT_CONFIG_VERSION`** and **`SNT_CONFIG_VERSION_ID`**, the name and id of the **`SNT_CONFIGURATION`** version read
-* Executed notebook under **`pipelines/snt_dhis2_outliers_imputation_magic_glasses/papermill_outputs/`**; report outputs under **`pipelines/snt_dhis2_outliers_imputation_magic_glasses/reporting/outputs/`**
+* **`data/dhis2/outliers_imputation/[COUNTRY_CODE]_parameters.json`**, with the injected notebook parameters (**`ROOT_PATH`**, **`RUN_MAGIC_GLASSES_COMPLETE`**, **`DEVIATION_MAD15`**, **`DEVIATION_MAD10`**, **`DEVIATION_SEASONAL5`**, **`DEVIATION_SEASONAL3`**), **`SNT_CONFIG_VERSION`** and **`SNT_CONFIG_VERSION_ID`** (the name and id of the **`SNT_CONFIGURATION`** version read), and **`NOTEBOOK_OVERRIDES`**. The flags **`push_db`**, **`run_report_only`** and **`use_custom_notebooks`** are not recorded.
+* **Executed notebooks** under **`pipelines/snt_dhis2_outliers_imputation_magic_glasses/papermill_outputs/`**, named **`<stem>_OUTPUT_<timestamp>.ipynb`**, or **`<stem>_CUSTOM_OUTPUT_<timestamp>.ipynb`** for a custom notebook
+* **Report outputs** under **`pipelines/snt_dhis2_outliers_imputation_magic_glasses/reporting/outputs/`**, named the same way
+* **Synced scripts** under **`pipelines/snt_dhis2_outliers_imputation_magic_glasses/`** (`code/`, `reporting/`, `utils/`) and replaced copies under **`archive/self_sync/`** (step 2)
 
 **Published to `DHIS2_OUTLIERS_IMPUTATION`** (not in report-only mode)
 
-* The three Parquet files above and the pipeline parameters JSON. No `.csv` twins are written.
+* **`[COUNTRY_CODE]_routine_outliers_detected.parquet`**
+* **`[COUNTRY_CODE]_routine_outliers_imputed.parquet`**
+* **`[COUNTRY_CODE]_routine_outliers_removed.parquet`**
+* **`[COUNTRY_CODE]_parameters.json`**
+
+No `.csv` twins are written.
 
 **Database** (only when `push_db`)
 
@@ -60,7 +75,7 @@ The **SNT DHIS2 Outliers Imputation (Magic Glasses)** pipeline flags outliers in
 
 > **Notes for the Data Analyst:**
 >
-> - **Last run wins:** all five outliers imputation pipelines publish the same three filenames to **`DHIS2_OUTLIERS_IMPUTATION`**. Downstream uses whichever ran last; check **`OUTLIER_METHOD`** or the parameters JSON to see which method produced the files.
+> - **Last run wins:** all five outliers imputation pipelines publish the same three filenames to **`DHIS2_OUTLIERS_IMPUTATION`** ([ADR 0002](../../docs/decisions/0002-alternative-methods-last-run-wins.md)). Downstream uses whichever ran last; check **`OUTLIER_METHOD`** or **`PIPELINE_NAME`** in **`[COUNTRY_CODE]_parameters.json`** to see which method produced the files.
 > - **Detection table** (long format, one row per facility × month × indicator of the routine data; rows sorted by `ADM1_ID`, `ADM2_ID`, `OU_ID`, `INDICATOR`, `PERIOD`), columns in order:
 >   - **`PERIOD`** (integer, `YYYYMM`), **`YEAR`**, **`MONTH`** (integer), **`DATE`** (date, first day of the month)
 >   - **`ADM1_NAME`**, **`ADM1_ID`**, **`ADM2_NAME`**, **`ADM2_ID`**, **`OU_ID`**, **`OU_NAME`** (character; names unchanged from the routine data), **`INDICATOR`** (character)
@@ -74,4 +89,6 @@ The **SNT DHIS2 Outliers Imputation (Magic Glasses)** pipeline flags outliers in
 > - **Gaps in `PERIOD`:** seasonal detection and the imputation window treat consecutive rows as consecutive months. A series with missing months logs a warning in complete mode, and its seasonal flags and imputed values may be misaligned.
 > - **MAD of zero:** in MAD15 / MAD10, a year × facility × indicator group whose MAD is `0` (typically when more than half of its values are identical) has an accepted interval equal to its median, so **every value different from the median is flagged**, whatever the threshold. The seasonal passes do the opposite: a series whose MAD is `0`, or with fewer than 2 values, is never flagged.
 > - **Run timeout:** the pipeline sets an explicit timeout of **8 hours** (`timeout=28800` seconds in `@pipeline(...)`), because complete mode can legitimately run for hours: the seasonal passes fit one `tsclean()` model per `OU_ID` × `INDICATOR` series, twice (seasonal5, then seasonal3), so run time grows with the number of facilities × indicators and falls with the number of CPU cores available (the passes use cores − 1 workers). A run still going after 8 hours is stopped by OpenHEXA. Outputs are only written at the end of the notebook and published after it, so a stopped run writes and publishes **nothing**: **`DHIS2_OUTLIERS_IMPUTATION`** keeps whatever the last successful outliers run published, which may come from another method.
+> - **`NOTEBOOK_OVERRIDES`**: one entry per notebook that did not run from this pipeline version, with **`NOTEBOOK`** (generic file name), **`SOURCE`** (`custom` or `country_variant`), **`PATH`** and **`SHA256`**. An empty list means every notebook was the pipeline's own. Entries are resolved for both notebooks up front.
 > - **Guarded execution:** nothing is skipped silently. The notebook stops with an `[ERROR]` if the routine file cannot be loaded or a configured indicator column is missing; the run stops before publishing if any of the three Parquet files was not rewritten during the run; a failed dataset upload or database push also stops the run. The database push comes after the dataset upload, so a failed push leaves the new files already published.
+> - **Edited notebooks**: the sync overwrites any hand edit to a notebook in `code/` or `reporting/` (the edited copy is kept in **`archive/self_sync/`**). To run an edited notebook, put it in **`pipelines/snt_dhis2_outliers_imputation_magic_glasses/custom/`** under the same file name and switch on **`use_custom_notebooks`**. `utils/*.r` always comes from the pipeline version.

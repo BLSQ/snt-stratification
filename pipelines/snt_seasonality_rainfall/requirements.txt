@@ -1,2 +1,2 @@
 openhexa.toolbox @ git+https://github.com/BLSQ/openhexa-toolbox@main
-snt_lib @ git+https://git@github.com/BLSQ/snt_utils.git@44f59462846ecbb35e86c4daa8b2f434584036b3
+snt_lib @ git+https://git@github.com/BLSQ/snt_utils.git@ca74b54aa31601f501f1f8f109c0b9268acadf35

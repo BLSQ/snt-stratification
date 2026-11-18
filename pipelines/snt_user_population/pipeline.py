@@ -4,7 +4,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from snt_lib.snt_pipeline_utils import (
-    pull_scripts_from_repository,
+    get_notebook_overrides,
+    sync_pipeline_scripts,
     add_files_to_dataset,
     load_configuration_snt_from_dataset,
     run_report_notebook,
@@ -49,15 +50,14 @@ EXPECTED_COLS = [*REQUIRED_COLS, *DISAGGREGATION_COLS]
     required=False,
 )
 @parameter(
-    "pull_scripts",
-    name="Pull notebooks from repository",
-    help="Pull the latest notebooks from the GitHub repository."
-    " Note: this will overwrite any local changes to the notebooks!",
+    "use_custom_notebooks",
+    name="Use custom notebooks",
+    help="Run the edited notebooks in pipelines/snt_user_population/custom/ instead of this pipeline's own",
     type=bool,
-    default=True,
+    default=False,
     required=False,
 )
-def snt_user_population(user_file: File, run_report_only: bool, pull_scripts: bool):
+def snt_user_population(user_file: File, run_report_only: bool, use_custom_notebooks: bool):
     """Orchestrate the SNT user population pipeline."""
     # set paths
     snt_root_path = Path(workspace.files_path)
@@ -68,12 +68,8 @@ def snt_user_population(user_file: File, run_report_only: bool, pull_scripts: bo
     snt_pipeline_path.mkdir(parents=True, exist_ok=True)
     snt_user_population_data_path.mkdir(parents=True, exist_ok=True)
 
-    if pull_scripts:
-        current_run.log_info("Pulling pipeline scripts from repository.")
-        pull_scripts_from_repository(
-            pipeline_name="snt_user_population",
-            report_scripts=["snt_user_population_report.ipynb"],
-        )
+    # Copy this pipeline version's notebooks and utils to the workspace (ADR 0044); stops the run on failure.
+    sync_pipeline_scripts(pipeline_name="snt_user_population", bundle_path=Path(__file__).parent)
 
     try:
         # Load configuration (needed for report and for main run)
@@ -88,6 +84,14 @@ def snt_user_population(user_file: File, run_report_only: bool, pull_scripts: bo
     except Exception as e:
         current_run.log_error(f"Error occurred extracting country code 'COUNTRY_CODE': {e}")
         raise
+
+    # Every notebook this pipeline may run; resolved before any runs, so a missing custom notebook
+    # stops the run up front.
+    notebook_overrides = get_notebook_overrides(
+        nb_paths=[snt_pipeline_path / "reporting" / "snt_user_population_report.ipynb"],
+        country_code=country_code,
+        use_custom_notebooks=use_custom_notebooks,
+    )
 
     try:
         dataset_pop_user_id = snt_config_dict["SNT_DATASET_IDENTIFIERS"]["SNT_POPULATION_USER_PROVIDED"]
@@ -145,6 +149,7 @@ def snt_user_population(user_file: File, run_report_only: bool, pull_scripts: bo
                 extra_metadata={
                     "SNT_CONFIG_VERSION": snt_config_version.name,
                     "SNT_CONFIG_VERSION_ID": snt_config_version.id,
+                    "NOTEBOOK_OVERRIDES": notebook_overrides,
                 },
             )
         except Exception as e:
@@ -171,6 +176,7 @@ def snt_user_population(user_file: File, run_report_only: bool, pull_scripts: bo
             nb_output_path=snt_pipeline_path / "reporting" / "outputs",
             error_label_severity_map={"[ERROR]": "error", "[WARNING]": "warning"},
             country_code=country_code,
+            use_custom_notebooks=use_custom_notebooks,
         )
     except Exception as e:
         current_run.log_error(f"Error in running report notebook: {e}")

@@ -3,7 +3,8 @@ from pathlib import Path
 from openhexa.sdk import current_run, pipeline, workspace, parameter
 
 from snt_lib.snt_pipeline_utils import (
-    pull_scripts_from_repository,
+    get_notebook_overrides,
+    sync_pipeline_scripts,
     add_files_to_dataset,
     load_configuration_snt_from_dataset,
     run_notebook,
@@ -82,10 +83,12 @@ from snt_lib.snt_pipeline_utils import (
     required=False,
 )
 @parameter(
-    "pull_scripts",
-    name="Pull notebooks from repository",
-    help="Pull the latest notebooks from the GitHub repository. "
-    "Note: this will overwrite any local changes to the notebooks!",
+    "use_custom_notebooks",
+    name="Use custom notebooks",
+    help=(
+        "Run the edited notebooks in pipelines/snt_dhis2_reporting_rate_dataelement/custom/ "
+        "instead of this pipeline's own"
+    ),
     type=bool,
     default=False,
     required=False,
@@ -97,16 +100,13 @@ def snt_dhis2_reporting_rate_dataelement(
     dataelement_method_denominator: str,
     use_weighted_reporting_rates: bool,
     run_report_only: bool,
-    pull_scripts: bool,
+    use_custom_notebooks: bool,
 ):
     """Orchestration function. Calls other functions within the pipeline."""
-    if pull_scripts:
-        current_run.log_info("Pulling pipeline scripts from repository.")
-        pull_scripts_from_repository(
-            pipeline_name="snt_dhis2_reporting_rate_dataelement",
-            report_scripts=["snt_dhis2_reporting_rate_dataelement_report.ipynb"],
-            code_scripts=["snt_dhis2_reporting_rate_dataelement.ipynb"],
-        )
+    # Copy this pipeline version's notebooks and utils to the workspace (ADR 0044); stops the run on failure.
+    sync_pipeline_scripts(
+        pipeline_name="snt_dhis2_reporting_rate_dataelement", bundle_path=Path(__file__).parent
+    )
 
     # Set paths
     root_path = Path(workspace.files_path)
@@ -122,6 +122,17 @@ def snt_dhis2_reporting_rate_dataelement(
     except Exception as e:
         current_run.log_error(f"Failed to load or validate configuration: {e}")
         raise
+
+    # Every notebook this pipeline may run; resolved before any runs, so a missing custom notebook
+    # stops the run up front.
+    notebook_overrides = get_notebook_overrides(
+        nb_paths=[
+            pipeline_path / "code" / "snt_dhis2_reporting_rate_dataelement.ipynb",
+            pipeline_path / "reporting" / "snt_dhis2_reporting_rate_dataelement_report.ipynb",
+        ],
+        country_code=country_code,
+        use_custom_notebooks=use_custom_notebooks,
+    )
 
     if not run_report_only:
         # Resolve routine data source based on the user's choice
@@ -159,6 +170,7 @@ def snt_dhis2_reporting_rate_dataelement(
                 extra_metadata={
                     "SNT_CONFIG_VERSION": snt_config_version.name,
                     "SNT_CONFIG_VERSION_ID": snt_config_version.id,
+                    "NOTEBOOK_OVERRIDES": notebook_overrides,
                 },
             )
         except Exception as e:
@@ -181,6 +193,7 @@ def snt_dhis2_reporting_rate_dataelement(
                 parameters=nb_parameters,
                 error_label_severity_map={"[ERROR]": "error", "[WARNING]": "warning"},
                 country_code=country_code,
+                use_custom_notebooks=use_custom_notebooks,
             )
         except Exception as e:
             current_run.log_error(f"Failed to run notebook: {e}")
@@ -203,6 +216,7 @@ def snt_dhis2_reporting_rate_dataelement(
             nb_output_path=pipeline_path / "reporting" / "outputs",
             error_label_severity_map={"[ERROR]": "error", "[WARNING]": "warning"},
             country_code=country_code,
+            use_custom_notebooks=use_custom_notebooks,
         )
     except Exception as e:
         current_run.log_error(f"Failed to run reporting notebook: {e}")

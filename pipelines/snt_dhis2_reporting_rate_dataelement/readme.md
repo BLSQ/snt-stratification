@@ -4,6 +4,8 @@ This pipeline estimates **monthly** and **yearly** reporting rates (routine data
 
 ## Parameters
 
+The standard flags **`run_report_only`** and **`use_custom_notebooks`** are omitted per project conventions; what `use_custom_notebooks` changes is described in steps 1 and 3 below ([ADR 0044](../../docs/decisions/0044-self-sync-replaces-pull-scripts.md)).
+
 * **`routine_data_choice`** (String, Required):
   * **Name:** Routine data source
   * **Description:** Selects the routine file used to determine facility activity and volume.
@@ -40,25 +42,31 @@ This pipeline estimates **monthly** and **yearly** reporting rates (routine data
 
 ## Functionality Overview
 
-1. **Configuration:** Load and validate **`SNT_config.json`** and resolve **`COUNTRY_CODE`**.
-2. **Routine source:** Map **`routine_data_choice`** to a dataset and filename, and check the file exists in that dataset. If it does not, the run **fails** (`FileNotFoundError`) before any computation.
-3. **Parameters:** Save **`[COUNTRY_CODE]_parameters.json`** in **`data/dhis2/reporting_rate/`** with the notebook parameters (**`ROOT_PATH`**, **`ROUTINE_FILE`**, **`DATASET_ID`**, **`DATAELEMENT_METHOD_DENOMINATOR`**, **`ACTIVITY_INDICATORS`**, **`VOLUME_ACTIVITY_INDICATORS`**, **`USE_WEIGHTED_REPORTING_RATES`**).
-4. **Computation:** Run **`snt_dhis2_reporting_rate_dataelement.ipynb`**:
+1. **Sync the R half (every run, report-only included):** Copy each **`code/*.ipynb`**, **`reporting/*.ipynb`** and **`utils/*.r`** of this pipeline version to **`pipelines/snt_dhis2_reporting_rate_dataelement/`** in the workspace, when the workspace copy is missing or its sha256 differs. A replaced copy is first moved to **`archive/self_sync/<UTC stamp>/pipelines/snt_dhis2_reporting_rate_dataelement/<path>`**, with a `[WARNING]` naming it. Nothing is deleted; **`custom/`** and **`*_[COUNTRY_CODE].ipynb`** variants are never touched. If the sync fails, the run stops with an `[ERROR]`.
+2. **Configuration:** Load and validate **`SNT_config.json`** and resolve **`COUNTRY_CODE`**.
+3. **Choose each notebook (before any runs):** For each of the two notebooks below, run **`custom/<notebook>`** if **`use_custom_notebooks`** is on and the file exists, else **`<notebook stem>_[COUNTRY_CODE].ipynb`** beside the generic notebook if it exists, else the generic notebook. Each notebook that is not the generic one logs a `[WARNING]`. With **`use_custom_notebooks`** on and no file in **`pipelines/snt_dhis2_reporting_rate_dataelement/custom/`** matching either name, the run stops with an `[ERROR]` before any notebook runs.
+4. **Routine source:** Map **`routine_data_choice`** to a dataset and filename, and check the file exists in that dataset. If it does not, the run **fails** (`FileNotFoundError`) before any computation.
+5. **Parameters:** Save **`[COUNTRY_CODE]_parameters.json`** in **`data/dhis2/reporting_rate/`**, before the notebook runs (see Outputs for its keys).
+6. **Computation:** Run **`snt_dhis2_reporting_rate_dataelement.ipynb`**:
    1. Load the routine file and **`[COUNTRY_CODE]_pyramid.parquet`**. Stop with an error if a volume indicator is missing from the routine data.
    2. Build the facility × month grid over the routine data's **`PERIOD`** range, using facilities at level **`ANALYTICS_ORG_UNITS_LEVEL`** of the pyramid.
    3. Flag each facility-month as active and open, flag facilities active at least once per year, and compute facility weights from the volume indicators.
    4. Aggregate to **ADM2 × month** and compute all reporting rate variants; keep the one selected by **`dataelement_method_denominator`** and **`use_weighted_reporting_rates`** as **`REPORTING_RATE`**.
    5. Aggregate the ADM2 × month counts to **ADM2 × year** and compute the same reporting rate variants (sum of the monthly numerators / sum of the monthly denominators); keep the same selected variant as **`REPORTING_RATE`**.
    6. Write the monthly and yearly final tables and the intermediate tables (see Outputs).
-5. **Output check:** Fail the run if any of the monthly or yearly final parquets or CSVs was not written during this run.
-6. **Publish:** Upload the monthly and yearly final parquets and CSVs, and the parameters JSON, to **`DHIS2_REPORTING_RATE`**.
-7. **Reporting:** Run **`snt_dhis2_reporting_rate_dataelement_report.ipynb`**. With `run_report_only`, steps 2–6 are skipped and only this step runs.
+7. **Output check:** Fail the run if any of the monthly or yearly final parquets or CSVs was not written during this run.
+8. **Publish:** Upload the monthly and yearly final parquets and CSVs, and **`[COUNTRY_CODE]_parameters.json`**, to **`DHIS2_REPORTING_RATE`** via **`add_files_to_dataset`**.
+9. **Reporting:** Run **`snt_dhis2_reporting_rate_dataelement_report.ipynb`** (or its custom or country version, chosen as in step 3).
+
+With **`run_report_only`**, steps 4–8 are skipped: nothing is computed, no parameters file is saved, nothing is published. Steps 1–3 and 9 still run.
 
 ## Inputs
 
 * **Routine file** selected by **`routine_data_choice`** (see Parameters), on **`DHIS2_DATASET_FORMATTED`** or **`DHIS2_OUTLIERS_IMPUTATION`**. Required. Columns used: **`OU_ID`**, **`PERIOD`**, **`YEAR`**, **`MONTH`**, **`ADM2_ID`**, and the indicators **`CONF`**, **`PRES`**, **`SUSP`**, **`TEST`** that are present.
-* **`[COUNTRY_CODE]_pyramid.parquet`** on **`DHIS2_DATASET_FORMATTED`**. Required. Columns used: the facility level **`LEVEL_[n]_ID`** / **`LEVEL_[n]_NAME`**, the admin columns named by **`DHIS2_ADMINISTRATION_1`** / **`DHIS2_ADMINISTRATION_2`** and their **`_ID`** counterparts, **`OPENING_DATE`**, **`CLOSED_DATE`**.
+* **`[COUNTRY_CODE]_pyramid.parquet`** on **`DHIS2_DATASET_FORMATTED`**. Required; the pipeline does not check for it before the notebook runs. Columns used: the facility level **`LEVEL_[n]_ID`** / **`LEVEL_[n]_NAME`**, the admin columns named by **`DHIS2_ADMINISTRATION_1`** / **`DHIS2_ADMINISTRATION_2`** and their **`_ID`** counterparts, **`OPENING_DATE`**, **`CLOSED_DATE`**.
 * **`SNT_config.json`** from the latest version of **`SNT_CONFIGURATION`** (required) for **`COUNTRY_CODE`**, **`DHIS2_ADMINISTRATION_1`**, **`DHIS2_ADMINISTRATION_2`**, **`ANALYTICS_ORG_UNITS_LEVEL`**, and the dataset identifiers **`DHIS2_DATASET_FORMATTED`**, **`DHIS2_OUTLIERS_IMPUTATION`**, **`DHIS2_REPORTING_RATE`**.
+* **`pipelines/snt_dhis2_reporting_rate_dataelement/custom/*.ipynb`** in the workspace (optional), used only when **`use_custom_notebooks`** is on.
+* **`*_[COUNTRY_CODE].ipynb`** beside a generic notebook in the workspace (optional), used whenever present.
 
 ## Outputs
 
@@ -66,12 +74,14 @@ This pipeline estimates **monthly** and **yearly** reporting rates (routine data
 
 * **`data/dhis2/reporting_rate/[COUNTRY_CODE]_reporting_rate_dataelement.parquet`** and **`.csv`** (monthly)
 * **`data/dhis2/reporting_rate/[COUNTRY_CODE]_reporting_rate_dataelement_yearly.parquet`** and **`.csv`** (yearly)
-* **`data/dhis2/reporting_rate/[COUNTRY_CODE]_parameters.json`**, with **`SNT_CONFIG_VERSION`** and **`SNT_CONFIG_VERSION_ID`**, the name and id of the **`SNT_CONFIGURATION`** version read
+* **`data/dhis2/reporting_rate/[COUNTRY_CODE]_parameters.json`**, with the notebook parameters (**`ROOT_PATH`**, **`ROUTINE_FILE`**, **`DATASET_ID`**, **`DATAELEMENT_METHOD_DENOMINATOR`**, **`ACTIVITY_INDICATORS`**, **`VOLUME_ACTIVITY_INDICATORS`**, **`USE_WEIGHTED_REPORTING_RATES`**), **`SNT_CONFIG_VERSION`** and **`SNT_CONFIG_VERSION_ID`** (the name and id of the **`SNT_CONFIGURATION`** version read), and **`NOTEBOOK_OVERRIDES`**. The **`run_report_only`** and **`use_custom_notebooks`** flags are not recorded.
 * Intermediate tables in **`pipelines/snt_dhis2_reporting_rate_dataelement/intermediate_results/`** (written, **not published**):
   * **`[COUNTRY_CODE]_reports_dataelement_fosa_monthly.parquet`**: facility × month flags and weights.
   * **`[COUNTRY_CODE]_reports_dataelement_monthly.parquet`** and **`.csv`**: ADM2 × month counts and every reporting rate variant.
   * **`[COUNTRY_CODE]_reports_dataelement_yearly.parquet`** and **`.csv`**: ADM2 × year counts and the share of facilities active at least once in the year (**`RR_TOTAL_HF`**, **`RR_OPEN_HF`**). Read by the reporting notebook. Not the same quantity as the published yearly **`REPORTING_RATE`**.
-* Executed notebooks under **`pipelines/snt_dhis2_reporting_rate_dataelement/papermill_outputs/`** and report outputs under **`pipelines/snt_dhis2_reporting_rate_dataelement/reporting/outputs/`**.
+* **Executed notebooks** under **`pipelines/snt_dhis2_reporting_rate_dataelement/papermill_outputs/`**, named **`<stem>_OUTPUT_<timestamp>.ipynb`**, or **`<stem>_CUSTOM_OUTPUT_<timestamp>.ipynb`** for a custom notebook
+* **Report outputs** under **`pipelines/snt_dhis2_reporting_rate_dataelement/reporting/outputs/`**, named the same way, with PNG figures in its **`figures/`** subfolder
+* **Synced scripts** under **`pipelines/snt_dhis2_reporting_rate_dataelement/`** (`code/`, `reporting/`, `utils/`) and replaced copies under **`archive/self_sync/`** (step 1)
 
 **Published to `DHIS2_REPORTING_RATE`**
 
@@ -96,6 +106,8 @@ This pipeline estimates **monthly** and **yearly** reporting rates (routine data
 > - **Open facility:** has an **`OPENING_DATE`** on or before the month, no **`CLOSED_DATE`** on or before the month, and a name that does not match `CLOTUR` or `FERM` (case-insensitive). Facilities with no **`OPENING_DATE`** are never open, so incomplete pyramid dates lower the denominator.
 > - **Facility weights:** a facility's mean monthly volume (sum of the volume indicators, averaged over months with volume > 0, across the whole period) divided by the ADM2 total of those means, times the number of facilities in the ADM2. Weights are constant across years. Facilities with no month of positive volume get no weight and drop out of weighted rates.
 > - **Period range:** from the first to the last **`PERIOD`** in the routine data.
-> - **Guarded execution:** a missing routine file stops the run before computation. A missing pyramid or volume indicator stops the notebook with an error. A missing activity indicator is logged as a warning first, then the computation fails at the activity step.
+> - **`NOTEBOOK_OVERRIDES`**: one entry per notebook that did not run from this pipeline version, with **`NOTEBOOK`** (generic file name), **`SOURCE`** (`custom` or `country_variant`), **`PATH`** and **`SHA256`**. An empty list means every notebook was the pipeline's own. Entries are resolved for both notebooks up front.
+> - **Guarded execution:** a missing routine file stops the run before computation. A missing pyramid or volume indicator stops the notebook with an error. A missing activity indicator is logged as a warning first, then the computation fails at the activity step. The parameters file is written before the notebook runs, so after a failed run the workspace copy describes that run while **`DHIS2_REPORTING_RATE`** still holds the previous one.
 > - **Last run wins:** **`snt_dhis2_reporting_rate_dataset`** also publishes to **`DHIS2_REPORTING_RATE`**, and the dataset holds only the files of the last successful run, so it contains either this pipeline's tables or the dataset ones, never both. Check the **`[COUNTRY_CODE]_parameters.json`** beside them to see which pipeline produced them.
-> - **Report-only runs** read the yearly intermediate CSV, so they need a previous full run in the same workspace.
+> - **Report-only runs** read **`[COUNTRY_CODE]_reporting_rate_dataelement.parquet`** from **`DHIS2_REPORTING_RATE`** and the yearly intermediate CSV from the workspace. They need a previous full run in the same workspace, and the report fails when **`snt_dhis2_reporting_rate_dataset`** was the last to publish.
+> - **Edited notebooks**: the sync overwrites any hand edit to a notebook in `code/` or `reporting/` (the edited copy is kept in **`archive/self_sync/`**). To run an edited notebook, put it in **`pipelines/snt_dhis2_reporting_rate_dataelement/custom/`** under the same file name and switch on **`use_custom_notebooks`**. `utils/*.r` always comes from the pipeline version.

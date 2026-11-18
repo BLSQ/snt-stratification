@@ -9,10 +9,11 @@ from rasterstats import zonal_stats
 from snt_lib.snt_pipeline_utils import (
     add_files_to_dataset,
     get_file_from_dataset,
+    get_notebook_overrides,
     load_configuration_snt_from_dataset,
-    pull_scripts_from_repository,
     run_report_notebook,
     save_pipeline_parameters,
+    sync_pipeline_scripts,
     validate_config,
 )
 from worldpopclient import WorldPopClient
@@ -43,27 +44,24 @@ from worldpopclient import WorldPopClient
     default=False,
 )
 @parameter(
-    "pull_scripts",
-    name="Pull Scripts",
-    help="Pull the latest scripts from the repository",
+    "use_custom_notebooks",
+    name="Use custom notebooks",
+    help="Run the edited notebooks in pipelines/snt_worldpop_extract/custom/ instead of this pipeline's own",
     type=bool,
     default=False,
     required=False,
 )
-def snt_worldpop_extract(year_start: int, year_end: int, run_report_only: bool, pull_scripts: bool) -> None:
+def snt_worldpop_extract(
+    year_start: int, year_end: int, run_report_only: bool, use_custom_notebooks: bool
+) -> None:
     """Write your pipeline orchestration here."""
     # set paths
     snt_root_path = Path(workspace.files_path)
     pipeline_path = snt_root_path / "pipelines" / "snt_worldpop_extract"
     data_path = snt_root_path / "data" / "worldpop"
 
-    if pull_scripts:
-        current_run.log_info("Pulling pipeline scripts from repository.")
-        pull_scripts_from_repository(
-            pipeline_name="snt_worldpop_extract",
-            report_scripts=["snt_worldpop_extract_report.ipynb"],
-            code_scripts=[],
-        )
+    # Copy this pipeline version's notebooks and utils to the workspace (ADR 0044); stops the run on failure.
+    sync_pipeline_scripts(pipeline_name="snt_worldpop_extract", bundle_path=Path(__file__).parent)
 
     # get configuration
     snt_config_dict, snt_config_version = load_configuration_snt_from_dataset()
@@ -72,12 +70,21 @@ def snt_worldpop_extract(year_start: int, year_end: int, run_report_only: bool, 
     # get country identifier for file naming
     country_code = snt_config_dict["SNT_CONFIG"].get("COUNTRY_CODE")
 
+    # Every notebook this pipeline may run; resolved before any runs, so a missing custom notebook
+    # stops the run up front.
+    notebook_overrides = get_notebook_overrides(
+        nb_paths=[pipeline_path / "reporting" / "snt_worldpop_extract_report.ipynb"],
+        country_code=country_code,
+        use_custom_notebooks=use_custom_notebooks,
+    )
+
     if run_report_only:
         current_run.log_info("Running report notebook only.")
         run_report_notebook(
             nb_file=pipeline_path / "reporting" / "snt_worldpop_extract_report.ipynb",
             nb_output_path=pipeline_path / "reporting" / "outputs",
             country_code=country_code,
+            use_custom_notebooks=use_custom_notebooks,
         )
         current_run.log_info("Report notebook executed successfully. Ending pipeline run.")
         return
@@ -93,13 +100,14 @@ def snt_worldpop_extract(year_start: int, year_end: int, run_report_only: bool, 
         parameters={
             "year_start": year_start,
             "year_end": year_end,
-            "pull_scripts": pull_scripts,
+            "use_custom_notebooks": use_custom_notebooks,
         },
         output_path=data_path,
         country_code=country_code,
         extra_metadata={
             "SNT_CONFIG_VERSION": snt_config_version.name,
             "SNT_CONFIG_VERSION_ID": snt_config_version.id,
+            "NOTEBOOK_OVERRIDES": notebook_overrides,
         },
     )
 
@@ -155,6 +163,7 @@ def snt_worldpop_extract(year_start: int, year_end: int, run_report_only: bool, 
         nb_file=pipeline_path / "reporting" / "snt_worldpop_extract_report.ipynb",
         nb_output_path=pipeline_path / "reporting" / "outputs",
         country_code=country_code,
+        use_custom_notebooks=use_custom_notebooks,
     )
 
 
