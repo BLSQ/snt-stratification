@@ -1143,6 +1143,10 @@ the final contract. The form and validation (`LocalStore`, download only) can pr
       `snt_healthcare_access` check their run parameters before the sync, so a run they reject
       syncs nothing. Still to verify at the next pre-release cut: the full DHIS2 chain against the
       baseline (`release` skill).
+- [ ] **Pin `snt_lib` to a tag** ([DEP-1](BACKLOG.md#dep-1)): in `snt_utils`, merge
+      `self-sync-r-half` (`ca74b54`) into `release-v1` and tag it; point the 21
+      `requirements.txt` here at that tag, in one PR. Then the `v1.0.0` release candidate tests
+      what ships.
 - [ ] Cut **`v1.0.0`** (first production release). Note: the templates publishing workspace does not
       exist before Phase 6, so `v1.0.0` ships without templates and both template jobs stay disabled
       (D-17); the deployer route does not need them.
