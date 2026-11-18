@@ -11,7 +11,8 @@
 #   slip. Used to publish a pre-release for a demo, or to re-publish a tag.
 # Every pipeline is pushed on every run, changed or not (decided 2026-11-13): OpenHEXA does not
 # compare contents, so an unchanged pipeline gets a new template version too. Template versions are
-# numbered by OpenHEXA (1, 2, …); the pipeline version behind each is named after the tag.
+# numbered by OpenHEXA (1, 2, …); the pipeline version behind each is named after the tag, or
+# <tag>+redeploy-<date> when that name is taken (see the push step).
 #
 # pipelines: checks the tag (manual run), then lists the pipelines from pipelines/registry.json at
 #            that tag, so no hand-written per-pipeline list or path filter can go stale.
@@ -110,7 +111,25 @@ jobs:
           RELEASE_URL: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ env.VERSION }}
         # --code selects the source pipeline, which must already exist (published by hand once, ADR
         # 0045); its code is snt-<name> with "-" for "_", as tools/build_manifest.py writes it. The
-        # version is named after the tag, as the deployer names the versions it registers.
-        run: >-
-          openhexa pipelines push "pipelines/$NAME" --code "${NAME//_/-}" --name "$VERSION"
-          --description "Release $VERSION" --link "$RELEASE_URL" --yes
+        # version is named after the tag, as the deployers name theirs. OpenHEXA refuses a name the
+        # pipeline already has (a re-published tag, or a hand push named after it), so then the
+        # deployers' fallback names follow (D22, docs/bootstrap/decisions.md), which the checker
+        # strips: <tag>+redeploy-<YYYYMMDD>, then <tag>+redeploy-<YYYYMMDDTHHMMSSZ>. Any other
+        # error fails the job at once.
+        run: |
+          for name in "$VERSION" "$VERSION+redeploy-$(date -u +%Y%m%d)" \
+              "$VERSION+redeploy-$(date -u +%Y%m%dT%H%M%SZ)"; do
+            if out=$(openhexa pipelines push "pipelines/$NAME" --code "${NAME//_/-}" --name "$name" \
+                --description "Release $VERSION" --link "$RELEASE_URL" --yes 2>&1); then
+              echo "$out"
+              echo "Pushed as version '$name'."
+              exit 0
+            fi
+            echo "$out"
+            if ! grep -q "version name is already used" <<< "$out"; then
+              exit 1
+            fi
+            echo "[WARNING] Version name '$name' is already used; trying the next one."
+          done
+          echo "[ERROR] Every version name tried for '$VERSION' is already used."
+          exit 1
