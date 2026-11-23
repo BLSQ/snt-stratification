@@ -128,11 +128,15 @@ rather than fail across this codebase:
 
 Every SNT pipeline has two more steps, placed where the code runs them
 ([ADR 0044](decisions/0044-self-sync-replaces-pull-scripts.md)): **Sync the R half** (what is
-copied, the `archive/self_sync/` path, the `[ERROR]` on failure) and **Choose each notebook**
-(`custom/` → `_<CC>` variant → generic, the `[WARNING]`, the `[ERROR]` when the switch is on and
-`custom/` holds none of them). This is where `use_custom_notebooks` is described. Name the
-pipeline's own folder and notebooks, and reuse the wording of
-[`snt_dhis2_formatting/readme.md`](../pipelines/snt_dhis2_formatting/readme.md). List
+copied, the `archive/self_sync/` path, that `custom/` and any `_<CC>` variant *not in this pipeline
+version* are never touched, the `[ERROR]` on failure) and **Choose each notebook** (`custom/` →
+`_<CC>` variant → generic, the `[WARNING]`, the `[ERROR]` when the switch is on and `custom/` holds
+none of them). This is where `use_custom_notebooks` is described. Name the pipeline's own folder and
+notebooks, and any country variant or hook the version ships
+([ADR 0046](decisions/0046-country-variants-in-the-repo.md); see
+[`snt_dhis2_incidence/readme.md`](../pipelines/snt_dhis2_incidence/readme.md)). `NOTEBOOK_OVERRIDES`
+has one entry per notebook that is not the generic one, a shipped variant included. Otherwise reuse
+the wording of [`snt_dhis2_formatting/readme.md`](../pipelines/snt_dhis2_formatting/readme.md). List
 `pipelines/<name>/custom/*.ipynb` as an optional input, and under **Outputs → Workspace
 filesystem** the synced scripts, the archived copies, and `<stem>_CUSTOM_OUTPUT_<stamp>.ipynb` as
 the executed-notebook name for a custom notebook.
