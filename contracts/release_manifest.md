@@ -90,8 +90,10 @@ push` and the deployers put in a version's zip. Two consequences:
   `not_covered` status ([`checker.md`](../docs/bootstrap/checker.md) §5.1) is the tripwire for
   exactly that.
 
-Country-specific notebook variants (none is in this repo, D-13) would appear undistinguished from
-generic files. That is intended: telling them apart is the checker's job, not the builder's.
+Country-specific notebook variants and hooks
+([ADR 0046](../docs/decisions/0046-country-variants-in-the-repo.md)) are listed undistinguished
+from generic files, on both routes. That is intended: their file name and `snt_variant` header say
+what they are, and the builder does not read either.
 
 ## Release assets beside the manifest
 

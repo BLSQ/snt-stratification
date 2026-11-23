@@ -707,6 +707,61 @@ test, and the Niger workspace's own copy, which may differ from the repo's.
 
 **Owner:** Giulia. **Source:** ADR 0046, commit 4, 2026-11-23.
 
+### <a id="var-4"></a>VAR-4 · Niger's rainfall variant and `new_parameter.r`, left out: still needed?
+
+`snt_seasonality_rainfall_NER.ipynb` was left out of this repo on purpose: it is probably obsolete.
+It is the generic rainfall-seasonality notebook with comments, plus
+`compute_month_seasonality_NEW()`, which uses a calendar-year denominator. It `source()`s
+`new_parameter.r`, a file that was only ever in the Niger workspace, in no repo. The notebook is
+readable at `pipelines/snt_seasonality_rainfall/code/snt_seasonality_rainfall_NER.ipynb` in
+`BLSQ/snt_development` at `94cfc383c0f8804d2eba264f26a4bd3d372d94da`.
+
+Before Niger runs from this repo, ask the Niger analysts whether its output is still used. If it
+is, get `new_parameter.r` from the workspace, decide whether the calendar-year denominator belongs
+in the generic notebook behind a configuration switch, and commit whatever remains as a variant
+with its header. If it is not, close this item.
+
+**Owner:** Giulia. **Source:** ADR 0046 discussion (D4), 2026-11-23.
+
+### <a id="var-5"></a>VAR-5 · Burundi's pyramid variant, left out: still needed?
+
+`snt_dhis2_formatting_pyramid_BDI.ipynb` was left out of this repo on purpose. It sat in the old
+repo's `country_specific/` folder, so it never ran from there. Its coordinate fix is already in the
+generic notebook. What remains is a mapping of old to new communes after Burundi's 2025
+administrative reform, and 3 facilities fixed by hand. It is readable at
+`pipelines/snt_dhis2_formatting/country_specific/snt_dhis2_formatting_pyramid_BDI.ipynb` in
+`BLSQ/snt_development` at `94cfc383c0f8804d2eba264f26a4bd3d372d94da`.
+
+Before Burundi runs from this repo, check whether its DHIS2 pyramid now carries the new communes
+and the 3 facilities' fixes. If it does, close this item. If not, commit it as a variant of
+`snt_dhis2_formatting/code/snt_dhis2_formatting_pyramid.ipynb`, with its header; its facility ids and names
+need the repo owner's approval ([VAR-1](#var-1)).
+
+**Owner:** Giulia. **Source:** ADR 0046 discussion (D9), 2026-11-23.
+
+### <a id="var-6"></a>VAR-6 · Optional: remove Jira and Google Sheets links from country notebooks
+
+ADR 0046 allows Jira and Google Sheets links in this public repo: neither opens without a Bluesquare
+login. They are still internal detail. If the PM prefers ([VAR-1](#var-1)), replace each with the
+ticket key alone (`SNT25-363`) or a short description, in the country notebooks and in their
+`snt_variant` headers. Optional; nothing depends on it.
+
+**Owner:** `_TBD_`. **Source:** ADR 0046 discussion (D1), 2026-11-23.
+
+### <a id="var-7"></a>VAR-7 · `snt_lib`: the sync docstring, and a drift warning at run time
+
+`sync_pipeline_scripts` in `snt_lib/snt_pipeline_utils.py` (`BLSQ/snt_utils`) says country variants
+are never touched. Since ADR 0046 that holds only for a variant **not** shipped in the pipeline
+version: a shipped one is copied, and a hand edit to it archived, like any notebook. Correct the
+docstring on the branch this repo pins ([DEP-1](#dep-1)).
+
+Optional, in the same change: when `resolve_notebook()` picks a variant, compare its
+`snt_variant.base_sha256` with the generic notebook's sha256 and log a `[WARNING]` when they differ,
+so an analyst sees in the run that the variant lags behind. Today only CI warns, on the pull request.
+
+**Owner:** `snt_lib` owner (`_TBD_` in [OWNERSHIP.md](OWNERSHIP.md)). **Source:** ADR 0046,
+2026-11-23.
+
 ---
 
 ## Bootstrap pipelines

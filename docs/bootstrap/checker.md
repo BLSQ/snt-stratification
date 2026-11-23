@@ -30,8 +30,10 @@ Its requirements, statuses, report contract and build phases are below. Design i
 * **Two sources to hash** — the filesystem for R analytics, and each pipeline version's stored zip
   for the Python half (readable via `get_pipeline`, which returns full file contents).
 * `.snt_release` tells the verifier which manifest to fetch, without being told.
-* Country-specific variants should eventually be recognised as deliberate overrides rather than
-  drift — deferred past v1 (decision D5).
+* Country-specific variants committed in this repo ship in the release like any notebook
+  ([ADR 0046](../decisions/0046-country-variants-in-the-repo.md)). One that exists only in a
+  workspace should eventually be recognised as a deliberate override rather than drift — deferred
+  past v1 (decision D5).
 
 ### 1.2 In scope / out of scope
 
@@ -46,8 +48,10 @@ Out of scope, and to be stated as blind spots in the report:
   `release_strategy.md`.
 * **`configuration/`** — managed by the Config Editor web app.
 * **`data/`** — bootstrapped by the pipelines themselves.
-* **Country-specific notebook variants as *overrides*** (decision D5) — in v1 they fall out as
-  ordinary untracked files. Recognising them as deliberate overrides is deferred, and until it is
+* **Country-specific notebook variants as *overrides*** (decision D5). A variant shipped in a
+  release is at a tracked path and reads like any notebook (`match`, `attributed`, or
+  `unknown_content` if edited by hand). One that exists only in the workspace falls out as an
+  ordinary `untracked` file. Recognising it as a deliberate override is deferred, and until it is
   done the report will look alarming in any workspace that has one.
 
 ## 2. Vocabulary
@@ -703,7 +707,7 @@ its distribution summary is what keeps the report readable at a glance.
 
 ### 7.9 Deferred to a later version
 
-Country-specific variant override detection (D5), web app verification (D8), and report history
+Override detection for country variants that exist only in a workspace (D5), web app verification (D8), and report history
 retention/pruning. Also parked until one of them blocks something (Giulia, 2026-09-29):
 
 * **A manifest cache**, keyed by tag. Safe, because tags never move. It is no longer needed for the

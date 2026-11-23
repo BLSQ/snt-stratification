@@ -148,8 +148,9 @@ Explicitly out of scope:
 * **Initialize (empty workspace)** — pull the named release's full codebase, R into the filesystem
   and Python via the API. The user then configures the workspace to unblock everything else.
 * **Diff / check** — hash what is actually in the workspace and compare against the release
-  manifest, flagging edited files. Country-specific notebook variants (`<generic>_<CC>.ipynb`) are
-  flagged as deliberate overrides, not as drift — deferred past v1, see [`checker.md`](checker.md) §1.2.
+  manifest, flagging edited files. A country variant (`<generic>_<CC>.ipynb`) shipped in the
+  release is checked like any notebook. One that exists only in the workspace should be flagged as
+  a deliberate override, not as drift — deferred past v1, see [`checker.md`](checker.md) §1.2.
 * **Update / downgrade** — back up modified files into `archive/<release_tag>/`, then overwrite
   with the target release. Updating forward is the path that matters: countries are expected to run
   an older release in a dedicated workspace rather than downgrade their main one, so a downgrade

@@ -64,7 +64,8 @@ whole run, before any notebook starts:
   `custom/` holds none of the listed names. A custom copy of an unlisted notebook does not count.
 
 List generic names only. Country-specific `_<CC>` variants are never listed: `snt_lib` finds them
-from the generic name — see
+from the generic name. Nor are `<CC>_<name>` hooks: `pipeline.py` runs them by name, and `custom/`
+cannot replace them — see
 [`../pipelines/CLAUDE.md`](../pipelines/CLAUDE.md#country-specific-notebook-variants).
 
 <a id="r16"></a>

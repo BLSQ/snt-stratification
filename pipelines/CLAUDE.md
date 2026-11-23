@@ -66,9 +66,9 @@ Setup for this loop: [`../dev/README.md`](../dev/README.md).
 ## Country-specific notebook variants
 
 **The mechanism.** A notebook whose filename is the generic name plus an underscore and a country
-code — `snt_seasonality_rainfall_NER.ipynb` beside `snt_seasonality_rainfall.ipynb` — is executed
-**instead of** the generic notebook, but only in the workspace whose `SNT_CONFIG.COUNTRY_CODE`
-matches that suffix. Everywhere else the generic notebook runs and the variant is inert.
+code — `snt_dhis2_incidence_NER.ipynb` beside `snt_dhis2_incidence.ipynb` — is executed **instead
+of** the generic notebook, but only in the workspace whose `SNT_CONFIG.COUNTRY_CODE` matches that
+suffix. Everywhere else the generic notebook runs and the variant is inert.
 
 `pipeline.py` never names the variant. It passes `country_code=` to `run_notebook()` /
 `run_report_notebook()` alongside the *generic* `nb_path`, and the substitution happens inside
@@ -76,20 +76,25 @@ matches that suffix. Everywhere else the generic notebook runs and the variant i
 
 ```python
 run_notebook(
-    nb_path=pipeline_path / "code" / "snt_seasonality_rainfall.ipynb",  # generic name only
-    country_code=country_code,                                          # ← enables the swap
-    use_custom_notebooks=use_custom_notebooks,                          # ← enables custom/
+    nb_path=pipeline_path / "code" / "snt_dhis2_incidence.ipynb",  # generic name only
+    country_code=country_code,                                     # ← enables the swap
+    use_custom_notebooks=use_custom_notebooks,                     # ← enables custom/
     ...
 )
 ```
 
+A **hook** is the other kind of country notebook: `<CC>_<name>.ipynb` in `code/`, a country step
+that `pipeline.py` calls by name for that country. The only one is
+`snt_dhis2_extract/code/NER_pyramid_format.ipynb`, run through papermill inside the extraction
+task. `custom/` cannot replace a hook, so it is not listed in `get_notebook_overrides` (R6).
+
 **Custom notebooks, the analyst's escape hatch** ([ADR 0044](../docs/decisions/0044-self-sync-replaces-pull-scripts.md)).
 Every run copies the pipeline's own notebooks and `utils/*.r` over the workspace copies, so a hand
-edit to a generic notebook is moved to `archive/self_sync/<UTC stamp>/…` and replaced, with a
-`[WARNING]`. To run an edited notebook, put it in `pipelines/<name>/custom/` under the generic
-file name (no `_<CC>` suffix) and run with **Use custom notebooks** (`use_custom_notebooks`) on.
-Only notebooks: `utils/*.r` always comes from the pipeline version, and `custom/` is never synced
-or deleted.
+edit to any notebook the pipeline version ships, a country variant or hook included, is moved to
+`archive/self_sync/<UTC stamp>/…` and replaced, with a `[WARNING]`. To run an edited notebook, put
+it in `pipelines/<name>/custom/` under the generic file name (no `_<CC>` suffix) and run with
+**Use custom notebooks** (`use_custom_notebooks`) on. Only notebooks: `utils/*.r` always comes from
+the pipeline version, and `custom/` is never synced or deleted.
 
 **Which notebook runs**, for each generic notebook, decided once per run:
 
@@ -108,34 +113,73 @@ or deleted.
 
 **Why variants exist.** They let a country keep a bespoke analysis that runs on every run without
 anyone ticking a switch ([ADR 0003](../docs/decisions/0003-country-variants-outside-pull-scripts.md),
-amended by 0044). The sync copies only files in the pipeline zip, and a variant is never in it, so
-it is neither overwritten nor delivered.
+amended by 0044 and 0046).
 
-A variant or custom notebook lives only **in its workspace**; no mechanism propagates it or reports
-drift, and the checker reports it as `untracked`. **None is in this repo**, by decision: it is
-public, so country notebooks were left out of the import (migration plan D-13). The few that
-existed are readable in `snt_development` at the SHA in [`../README.md`](../README.md). How they
-should be versioned is open (migration plan OD-10).
+**Where they live: in this repo, beside the generic notebook**
+([ADR 0046](../docs/decisions/0046-country-variants-in-the-repo.md)). A country notebook is
+committed in `code/` or `reporting/` and ships in the pipeline version like any other notebook, so
+self-sync, the deployer and the templates deliver it. Every workspace receives every country's
+notebooks, inert outside their country. The repo is the record of which ones exist:
+
+```bash
+git ls-files 'pipelines/*/code/*_[A-Z][A-Z][A-Z].ipynb' 'pipelines/*/reporting/*_[A-Z][A-Z][A-Z].ipynb' 'pipelines/*/code/[A-Z][A-Z][A-Z]_*.ipynb'
+```
+
+The checker reports a shipped one like any notebook (`match` or `attributed`, `unknown_content` if
+edited by hand). A variant made by hand in a workspace and never committed still reads `untracked`;
+the first run of a release that ships a notebook under the same name replaces it and archives the
+hand-made copy. Countries on the old `snt_development` repo keep their variants in their workspace,
+as before.
+
+**The header and the check.** Each country notebook carries a `snt_variant` key in its notebook
+metadata (Jupyter: *Edit → Notebook metadata*): `kind` (`variant` or `hook`), `country`,
+`variant_of`, `base_sha256` (the generic notebook's fingerprint when the variant was last aligned
+with it, `null` if unknown), `base_ref` (the release or commit to diff the generic against),
+`reason` and `tickets`. Field reference: the docstring of
+[`tools/check_country_variants.py`](../tools/check_country_variants.py), which CI runs. It
+**fails** on a missing or contradicting header, a variant with no generic notebook beside it, a
+country notebook in the wrong folder, or any `country_specific/` folder. It **warns**, without
+failing, when the generic notebook has changed since `base_sha256`: a pull request that changes a
+generic notebook lists the countries that fall behind, and is never blocked by them. After
+re-aligning a variant, record the new base:
+
+```bash
+python tools/check_country_variants.py --stamp pipelines/snt_dhis2_incidence/code/snt_dhis2_incidence_NER.ipynb --ref v0.3.0
+```
+
+**Changing a country notebook:**
+
+- **Normal path:** a pull request, like any notebook. It reaches the country with the next release,
+  installed by the deployer or a template update. A country fix waits for a release.
+- **Urgent path:** the analyst puts the edited notebook in `custom/` under the *generic* file name
+  and switches on `use_custom_notebooks` (a custom notebook wins over a variant), then opens the
+  pull request. `custom/` is temporary and unversioned. It cannot replace a hook.
+- **Not a path:** editing the variant in the workspace. The next run overwrites it and archives the
+  edit, as for a generic notebook.
 
 **Working rules:**
 
 - **Prefer a config-driven branch inside the generic notebook** over creating a variant. A variant
-  is a permanent fork that no tooling maintains.
-- When a variant is unavoidable, record the reason and the ticket in a markdown cell inside it.
-  Do not commit it here.
-- **Before changing a generic notebook, ask which countries run a `_<CC>` sibling** — this repo
-  cannot tell you. A fix to `snt_seasonality_rainfall.ipynb` does **not** reach Niger if
-  `..._NER.ipynb` exists there. Name in the handover the countries that need it applied by hand.
+  is a permanent fork: CI says when it has fallen behind, but someone still has to re-align it.
+- **A new country notebook** gets its header (with `reason` and `tickets`), `base_sha256` stamped
+  from the generic it was copied from, and stripped outputs. Credentials, country data files and
+  personal data never go in. Jira links, Google Sheets links and DHIS2 identifiers may, but until
+  the PM has ruled ([VAR-1](../docs/BACKLOG.md#var-1)) the repo owner approves each one first.
+- **Before changing a generic notebook, list its `_<CC>` siblings in the same folder.** The change
+  does not reach those countries unless their variant is re-aligned too; name them in the handover.
+  Variants that exist only in a workspace, or in a country still on the old repo, are not in this
+  list.
 - **Location matters.** A variant only takes effect in the same folder the generic notebook is
-  loaded from (`code/` or `reporting/`). A `country_specific/` folder is on no execution path.
+  loaded from (`code/` or `reporting/`). A `country_specific/` folder is on no execution path, and
+  the check fails on one.
 - **A variant may still read the config from disk.** The generic notebooks read `SNT_config.json`
   from the latest version of the `SNT_CONFIGURATION` dataset, through
   `load_snt_config_from_dataset()` ([ADR 0043](../docs/decisions/0043-config-read-from-snt-configuration-dataset.md)).
-  A variant written before that reads `configuration/SNT_config.json`, and nothing changes it. In
-  a workspace installed from this repo that file is either missing, so the variant fails, or an
-  old copy, so the variant runs on a different config from the rest of its pipeline and logs no
-  version. When a country with variants moves to this repo, switch each variant to
-  `load_snt_config_from_dataset()` in its workspace.
+  A variant written before that reads `configuration/SNT_config.json`, as the NER incidence variant
+  does ([VAR-3](../docs/BACKLOG.md#var-3)). In a workspace installed from this repo that file is
+  either missing, so the variant fails, or an old copy, so the variant runs on a different config
+  from the rest of its pipeline and logs no version. Switch it to `load_snt_config_from_dataset()`
+  in the repo before its country moves to this repo.
 
 ## Pipeline traps
 
@@ -152,9 +196,11 @@ should be versioned is open (migration plan OD-10).
   partial run looks successful. Adding a stage: decide deliberately between skip and raise, and log
   the choice.
 - **Country escape hatches are hardcoded** in `snt_dhis2_extract/pipeline.py`: BFA filters
-  `level_4_name` starting `"DS"`; NER rewrites the pyramid through `NER_pyramid_format.ipynb`, which
-  is not in this repo (D-13), so NER cannot run from here. Adding a country may mean adding a
-  branch there — check the pyramid levels first.
+  `level_4_name` starting `"DS"`; NER rewrites the pyramid through the hook
+  `code/NER_pyramid_format.ipynb`. NER is not ready to run from here: the hook leaves 7 facilities
+  without an ADM2 ([VAR-2](../docs/BACKLOG.md#var-2)) and the incidence variant fails
+  ([VAR-3](../docs/BACKLOG.md#var-3)). Adding a country may mean adding a branch there — check the
+  pyramid levels first.
 - **The external-source pipelines depend on `snt_dhis2_formatting`.** `snt_era5_climate_data`,
   `snt_map_extracts`, `snt_worldpop_extract` and `snt_healthcare_access` all fetch
   `{CC}_shapes.geojson` from `DHIS2_DATASET_FORMATTED` first.

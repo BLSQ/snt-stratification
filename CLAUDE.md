@@ -106,7 +106,7 @@ the rule, never half-convert a violator. **Old ID** (where it changed): o = orch
 | [**R3**](docs/CONVENTIONS.md#r3) | `pipeline.py` orchestrates, never computes | `convention` | |
 | [**R4**](docs/CONVENTIONS.md#r4) | An output only exists if it is passed to `add_files_to_dataset(...)` | `convention` | |
 | [**R5**](docs/CONVENTIONS.md#r5) | Each template set is published from exactly one workspace; never push a pipeline from this repo to `snt-development` | `convention` | |
-| [**R6**](docs/CONVENTIONS.md#r6) | Every notebook a pipeline runs listed in its `get_notebook_overrides(nb_paths=[...])` call; country variants never | `convention` | |
+| [**R6**](docs/CONVENTIONS.md#r6) | Every notebook a pipeline runs listed in its `get_notebook_overrides(nb_paths=[...])` call; country variants and hooks never | `convention` | |
 | [**R7**](docs/CONVENTIONS.md#r7) | Every data file prefixed `{CC}_`, uppercase country code | `⚠ exceptions` — `data/worldpop/rasters/{cc_lower}_pop_*.tif` | |
 | [**R8**](docs/CONVENTIONS.md#r8) | Parquet is the machine contract; write the `.csv` twin beside it | `convention` | |
 | [**R9**](docs/CONVENTIONS.md#r9) | `{CC}_parameters.json` published beside the data, via `save_pipeline_parameters(...)` | `⚠ exceptions` — ERA5, healthcare_access | |
@@ -172,9 +172,9 @@ defects): [`pipelines/CLAUDE.md`](pipelines/CLAUDE.md#pipeline-traps). Webapp tr
   (`pipelines/registry.json`, `contracts/**/*.json`, `webapps/*/app/**/*.json`, …). `git add` skips
   a matching file without error. Test with `git add --dry-run <file>`; `git check-ignore -v` exits 0
   on a `!` negation too, so it misleads. A new JSON file needs a deliberate negation, never `-f`.
-- **A country may not be running the notebook you edit.** A `<generic>_<CC>.ipynb` variant, or
-  with `use_custom_notebooks` on a copy in `custom/`, runs instead, and none is in this repo
-  (D-13) →
+- **A country may not be running the notebook you edit.** A `<generic>_<CC>.ipynb` variant beside
+  it, or with `use_custom_notebooks` on a copy in `custom/`, runs instead. Variants are committed
+  in this repo (ADR 0046): list the siblings before you change a generic notebook →
   [`pipelines/CLAUDE.md`](pipelines/CLAUDE.md#country-specific-notebook-variants).
 - **Pipelines are not a DAG.** A results table can mix data vintages. Never assume your upstream ran
   today.
@@ -183,7 +183,8 @@ defects): [`pipelines/CLAUDE.md`](pipelines/CLAUDE.md#pipeline-traps). Webapp tr
 - **`snt_lib`** (`github.com/BLSQ/snt_utils`) is **external**, pinned to one commit on a branch, not
   to a tag ([DEP-1](docs/BACKLOG.md#dep-1)). Do not guess its signatures; read the upstream repo at
   the pinned commit, or an existing call site.
-- **Not imported:** `deprecated/`, `.github/`, country notebooks. Read them in the old repos at
+- **Not imported:** `deprecated/`, `.github/`, and two country notebooks left out on purpose
+  ([VAR-4](docs/BACKLOG.md#var-4), [VAR-5](docs/BACKLOG.md#var-5)). Read them in the old repos at
   the SHAs in [`README.md`](README.md).
 
 ---
