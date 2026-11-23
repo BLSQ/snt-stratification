@@ -1163,6 +1163,19 @@ Found during the self-sync work, 2026-11-18:
     ([ADR 0038](decisions/0038-repo-path-is-workspace-path.md)); add `pipelines/<name>/custom/` and
     `archive/self_sync/` (ADR 0044).
 
+Found during the country-variants work, 2026-11-23:
+
+- **[`README.md`](../README.md) "📦 Release management" describes the repos before the monorepo.**
+  It says the manifest is built by `generate_manifest.yaml` (linked in the old `snt_development`
+  repo), and that the deploy and check tools and the manifest schema live in
+  `BLSQ/snt_workspace_bootstrap`. Today the manifest is built by
+  [`tools/build_manifest.py`](../tools/build_manifest.py) and attached to each release by
+  [`release.yaml`](../.github/workflows/release.yaml); the deployer and checker are
+  `pipelines/snt_workspace_*` in this repo; the schema is
+  [`contracts/release_manifest.schema.json`](../contracts/release_manifest.schema.json). Rewrite the
+  section to link those, the [`release` skill](../.claude/skills/release/SKILL.md) and
+  [`ARCHITECTURE.md` §1.4](ARCHITECTURE.md#14-release-train), rather than restate them (R25).
+
 **Owner:** Giulia.
 
 ### <a id="doc-4"></a>DOC-4 · Fill in the ownership tables
