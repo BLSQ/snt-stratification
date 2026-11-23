@@ -111,7 +111,8 @@ deliberate; none is a bug to fix.
    `Pull scripts` = ON pulls from there; the routes from this repo are still being built.
    → [`CLAUDE.md` rule 2](CLAUDE.md#the-five-rules-that-matter-most)
 3. **A country may not be running the notebook you are looking at.** A `<generic_name>_<CC>.ipynb`
-   variant runs *instead*, in that one country's workspace, and no mechanism propagates it.
+   variant beside it runs *instead*, in that one country's workspace. A fix to the generic notebook
+   does not reach that country unless the variant is re-aligned too.
    → [`pipelines/CLAUDE.md`](pipelines/CLAUDE.md#country-specific-notebook-variants)
 4. **OpenHEXA datasets are the contract, not the filesystem.** A file not registered with
    `add_files_to_dataset(...)` is invisible downstream. → [R4](docs/CONVENTIONS.md#r4)
@@ -212,6 +213,29 @@ there. Do not change the shape without updating that schema in the same change.
 
 ---
 
+## 🌍 Supported countries
+
+**Provisional**, until the project manager approves the list ([VAR-8](docs/BACKLOG.md#var-8)):
+
+| Code | Country |
+|---|---|
+| `BFA` | Burkina Faso |
+| `NER` | Niger |
+| `COD` | Democratic Republic of the Congo |
+| `BDI` | Burundi |
+| `CMR` | Cameroon |
+
+Each release is verified once per supported country, in a test workspace with that country's
+DHIS2 connection and configuration, so that its country variants run
+([ADR 0046](docs/decisions/0046-country-variants-in-the-repo.md); procedure: the
+[`release` skill](.claude/skills/release/SKILL.md) §3). No country workspace runs from this repo yet,
+and Niger is not ready to ([VAR-2](docs/BACKLOG.md#var-2), [VAR-3](docs/BACKLOG.md#var-3)).
+
+Other countries can run the pipelines, but no release is verified against their data: a pipeline
+may fail where their data differ a lot from those of the supported countries.
+
+---
+
 ## 🚧 Status and known limitations
 
 Stated plainly, so nobody spends a day rediscovering them:
@@ -263,8 +287,11 @@ readable at these commits.
 - **Stripped:** a stray execution count from
   `pipelines/snt_seasonality_rainfall/reporting/snt_seasonality_rainfall_report.ipynb`.
 
-Country-specific notebooks (`*_<CC>.ipynb`) are not imported (D-13). They remain in
-`snt_development` at the commit above, and in the country workspaces.
+Country-specific notebooks were left out of the import (D-13), then brought in by
+[ADR 0046](docs/decisions/0046-country-variants-in-the-repo.md): Niger's pyramid hook and incidence
+variant, with redactions listed in [VAR-1](docs/BACKLOG.md#var-1). Two stay out on purpose, readable
+in `snt_development` at the commit above: Niger's rainfall variant ([VAR-4](docs/BACKLOG.md#var-4))
+and Burundi's pyramid variant ([VAR-5](docs/BACKLOG.md#var-5)). Country workspaces may hold others.
 
 ---
 

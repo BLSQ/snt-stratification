@@ -34,6 +34,7 @@ work and is managed by Giulia; this file holds the repo-level items behind it.
 | [Config & contracts](#config--contracts) | `CFG-*` |
 | [SNT Explorer metadata](#snt-explorer-metadata) | `META-*` — most are questions for the IASO developers |
 | [Pipelines & code](#pipelines--code) | `PIPE-*` |
+| [Country variants](#country-variants) | `VAR-*` |
 | [Bootstrap pipelines](#bootstrap-pipelines) | `BOOT-*` |
 | [Releases & deploy](#releases--deploy) | `REL-*` |
 | [Orchestrator webapp](#orchestrator-webapp) | `APP-*`, `UI-*`, `OPS-*`, `GEN-*`, `PLAT-*`, `PM-*` |
@@ -637,6 +638,143 @@ self-sync commit 4 review, 2026-11-18.
 
 ---
 
+## Country variants
+
+Country-specific notebooks committed beside their generic notebook
+([ADR 0046](decisions/0046-country-variants-in-the-repo.md)).
+
+### <a id="var-1"></a>VAR-1 · PM review: what may be public in country notebooks
+
+ADR 0046 lets country notebooks into this public repo. Credentials, country data files, notebook
+outputs and personal data never go in. For everything between those lines, the PM decides, per
+category, whether it may be public:
+
+- links to internal tools (Jira, Google Sheets);
+- names of Bluesquare test workspaces, of live country workspaces, and of storage buckets;
+- DHIS2 identifiers of organisation units and organisation-unit groups;
+- health-facility names and hand-entered GPS coordinates;
+- staff names in comments.
+
+Until then the repo owner approves each such item before it is committed. Approved so far, in
+`snt_dhis2_extract/code/NER_pyramid_format.ipynb`: 1 Jira link, 12 organisation-unit-group ids and
+a first name. Redacted: the 7 facility ids, names and coordinates ([VAR-2](#var-2)). The import's
+redactions (15 DHIS2 ids, 2 live workspace names, 1 bucket name, a Niger helper with facility ids
+and coordinates) are kept until this item is settled.
+
+**Owner:** Giulia. **Blocked on:** the PM. **Source:** ADR 0046 discussion, 2026-11-23.
+
+### <a id="var-2"></a>VAR-2 · Restore the redacted coordinates in the NER pyramid notebook
+
+Cell 9 of [`NER_pyramid_format.ipynb`](../pipelines/snt_dhis2_extract/code/NER_pyramid_format.ipynb)
+sets the coordinates of 7 Niger health facilities that have none in DHIS2, so that they can be
+placed under their district (DS). These lines (DHIS2 id, facility name, latitude and longitude
+taken from Google Maps) were redacted before the notebook was published. Until they are back,
+every NER run of `snt_dhis2_extract` logs a `[WARNING]` and leaves those facilities without a
+district. The original lines are in the same cell of
+`pipelines/snt_dhis2_extract/code/NER_pyramid_format.ipynb` in `BLSQ/snt_development` at
+`94cfc383c0f8804d2eba264f26a4bd3d372d94da`.
+
+When [VAR-1](#var-1) allows it, restore them, and remove the `[WARNING]` and the "REDACTED" notes
+from cells 0, 7 and 9, the `reason` in the notebook's `snt_variant` header, and step 5 of the
+[pipeline readme](../pipelines/snt_dhis2_extract/readme.md). If it does not, decide where these
+coordinates live instead, for example in DHIS2 itself. Either way, do this before Niger runs
+from this repo, and check first whether DHIS2 now has coordinates for these facilities.
+
+**Owner:** Giulia. **Blocked on:** [VAR-1](#var-1). **Source:** ADR 0046, commit 3, 2026-11-23.
+
+### <a id="var-3"></a>VAR-3 · Re-base the NER incidence variant before Niger runs from this repo
+
+[`snt_dhis2_incidence_NER.ipynb`](../pipelines/snt_dhis2_incidence/code/snt_dhis2_incidence_NER.ipynb)
+was committed as it stood in `snt_development` (its `country_specific/` folder, at `94cfc38`). It was
+forked from an older generic notebook, at a point nobody recorded (`base_sha256: null`, so CI lists
+it as stale), and does not fit today's pipeline:
+
+- it loads `snt_utils.r` and `snt_palettes.r` from `code/`, which a workspace installed from this repo
+  does not have (shared R is in `shared/r/`, [ADR 0038](decisions/0038-repo-path-is-workspace-path.md));
+- it reads `configuration/SNT_config.json` from the filesystem, not the `SNT_CONFIGURATION` dataset
+  ([ADR 0043](decisions/0043-config-read-from-snt-configuration-dataset.md));
+- it ignores two parameters the pipeline sends, `POPULATION_DATASET_ID` and `CARESEEKING_FILE_PATH`,
+  and chooses its population with its own `USE_ADJUSTED_POPULATION` (never sent, default `FALSE`);
+- it carries none of the generic notebook's changes since the fork.
+
+It runs automatically wherever `COUNTRY_CODE` is `NER`, so from the first release that contains it, a
+Niger run of `snt_dhis2_incidence` is expected to fail at this notebook. Re-base it: compare it with
+the generic notebook to list what is Niger-specific (population disaggregation for pregnant women
+and children under 5, SNT25-363), move whatever a configuration switch can carry into the generic
+notebook, and rewrite the rest on top of the current generic. Then record the new base with
+`python tools/check_country_variants.py --stamp <variant> --ref <release>`. Needs Niger data to
+test, and the Niger workspace's own copy, which may differ from the repo's.
+
+**Owner:** Giulia. **Source:** ADR 0046, commit 4, 2026-11-23.
+
+### <a id="var-4"></a>VAR-4 · Niger's rainfall variant and `new_parameter.r`, left out: still needed?
+
+`snt_seasonality_rainfall_NER.ipynb` was left out of this repo on purpose: it is probably obsolete.
+It is the generic rainfall-seasonality notebook with comments, plus
+`compute_month_seasonality_NEW()`, which uses a calendar-year denominator. It `source()`s
+`new_parameter.r`, a file that was only ever in the Niger workspace, in no repo. The notebook is
+readable at `pipelines/snt_seasonality_rainfall/code/snt_seasonality_rainfall_NER.ipynb` in
+`BLSQ/snt_development` at `94cfc383c0f8804d2eba264f26a4bd3d372d94da`.
+
+Before Niger runs from this repo, ask the Niger analysts whether its output is still used. If it
+is, get `new_parameter.r` from the workspace, decide whether the calendar-year denominator belongs
+in the generic notebook behind a configuration switch, and commit whatever remains as a variant
+with its header. If it is not, close this item.
+
+**Owner:** Giulia. **Source:** ADR 0046 discussion (D4), 2026-11-23.
+
+### <a id="var-5"></a>VAR-5 · Burundi's pyramid variant, left out: still needed?
+
+`snt_dhis2_formatting_pyramid_BDI.ipynb` was left out of this repo on purpose. It sat in the old
+repo's `country_specific/` folder, so it never ran from there. Its coordinate fix is already in the
+generic notebook. What remains is a mapping of old to new communes after Burundi's 2025
+administrative reform, and 3 facilities fixed by hand. It is readable at
+`pipelines/snt_dhis2_formatting/country_specific/snt_dhis2_formatting_pyramid_BDI.ipynb` in
+`BLSQ/snt_development` at `94cfc383c0f8804d2eba264f26a4bd3d372d94da`.
+
+Before Burundi runs from this repo, check whether its DHIS2 pyramid now carries the new communes
+and the 3 facilities' fixes. If it does, close this item. If not, commit it as a variant of
+`snt_dhis2_formatting/code/snt_dhis2_formatting_pyramid.ipynb`, with its header; its facility ids and names
+need the repo owner's approval ([VAR-1](#var-1)).
+
+**Owner:** Giulia. **Source:** ADR 0046 discussion (D9), 2026-11-23.
+
+### <a id="var-6"></a>VAR-6 · Optional: remove Jira and Google Sheets links from country notebooks
+
+ADR 0046 allows Jira and Google Sheets links in this public repo: neither opens without a Bluesquare
+login. They are still internal detail. If the PM prefers ([VAR-1](#var-1)), replace each with the
+ticket key alone (`SNT25-363`) or a short description, in the country notebooks and in their
+`snt_variant` headers. Optional; nothing depends on it.
+
+**Owner:** `_TBD_`. **Source:** ADR 0046 discussion (D1), 2026-11-23.
+
+### <a id="var-7"></a>VAR-7 · `snt_lib`: the sync docstring, and a drift warning at run time
+
+`sync_pipeline_scripts` in `snt_lib/snt_pipeline_utils.py` (`BLSQ/snt_utils`) says country variants
+are never touched. Since ADR 0046 that holds only for a variant **not** shipped in the pipeline
+version: a shipped one is copied, and a hand edit to it archived, like any notebook. Correct the
+docstring on the branch this repo pins ([DEP-1](#dep-1)).
+
+Optional, in the same change: when `resolve_notebook()` picks a variant, compare its
+`snt_variant.base_sha256` with the generic notebook's sha256 and log a `[WARNING]` when they differ,
+so an analyst sees in the run that the variant lags behind. Today only CI warns, on the pull request.
+
+**Owner:** `snt_lib` owner (`_TBD_` in [OWNERSHIP.md](OWNERSHIP.md)). **Source:** ADR 0046,
+2026-11-23.
+
+### <a id="var-8"></a>VAR-8 · PM to review and approve the supported-country list
+
+The [supported countries](../README.md#-supported-countries) (BFA, NER, COD, BDI, CMR) were chosen
+by the repo owner and are marked provisional. Each one costs a pair of test workspaces per release,
+with that country's DHIS2 connection and configuration
+([`release` skill](../.claude/skills/release/SKILL.md) §3). The PM confirms the list, and with it
+which countries are told that a pipeline may fail on their data. Once approved, remove
+"provisional" from the README.
+
+**Owner:** Giulia. **Blocked on:** the PM. **Source:** ADR 0046 discussion (D5, D11), 2026-11-23.
+
+---
+
 ## Bootstrap pipelines
 
 ### <a id="boot-2"></a>BOOT-2 · A readable status page from the checker
@@ -1017,9 +1155,6 @@ Found during the self-sync work, 2026-11-18:
 - **Paths and details in [`DATA_ARCHITECTURE.md`](DATA_ARCHITECTURE.md)**:
   - §3.1, the DHS row: `extract_latest_dhs_recode_filename()` is in `shared/r/snt_utils.r`, not
     `code/snt_utils.r`.
-  - §3.2, `snt_dhis2_extract`: the NER notebook runs from
-    `pipelines/snt_dhis2_extract/NER_transformations/NER_pyramid_format.ipynb`, not `code/`. It is
-    a country notebook, not in this repo, so neither the sync nor the deployer delivers it.
   - §3.2, outlier imputation: "Each variant also pushes … (`push_db`, default `True`)" — in
     `snt_dhis2_outliers_imputation_magic_glasses` the default is `False`.
   - §4.3: the publish task is `add_files_to_dataset_for_extracts_task`; the `try/except` around

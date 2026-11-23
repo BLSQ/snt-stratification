@@ -104,11 +104,14 @@ Not owned by any one pipeline; a change here affects many.
 | `docs/` | @sPuntinG | Architecture, glossary, standards. |
 | `snt_lib` / `snt_utils` ([external repo](https://github.com/BLSQ/snt_utils)) | `_TBD_` | **Outside this repo**, and unpinned — changes there reach every pipeline on its next deploy. |
 
-**Country-specific escape hatches** exist in two forms: branches hardcoded in
-`snt_dhis2_extract` (BFA, NER), and `<generic_name>_<CC>.ipynb` notebook variants that run instead
-of the generic notebook in one country's workspace. Whoever owns the country engagement should be
-consulted before changing either — and note that a variant lives in the workspace, not in `main`,
-so this repository is not a reliable record of which ones exist.
+**Country-specific escape hatches** exist in three forms: branches hardcoded in
+`snt_dhis2_extract` (BFA, NER), `<generic_name>_<CC>.ipynb` notebook variants that run instead of
+the generic notebook in one country's workspace, and `<CC>_<name>.ipynb` hooks that `pipeline.py`
+calls for one country. Variants and hooks are committed beside the generic notebooks
+([ADR 0046](decisions/0046-country-variants-in-the-repo.md)). Whoever owns the country engagement
+should be consulted before changing any of them, or the generic notebook a variant was forked from.
+Countries still on the old `snt_development` repo may hold variants that are only in their
+workspace.
 → [Pipeline traps](../pipelines/CLAUDE.md#pipeline-traps) · [Country-specific notebook
 variants](../pipelines/CLAUDE.md#country-specific-notebook-variants)
 

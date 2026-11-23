@@ -578,8 +578,9 @@ never added to its dataset is invisible to every downstream pipeline.
 
 The config is not on the filesystem either: it is in the `SNT_CONFIGURATION` dataset
 ([§5.4](#54-configuration-schema-snt_configjson)). A workspace set up for the old repo still holds
-`configuration/SNT_config.json`; nothing from this repo reads it, only the old repo's pipelines and
-country notebook variants ([`pipelines/CLAUDE.md`](../pipelines/CLAUDE.md#country-specific-notebook-variants)).
+`configuration/SNT_config.json`. Only the old repo's pipelines read it, and the country variants
+written before the change, among them the NER incidence variant in this repo
+([VAR-3](BACKLOG.md#var-3), [`pipelines/CLAUDE.md`](../pipelines/CLAUDE.md#country-specific-notebook-variants)).
 
 ### 5.2 Naming
 

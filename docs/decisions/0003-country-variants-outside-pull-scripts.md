@@ -1,7 +1,7 @@
 # 0003. Country-specific notebook variants live outside `Pull scripts`
 
 Date: not recorded
-Status: Accepted (amended by [0044](0044-self-sync-replaces-pull-scripts.md): `Pull scripts` is replaced by self-sync; variants still run automatically, now logged and recorded)
+Status: Accepted (amended by [0044](0044-self-sync-replaces-pull-scripts.md): `Pull scripts` is replaced by self-sync; variants still run automatically, now logged and recorded. Amended by [0046](0046-country-variants-in-the-repo.md): variants are committed beside the generic notebook and delivered with the pipeline version)
 
 ## Context
 
