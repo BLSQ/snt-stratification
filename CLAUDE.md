@@ -142,6 +142,7 @@ ruff check --fix . && ruff format .
 pytest tests/ -q                          # offline: bootstrap pipelines, contracts, tools/
 python tools/check_tracked_files.py       # R1 data files, R2 notebook outputs
 python tools/check_links.py               # relative links and #anchors in Markdown
+python tools/check_country_variants.py    # _<CC> variants: header, placement, drift (ADR 0046)
 
 nbstripout pipelines/<name>/code/<notebook>.ipynb
 nbdime diff <a>.ipynb <b>.ipynb           # readable notebook diffs

@@ -1,7 +1,7 @@
 # Checks every pull request and every push to main. Deploys nothing (root CLAUDE.md, rule 2).
 #
-# checks: ruff, rules R1/R2 on tracked files, Markdown links, registry <-> folders (via the manifest
-#         builder), the SNT Explorer master list. Light installs; every step runs even if an earlier
+# checks: ruff, rules R1/R2 on tracked files, Markdown links, country-variant headers, registry <->
+#         folders (via the manifest builder), the SNT Explorer master list. Light installs; every step runs even if an earlier
 #         one fails, so one run lists every problem.
 # pytest: the offline tests, with snt_lib installed at its pin so the config conformance test runs
 #         against the real validate_config() and fails instead of skipping (SNT_LIB_REQUIRED=1).
@@ -52,6 +52,11 @@ jobs:
       - name: Markdown links and anchors
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: python tools/check_links.py
+      - name: Country variants, header and drift (ADR 0046)
+        # Fails on a missing or wrong snt_variant header; a variant behind its generic notebook is
+        # only a warning, shown as an annotation on the pull request.
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: python tools/check_country_variants.py
       - name: Registry matches pipeline folders; manifest is valid
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: >-
