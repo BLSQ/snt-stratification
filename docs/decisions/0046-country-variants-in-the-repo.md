@@ -65,6 +65,8 @@ Google Sheet does not open from its link.
   the generic one. Re-aligning it, or accepting the gap, is a decision someone has to make.
 - A country fix waits for a release, unless it goes through `custom/` for the meantime.
 - Verifying a release costs one test workspace pair (candidate and baseline) per supported country.
+  Until the Niger incidence variant is re-based, a Niger test workspace runs it stale and is
+  expected to fail at that notebook.
 - Forking is now cheap. Preferring a configuration switch inside the generic notebook matters more,
   not less.
 - When a country moves to this repo, the first run of each pipeline replaces any hand-made variant

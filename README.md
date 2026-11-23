@@ -213,6 +213,29 @@ there. Do not change the shape without updating that schema in the same change.
 
 ---
 
+## 🌍 Supported countries
+
+**Provisional**, until the project manager approves the list ([VAR-8](docs/BACKLOG.md#var-8)):
+
+| Code | Country |
+|---|---|
+| `BFA` | Burkina Faso |
+| `NER` | Niger |
+| `COD` | Democratic Republic of the Congo |
+| `BDI` | Burundi |
+| `CMR` | Cameroon |
+
+Each release is verified once per supported country, in a test workspace with that country's
+DHIS2 connection and configuration, so that its country variants run
+([ADR 0046](docs/decisions/0046-country-variants-in-the-repo.md); procedure: the
+[`release` skill](.claude/skills/release/SKILL.md) §3). No country workspace runs from this repo yet,
+and Niger is not ready to ([VAR-2](docs/BACKLOG.md#var-2), [VAR-3](docs/BACKLOG.md#var-3)).
+
+Other countries can run the pipelines, but no release is verified against their data: a pipeline
+may fail where their data differ a lot from those of the supported countries.
+
+---
+
 ## 🚧 Status and known limitations
 
 Stated plainly, so nobody spends a day rediscovering them:

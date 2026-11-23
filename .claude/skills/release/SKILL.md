@@ -1,6 +1,6 @@
 ---
 name: release
-description: Cut, verify and promote a release of snt-stratification — the pre-cut checklist, cutting a pre-release candidate (v0.x.y, or vX.Y.Z-rc.N from v1.0.0 on), verifying it in a fresh test workspace (deployer, checker, then the DHIS2 chain compared with the previous release's workspace), and promoting a verified rc to a full release. Use when asked to cut, tag, test, verify or promote a release, or to plan the next one.
+description: Cut, verify and promote a release of snt-stratification — the pre-cut checklist, cutting a pre-release candidate (v0.x.y, or vX.Y.Z-rc.N from v1.0.0 on), verifying it in fresh test workspaces, one per supported country (deployer, checker, then the DHIS2 chain compared with the previous release's workspace for that country), and promoting a verified rc to a full release. Use when asked to cut, tag, test, verify or promote a release, or to plan the next one.
 ---
 
 # Release
@@ -57,7 +57,18 @@ The previous release is the baseline for §3:
    git log --oneline <previous tag>..<sha> -- pipelines shared/r webapps catalogs
    ```
    Note which pipelines changed. Also note any outside the DHIS2 chain of §3.9.
-4. **Optional, when `release.yaml` or `tools/build_*` changed since the last release:** dry-build
+4. **Stale country variants: re-based or accepted.** In the log of the `ci` run from 1.1 (its ID is
+   the `ID` column of `gh run list`):
+   ```bash
+   gh run view <run id> --repo BLSQ/snt-stratification --log | grep -E "country notebook\(s\) checked|\[WARNING\] pipelines/"
+   ```
+   Each `[WARNING]` names a variant whose generic notebook has changed since the variant was last
+   aligned with it, or whose fork point was never recorded. For each one, the maintainer either has
+   it re-based first (a pull request ending with `python tools/check_country_variants.py --stamp`),
+   or accepts the gap: name the accepted ones in the release notes (§2), and expect that country's
+   workspace to run the stale variant in §3.9. Until [VAR-3](../../../docs/BACKLOG.md#var-3) is done,
+   `snt_dhis2_incidence_NER.ipynb` is one of them.
+5. **Optional, when `release.yaml` or `tools/build_*` changed since the last release:** dry-build
    the assets. Actions → `release` → Run workflow on `main`, version `v0.0.0-test`. This creates no
    release; download the `release-assets-v0.0.0-test` artefact from the run's page.
 
@@ -101,15 +112,26 @@ print(f, 'filesystem files +', z, 'files in pipeline versions =', f + z, 'checke
 Below, **P** stands for the pipeline count, **F** for the filesystem-file count and **E** for the
 entry count.
 
-## 3. Verify in a fresh test workspace
+## 3. Verify in fresh test workspaces, one pair per supported country
 
-Use two workspaces, and run every comparison step in both:
-- **candidate:** a new workspace for this candidate, never reused, because the deployer cannot
-  delete strays ([`deployer.md`](../../../docs/bootstrap/deployer.md) §7.5; ADR 0032, one workspace
-  per release). Slug from the tag: `snt-v020-test`, `snt-v100-rc1-test`. A slug cannot be changed
-  later;
-- **baseline:** the previous release's test workspace, kept as it was (`v0.1.0`:
-  `snt-v010-test-bootstrap`). It stays on its release; do not deploy the candidate into it.
+Verify in each supported country listed in the
+[`README.md`](../../../README.md#-supported-countries) (provisional,
+[VAR-8](../../../docs/BACKLOG.md#var-8)), so that its country variants and hooks actually run
+([ADR 0046](../../../docs/decisions/0046-country-variants-in-the-repo.md)). Per country, use two
+workspaces, and run every comparison step in both:
+- **candidate:** a new workspace for this candidate and country, never reused, because the deployer
+  cannot delete strays ([`deployer.md`](../../../docs/bootstrap/deployer.md) §7.5; ADR 0032, one
+  workspace per release). Slug from the tag and the country code: `snt-v020-bfa-test`,
+  `snt-v100-rc1-ner-test`. A slug cannot be changed later;
+- **baseline:** that country's test workspace of the previous release, kept as it was (`v0.1.0`
+  was verified for BFA only: `snt-v010-test-bootstrap`). It stays on its release; do not deploy the
+  candidate into it. A country with no such workspace has no baseline: run 3.9 in the candidate
+  only, record that its outputs were not compared, and keep the candidate as that country's
+  baseline for the next release.
+
+Run 3.1–3.4, 3.6, 3.9 and 3.10 for every country; 3.5, 3.7 and 3.8 in one candidate workspace is
+enough, since they do not depend on the country. A country whose DHIS2 connection or configuration
+you cannot get is not verified for this release: name it in 3.11.
 
 **3.1 Set up the candidate workspace.** In this order:
 1. Settings → General → **Image** `blsq/openhexa-blsq-r-environment:latest`. A fresh workspace has
@@ -121,7 +143,9 @@ Use two workspaces, and run every comparison step in both:
    `SNT_CONFIGURATION`, check its slug is `snt-configuration`, and upload `SNT_config.json` as a
    new version. Use the same content as the baseline's config: in a baseline on `v0.1.0`, which
    predates ADR 0043, that is Files → `configuration/SNT_config.json`; in a later one, the latest
-   version of its `SNT_CONFIGURATION`. The file must pass `validate_config()` (the how-to shows
+   version of its `SNT_CONFIGURATION`. With no baseline, start from the country's live config. Its
+   `COUNTRY_CODE` must be the country's: it decides which variants run. The file must pass
+   `validate_config()` (the how-to shows
    how to check it): a copy that lacks a key the current `snt_lib` requires, such as
    `SNT_DATASET_IDENTIFIERS.SNT_POPULATION_USER_PROVIDED`, stops every pipeline.
 4. Connections → New → **Custom**, name `oh`, one field `token`, marked secret. Its value is the
@@ -198,7 +222,17 @@ the *old* `snt_development` repo (root rule 2) and overwrites that release.
 | 7 | `snt-dhis2-quality-of-care` | Data action `imputed` |
 
 "Run reporting only" stays off everywhere. If §1.3 lists a changed pipeline outside these seven,
-run it in both workspaces too, after its inputs exist.
+run it in both workspaces too, after its inputs exist. In each country, use the same parameters in
+its two workspaces, with that country's connection and periods.
+- **Country notebooks run.** A run that uses a variant logs a `[WARNING]` naming it, and its
+  `NOTEBOOK_OVERRIDES` lists it with `SOURCE` `country_variant`; in a country without variants it is
+  empty. A variant or hook this candidate ships for the first time makes that country's outputs
+  differ from its baseline: explain it in 3.10 by §1.3.
+- **Niger, until [VAR-2](../../../docs/BACKLOG.md#var-2) and
+  [VAR-3](../../../docs/BACKLOG.md#var-3) are done:** the extract logs a `[WARNING]` from the
+  pyramid hook (7 facilities without coordinates), and `snt-dhis2-incidence` is expected to fail at
+  `snt_dhis2_incidence_NER.ipynb`. Record both as known, not as findings, and go on to step 7,
+  which does not read the incidence output.
 - **The same failure in both** (same first `[ERROR]`) comes from code shared by both releases, not
   from this candidate. Record it, and don't go on until it is settled: every later step reads the
   extract.
@@ -209,7 +243,7 @@ run it in both workspaces too, after its inputs exist.
   workspaces. Check that its slug equals `DHIS2_DATASET_EXTRACTS` in the config and that neither
   workspace has a local copy of its own. Record that the extract went unverified.
 
-**3.10 Compare the outputs.** In each workspace, open JupyterHub → new Python notebook, paste all of
+**3.10 Compare the outputs**, country by country. In each workspace, open JupyterHub → new Python notebook, paste all of
 [`dataset_summary.py`](dataset_summary.py) into one cell and run it. Then download
 `snt_compare/<slug>_summary.json` into `ignore/<tag>_verification/` (git-ignored). From the repo
 root:
@@ -223,8 +257,9 @@ Expected `info … differs` lines:
 - `BFA_shapes.geojson` from formatting: same size, different bytes, unexplained since `v0.1.0`.
 
 **3.11 Record the results** where the work that asked for the release is tracked (until the
-migration ends: [`MIGRATION_PLAN.md`](../../../docs/MIGRATION_PLAN.md)). Record what ran, what passed,
-what was not verified (name it: the extract, the webapp zips, …) and each explained difference.
+migration ends: [`MIGRATION_PLAN.md`](../../../docs/MIGRATION_PLAN.md)). Record, per country, what
+ran, what passed, what was not verified (name it: a country, the extract, the webapp zips, …), the
+stale variants accepted in §1.4, and each explained difference.
 Reports and summaries hold only paths, counts and hashes, but they stay in `ignore/`: never commit
 them.
 
@@ -267,7 +302,7 @@ pre-release, on **the exact commit of that rc**. Don't untick "pre-release" on t
    a, b = (json.load(open(d + '/release_manifest.json')) for d in ('rc', 'full'))
    print('files equal:', a['files'] == b['files'], '| webapps equal:', {k: v['files'] for k, v in a['webapps'].items()} == {k: v['files'] for k, v in b['webapps'].items()})"
    ```
-4. **In the rc's test workspace**, deploy `vX.Y.Z`. **Expected:** no pre-release `[WARNING]`, and
+4. **In one of the rc's test workspaces**, deploy `vX.Y.Z`. **Expected:** no pre-release `[WARNING]`, and
    every pipeline `… (same files, relabelled)`; the bootstrap ones too, since the target is now the
    latest full release. Then run the checker twice. With an empty tag, expect `match` on all E
    entries. With `none`, expect best fit `vX.Y.Z`: this is the first time attribution can score a

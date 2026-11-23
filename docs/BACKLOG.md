@@ -762,6 +762,17 @@ so an analyst sees in the run that the variant lags behind. Today only CI warns,
 **Owner:** `snt_lib` owner (`_TBD_` in [OWNERSHIP.md](OWNERSHIP.md)). **Source:** ADR 0046,
 2026-11-23.
 
+### <a id="var-8"></a>VAR-8 · PM to review and approve the supported-country list
+
+The [supported countries](../README.md#-supported-countries) (BFA, NER, COD, BDI, CMR) were chosen
+by the repo owner and are marked provisional. Each one costs a pair of test workspaces per release,
+with that country's DHIS2 connection and configuration
+([`release` skill](../.claude/skills/release/SKILL.md) §3). The PM confirms the list, and with it
+which countries are told that a pipeline may fail on their data. Once approved, remove
+"provisional" from the README.
+
+**Owner:** Giulia. **Blocked on:** the PM. **Source:** ADR 0046 discussion (D5, D11), 2026-11-23.
+
 ---
 
 ## Bootstrap pipelines
