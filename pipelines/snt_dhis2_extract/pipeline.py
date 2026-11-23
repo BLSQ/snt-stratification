@@ -333,11 +333,11 @@ def get_dhis2_pyramid(dhis2_client: DHIS2, snt_config: dict, pipeline_path: Path
 
         current_run.log_info("Re-arranging pyramid organisation units for Niger pyramid.")
         try:
-            # run R script for ad-hoc transformations
+            # run R script for ad-hoc transformations: a country hook shipped in code/ (ADR 0046)
             # ticket ref: https://bluesquare.atlassian.net/browse/SNT25-253
             dhis2_pyramid = run_transformation_notebook(
                 df=dhis2_pyramid,
-                nb_path=pipeline_path / "NER_transformations" / "NER_pyramid_format.ipynb",
+                nb_path=pipeline_path / "code" / "NER_pyramid_format.ipynb",
                 nb_output_dir=pipeline_path / "NER_transformations",
             )
         except Exception as e:

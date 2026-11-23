@@ -34,6 +34,7 @@ work and is managed by Giulia; this file holds the repo-level items behind it.
 | [Config & contracts](#config--contracts) | `CFG-*` |
 | [SNT Explorer metadata](#snt-explorer-metadata) | `META-*` — most are questions for the IASO developers |
 | [Pipelines & code](#pipelines--code) | `PIPE-*` |
+| [Country variants](#country-variants) | `VAR-*` |
 | [Bootstrap pipelines](#bootstrap-pipelines) | `BOOT-*` |
 | [Releases & deploy](#releases--deploy) | `REL-*` |
 | [Orchestrator webapp](#orchestrator-webapp) | `APP-*`, `UI-*`, `OPS-*`, `GEN-*`, `PLAT-*`, `PM-*` |
@@ -637,6 +638,52 @@ self-sync commit 4 review, 2026-11-18.
 
 ---
 
+## Country variants
+
+Country-specific notebooks committed beside their generic notebook
+([ADR 0046](decisions/0046-country-variants-in-the-repo.md)).
+
+### <a id="var-1"></a>VAR-1 · PM review: what may be public in country notebooks
+
+ADR 0046 lets country notebooks into this public repo. Credentials, country data files, notebook
+outputs and personal data never go in. For everything between those lines, the PM decides, per
+category, whether it may be public:
+
+- links to internal tools (Jira, Google Sheets);
+- names of Bluesquare test workspaces, of live country workspaces, and of storage buckets;
+- DHIS2 identifiers of organisation units and organisation-unit groups;
+- health-facility names and hand-entered GPS coordinates;
+- staff names in comments.
+
+Until then the repo owner approves each such item before it is committed. Approved so far, in
+`snt_dhis2_extract/code/NER_pyramid_format.ipynb`: 1 Jira link, 12 organisation-unit-group ids and
+a first name. Redacted: the 7 facility ids, names and coordinates ([VAR-2](#var-2)). The import's
+redactions (15 DHIS2 ids, 2 live workspace names, 1 bucket name, a Niger helper with facility ids
+and coordinates) are kept until this item is settled.
+
+**Owner:** Giulia. **Blocked on:** the PM. **Source:** ADR 0046 discussion, 2026-11-23.
+
+### <a id="var-2"></a>VAR-2 · Restore the redacted coordinates in the NER pyramid notebook
+
+Cell 9 of [`NER_pyramid_format.ipynb`](../pipelines/snt_dhis2_extract/code/NER_pyramid_format.ipynb)
+sets the coordinates of 7 Niger health facilities that have none in DHIS2, so that they can be
+placed under their district (DS). These lines (DHIS2 id, facility name, latitude and longitude
+taken from Google Maps) were redacted before the notebook was published. Until they are back,
+every NER run of `snt_dhis2_extract` logs a `[WARNING]` and leaves those facilities without a
+district. The original lines are in the same cell of
+`pipelines/snt_dhis2_extract/code/NER_pyramid_format.ipynb` in `BLSQ/snt_development` at
+`94cfc383c0f8804d2eba264f26a4bd3d372d94da`.
+
+When [VAR-1](#var-1) allows it, restore them, and remove the `[WARNING]` and the "REDACTED" notes
+from cells 0, 7 and 9, the `reason` in the notebook's `snt_variant` header, and step 5 of the
+[pipeline readme](../pipelines/snt_dhis2_extract/readme.md). If it does not, decide where these
+coordinates live instead, for example in DHIS2 itself. Either way, do this before Niger runs
+from this repo, and check first whether DHIS2 now has coordinates for these facilities.
+
+**Owner:** Giulia. **Blocked on:** [VAR-1](#var-1). **Source:** ADR 0046, commit 3, 2026-11-23.
+
+---
+
 ## Bootstrap pipelines
 
 ### <a id="boot-2"></a>BOOT-2 · A readable status page from the checker
@@ -1017,9 +1064,6 @@ Found during the self-sync work, 2026-11-18:
 - **Paths and details in [`DATA_ARCHITECTURE.md`](DATA_ARCHITECTURE.md)**:
   - §3.1, the DHS row: `extract_latest_dhs_recode_filename()` is in `shared/r/snt_utils.r`, not
     `code/snt_utils.r`.
-  - §3.2, `snt_dhis2_extract`: the NER notebook runs from
-    `pipelines/snt_dhis2_extract/NER_transformations/NER_pyramid_format.ipynb`, not `code/`. It is
-    a country notebook, not in this repo, so neither the sync nor the deployer delivers it.
   - §3.2, outlier imputation: "Each variant also pushes … (`push_db`, default `True`)" — in
     `snt_dhis2_outliers_imputation_magic_glasses` the default is `False`.
   - §4.3: the publish task is `add_files_to_dataset_for_extracts_task`; the `try/except` around
