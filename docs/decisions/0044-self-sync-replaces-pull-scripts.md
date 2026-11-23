@@ -1,7 +1,7 @@
 # 0044. Pipelines self-sync their R half; `custom/` is the escape hatch
 
 Date: 2026-11-17
-Status: Accepted
+Status: Accepted (amended by [0046](0046-country-variants-in-the-repo.md): country variants are committed and synced with the pipeline version)
 
 ## Context
 
