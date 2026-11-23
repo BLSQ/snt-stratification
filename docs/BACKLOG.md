@@ -682,6 +682,31 @@ from this repo, and check first whether DHIS2 now has coordinates for these faci
 
 **Owner:** Giulia. **Blocked on:** [VAR-1](#var-1). **Source:** ADR 0046, commit 3, 2026-11-23.
 
+### <a id="var-3"></a>VAR-3 · Re-base the NER incidence variant before Niger runs from this repo
+
+[`snt_dhis2_incidence_NER.ipynb`](../pipelines/snt_dhis2_incidence/code/snt_dhis2_incidence_NER.ipynb)
+was committed as it stood in `snt_development` (its `country_specific/` folder, at `94cfc38`). It was
+forked from an older generic notebook, at a point nobody recorded (`base_sha256: null`, so CI lists
+it as stale), and does not fit today's pipeline:
+
+- it loads `snt_utils.r` and `snt_palettes.r` from `code/`, which a workspace installed from this repo
+  does not have (shared R is in `shared/r/`, [ADR 0038](decisions/0038-repo-path-is-workspace-path.md));
+- it reads `configuration/SNT_config.json` from the filesystem, not the `SNT_CONFIGURATION` dataset
+  ([ADR 0043](decisions/0043-config-read-from-snt-configuration-dataset.md));
+- it ignores two parameters the pipeline sends, `POPULATION_DATASET_ID` and `CARESEEKING_FILE_PATH`,
+  and chooses its population with its own `USE_ADJUSTED_POPULATION` (never sent, default `FALSE`);
+- it carries none of the generic notebook's changes since the fork.
+
+It runs automatically wherever `COUNTRY_CODE` is `NER`, so from the first release that contains it, a
+Niger run of `snt_dhis2_incidence` is expected to fail at this notebook. Re-base it: compare it with
+the generic notebook to list what is Niger-specific (population disaggregation for pregnant women
+and children under 5, SNT25-363), move whatever a configuration switch can carry into the generic
+notebook, and rewrite the rest on top of the current generic. Then record the new base with
+`python tools/check_country_variants.py --stamp <variant> --ref <release>`. Needs Niger data to
+test, and the Niger workspace's own copy, which may differ from the repo's.
+
+**Owner:** Giulia. **Source:** ADR 0046, commit 4, 2026-11-23.
+
 ---
 
 ## Bootstrap pipelines
