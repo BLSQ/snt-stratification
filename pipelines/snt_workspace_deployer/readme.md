@@ -70,7 +70,7 @@ standard SNT flags (`run_report_only`, `use_custom_notebooks`, `overwrite`) appl
    GitHub finds nothing, the run works out why and says so: repository missing or private, no
    published release at all, only pre-releases (never "latest" on GitHub), or a misspelled tag (the
    most recent tags are listed). A pre-release, which can only be typed, is deployed like any
-   release but logged as a `[WARNING]`: pre-releases are for development and testing (D27). Then download the release's `release_manifest.json` asset; a release
+   release but logged as a warning: pre-releases are for development and testing (D27). Then download the release's `release_manifest.json` asset; a release
    without it aborts the run, asking to wait for (or re-run) the release's `release` workflow run.
    A manifest without a `schema_version` this run can read (a v1 manifest from the old
    `snt_development` repository, or a newer one) aborts the run before anything is written.
@@ -82,7 +82,7 @@ standard SNT flags (`run_report_only`, `use_custom_notebooks`, `overwrite`) appl
    the workspace bucket.
 4. **Bootstrap guard:** when the release is older than GitHub's latest full release (by
    `published_at`), the bootstrap pipelines (`kind: bootstrap`, this one included) are left out with
-   an `[INFO]`: a deployer never replaces itself with an older copy (ADR 0042). With no full release
+   an info message: a deployer never replaces itself with an older copy (ADR 0042). With no full release
    yet, every release counts as the newest.
 5. **Download the slim tarball** `<repo name>-<tag>.tar.gz`, a release asset holding exactly the
    manifest's files, once for the whole release, and extract it to a temporary directory (a per-file
@@ -110,8 +110,8 @@ standard SNT flags (`run_report_only`, `use_custom_notebooks`, `overwrite`) appl
    * **the tag is refused because an older, non-current version holds it** (for example after a
      rollback): the redeploy names above are tried in turn.
 
-8. **Continue on failure:** one pipeline's failure is logged with an `[ERROR]` prefix and does not
-   stop the others; the run stops at the end with an `[ERROR]` message listing every failure. Re-running the same tag
+8. **Continue on failure:** one pipeline's failure is logged as an error and does not
+   stop the others; the run stops at the end with an error message listing every failure. Re-running the same tag
    converges: pipelines already deployed are skipped (step 7).
 9. **Write the release marker:** record `{"snt_release": "<tag>", "repo": "<owner/name>"}` in
    `.snt_release` at the workspace root
@@ -163,10 +163,10 @@ standard SNT flags (`run_report_only`, `use_custom_notebooks`, `overwrite`) appl
 >   what is deployed ([`contracts/release_manifest.md`](../../contracts/release_manifest.md)).
 > - **Every failure is spelled out in the run's Messages.** A raised exception alone reaches only the
 >   run's logs, so each failure the pipeline anticipates (connection, release lookup, manifest,
->   tarball, failed pipelines) is logged as `[ERROR] Cannot deploy: <reason and what to do>` before
+>   tarball, failed pipelines) is logged as `Cannot deploy: <reason and what to do>` before
 >   the run stops. Anything unanticipated is caught at the top and logged as
->   `[ERROR] Deployment stopped by an unexpected error - <type>: <message>`. If Messages ends on an
->   `INFO` line with no `[ERROR]` after it, that is a gap in this coverage — report it.
+>   `Deployment stopped by an unexpected error - <type>: <message>`. If Messages ends on an
+>   `INFO` line with no `ERROR` line after it, that is a gap in this coverage — report it.
 > - **An empty `release_tag` follows GitHub's "latest", not the newest tag.** A pre-release is never
 >   "latest", so until this repository's first full release (`v1.0.0`) an empty tag aborts: type the
 >   pre-release's tag. Type the tag when in doubt.

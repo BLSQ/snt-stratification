@@ -13,7 +13,7 @@ already holds real work and must not be changed beyond the one pipeline asked fo
 The shared R library (shared/r/**/*.r) is NEVER copied: every pipeline sources it, so
 updating it for one pipeline changes them all. The deployed notebooks may therefore run
 against shared/r/ scripts from another release. The run compares the workspace's copies with
-the release's and names every file that differs, in a [WARNING].
+the release's and names every file that differs, in a warning.
 
 The files come from the release's slim tarball asset, which holds exactly the manifest's files.
 
@@ -170,7 +170,7 @@ def snt_pipeline_deployer(
         raise
     except Exception as exception:
         current_run.log_error(
-            f"[ERROR] Deployment stopped by an unexpected error - {type(exception).__name__}: {exception}"
+            f"Deployment stopped by an unexpected error - {type(exception).__name__}: {exception}"
         )
         raise
 
@@ -288,7 +288,7 @@ def refuse_older_bootstrap(github_repo: str, release: dict, dir_name: str) -> No
     """Stop the run if a bootstrap pipeline is asked for from a release older than the latest full one.
 
     A deployer must never replace itself, or the other bootstrap pipelines, with an older and
-    possibly buggy copy (ADR 0042). snt_workspace_deployer skips them with an [INFO] and deploys
+    possibly buggy copy (ADR 0042). snt_workspace_deployer skips them with an info message and deploys
     the rest; here the one pipeline asked for is the bootstrap pipeline, so the run stops before
     anything is written.
     """
@@ -355,7 +355,7 @@ def report_shared_library_drift(
     listed = ", ".join(differing[:MAX_DRIFT_PATHS_LISTED])
     more = len(differing) - MAX_DRIFT_PATHS_LISTED
     current_run.log_warning(
-        f"[WARNING] Shared R library (shared/r/, used by all pipelines, not updated by this run): "
+        f"Shared R library (shared/r/, used by all pipelines, not updated by this run): "
         f"{len(differing)}/{len(shared)} file(s) differ from release {release_tag}: "
         f"{listed}{f', and {more} more' if more > 0 else ''}. "
         "The pipeline just deployed sources them and may fail or behave differently if they changed "
@@ -383,7 +383,7 @@ def get_api_token(connection_slug: str) -> str:
 
     if not token:
         message = (
-            f"[ERROR] Cannot deploy: the OpenHEXA API connection '{connection_slug}' is missing or "
+            f"Cannot deploy: the OpenHEXA API connection '{connection_slug}' is missing or "
             f"unusable ({reason}). Create a CUSTOM connection with the slug '{connection_slug}' and a "
             "secret field named 'token' holding a workspace API token (Settings > Connections), "
             "or set the 'OpenHEXA API connection' parameter to an existing connection slug."
@@ -420,7 +420,7 @@ def get_release(github_repo: str, release_tag: str | None) -> dict:
         current_run.log_info(f"No release tag given: deploying the latest release: '{release['tag_name']}'.")
     if release.get("prerelease"):
         current_run.log_warning(
-            f"[WARNING] Release {release['tag_name']} is a pre-release, for development and testing "
+            f"Release {release['tag_name']} is a pre-release, for development and testing "
             "only, not for a country workspace. snt_workspace_checker ignores pre-releases unless "
             "one is its target, so give it this tag to check this pipeline against it."
         )
@@ -549,7 +549,7 @@ def abort_run(reason: str) -> NoReturn:
     DeploymentAbortedError
         Always, carrying the same message that was logged.
     """
-    message = f"[ERROR] Cannot deploy: {reason}"
+    message = f"Cannot deploy: {reason}"
     current_run.log_error(message)
     raise DeploymentAbortedError(message)
 

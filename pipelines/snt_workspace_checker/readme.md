@@ -50,7 +50,7 @@ unattended in a country workspace that holds no connection at all.
 1. Read `.snt_release` at the workspace root, if present, for the **declared** release: its tag and,
    when the deployer recorded it, its repository. Its absence is the normal starting state for every
    country workspace today and is never an error. A marker naming another repository than
-   `github_repo` is reported under `declared_release` with a `[WARNING]` and not used as a target.
+   `github_repo` is reported under `declared_release` with a warning and not used as a target.
 2. Resolve the **target** release: `release_tag` = `none` means no target; otherwise the parameter,
    else the declared release (when usable, step 1), else no target. No target means attribution mode.
    The report records the outcome under `target_release.resolved_from`: `parameter`, `marker` or
@@ -61,7 +61,7 @@ unattended in a country workspace that holds no connection at all.
    not appear anywhere in the report (D27). A release whose manifest is absent, cannot
    be downloaded, or has a `schema_version` this checker cannot read (none: a v1 manifest from the old
    `snt_development` repository; or a newer one) cannot be used for comparison. It is logged as a
-   `[WARNING]`, listed with `manifest_available: false`, added to `errors`, and the report is marked
+   warning, listed with `manifest_available: false`, added to `errors`, and the report is marked
    `incomplete`. The run
    stops (raises) only if the **target** is not among the published releases or has no usable
    manifest.

@@ -138,7 +138,7 @@ def snt_workspace_deployer(
         raise
     except Exception as exception:
         current_run.log_error(
-            f"[ERROR] Deployment stopped by an unexpected error - {type(exception).__name__}: {exception}"
+            f"Deployment stopped by an unexpected error - {type(exception).__name__}: {exception}"
         )
         raise
 
@@ -211,7 +211,7 @@ def get_api_token(connection_slug: str) -> str:
 
     if not token:
         message = (
-            f"[ERROR] Cannot deploy: the OpenHEXA API connection '{connection_slug}' is missing or "
+            f"Cannot deploy: the OpenHEXA API connection '{connection_slug}' is missing or "
             f"unusable ({reason}). Create a CUSTOM connection with the slug '{connection_slug}' and a "
             "secret field named 'token' holding a workspace API token (Settings > Connections), "
             "or set the 'OpenHEXA API connection' parameter to an existing connection slug."
@@ -248,7 +248,7 @@ def get_release(github_repo: str, release_tag: str | None) -> dict:
         current_run.log_info(f"No release tag given: deploying the latest release, {release['tag_name']}.")
     if release.get("prerelease"):
         current_run.log_warning(
-            f"[WARNING] Release {release['tag_name']} is a pre-release, for development and testing "
+            f"Release {release['tag_name']} is a pre-release, for development and testing "
             "only, not for a country workspace. snt_workspace_checker ignores pre-releases unless "
             "one is its target; run with an empty tag, it targets the release in .snt_release, i.e. "
             "this one."
@@ -378,7 +378,7 @@ def abort_run(reason: str) -> NoReturn:
     DeploymentAbortedError
         Always, carrying the same message that was logged.
     """
-    message = f"[ERROR] Cannot deploy: {reason}"
+    message = f"Cannot deploy: {reason}"
     current_run.log_error(message)
     raise DeploymentAbortedError(message)
 
@@ -466,7 +466,7 @@ def without_older_bootstrap(github_repo: str, release: dict, pipelines: dict) ->
     """Leave out the release's bootstrap pipelines when it is older than the latest full release.
 
     The other pipelines are deployed as usual: an older release is a legitimate rollback for them,
-    but not for the deployer itself (ADR 0042). The skip is an [INFO], not a warning, because it
+    but not for the deployer itself (ADR 0042). The skip is logged as info, not a warning, because it
     is the intended behaviour, and the run still succeeds.
 
     Returns
@@ -481,7 +481,7 @@ def without_older_bootstrap(github_repo: str, release: dict, pipelines: dict) ->
     if reason is None:
         return pipelines
     current_run.log_info(
-        f"[INFO] Bootstrap pipelines skipped ({', '.join(bootstrap)}): {reason}, and a deployer "
+        f"Bootstrap pipelines skipped ({', '.join(bootstrap)}): {reason}, and a deployer "
         "never replaces itself with an older copy. Deploy the latest full release, or a newer one, "
         "to update them."
     )
@@ -603,7 +603,7 @@ def deploy_all(
         try:
             deploy_one(tarball_root, name, pipelines[name], release, token, dry_run)
         except Exception as exception:  # one bad pipeline must not stop the other nineteen
-            current_run.log_error(f"[ERROR] {name}: deployment failed: {exception}")
+            current_run.log_error(f"{name}: deployment failed: {exception}")
             failures.append(name)
 
     if dry_run:

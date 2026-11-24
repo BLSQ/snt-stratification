@@ -280,7 +280,7 @@ def snt_workspace_checker(github_repo: str, release_tag: str | None) -> None:
         )
         if marker_tag and marker_tag != target_tag:
             current_run.log_warning(
-                f"[WARNING] The workspace declares release '{marker_tag}' but is being checked against "
+                f"The workspace declares release '{marker_tag}' but is being checked against "
                 f"'{target_tag}'. The declaration records intent, not verified fact."
             )
 
@@ -392,7 +392,7 @@ def read_release_marker(snt_root_path: Path) -> tuple[str | None, str | None]:
         repo = marker.get("repo")
     except (OSError, ValueError, KeyError, TypeError, AttributeError) as exception:
         current_run.log_warning(
-            f"[WARNING] {RELEASE_MARKER_NAME} exists but could not be read: {exception}. "
+            f"{RELEASE_MARKER_NAME} exists but could not be read: {exception}. "
             "Treating the workspace as declaring no release."
         )
         return None, None
@@ -421,7 +421,7 @@ def marker_target(declared_tag: str | None, declared_repo: str | None, github_re
     if declared_repo.lower() == github_repo.lower():
         return declared_tag
     current_run.log_warning(
-        f"[WARNING] {RELEASE_MARKER_NAME} declares release {declared_repo}@{declared_tag}, not a release "
+        f"{RELEASE_MARKER_NAME} declares release {declared_repo}@{declared_tag}, not a release "
         f"of {github_repo}, so it is not used as the target. To check against it, set the 'GitHub "
         f"repository' parameter to {declared_repo}."
     )
@@ -614,7 +614,7 @@ def load_manifests(releases: list[dict]) -> tuple[dict, list[dict], list[dict]]:
                 f"Release {tag}: {problem}, so it cannot be compared against. Files only it shipped "
                 "may be reported as untracked or unknown_content."
             )
-            current_run.log_warning(f"[WARNING] {message}")
+            current_run.log_warning(message)
             errors.append({"scope": f"manifest:{tag}", "message": message})
 
         considered.append(
@@ -1120,7 +1120,7 @@ def classify_file(rel_path: str, file_path: Path, index: ReleaseIndex) -> dict:
     try:
         observed = sha256_bytes(file_path.read_bytes())
     except OSError as exception:
-        current_run.log_warning(f"[WARNING] Could not read {rel_path}: {exception}")
+        current_run.log_warning(f"Could not read {rel_path}: {exception}")
         target_sha = index.target_files.get(rel_path)
         return make_entry(rel_path, "filesystem", None, None, verdict("unreadable", target_sha))
 
@@ -1164,7 +1164,7 @@ def check_pipeline_versions(index: ReleaseIndex, token: str) -> tuple[list[dict]
             members = read_zip_members(version["zipfile"]) if version else None
         except Exception as exception:  # one unreadable pipeline must not hide the others
             message = f"Could not read the current version of pipeline '{code}': {exception}"
-            current_run.log_error(f"[ERROR] {message}")
+            current_run.log_error(message)
             errors.append({"scope": f"pipeline_version:{code}", "message": message})
             for member in sorted(expected_members):
                 rel_path = index.zip_path(dir_name, member)
@@ -1184,7 +1184,7 @@ def check_pipeline_versions(index: ReleaseIndex, token: str) -> tuple[list[dict]
         if members is None:
             if in_target:
                 current_run.log_warning(
-                    f"[WARNING] {code}: the target release defines this pipeline but the workspace has "
+                    f"{code}: the target release defines this pipeline but the workspace has "
                     "no deployed version of it. All of its files are reported missing."
                 )
                 for member in sorted(expected_members):
@@ -1200,7 +1200,7 @@ def check_pipeline_versions(index: ReleaseIndex, token: str) -> tuple[list[dict]
         name = version["versionName"]
         if in_target is False:
             current_run.log_warning(
-                f"[WARNING] {code}: deployed (current version '{name}') but not part of the target "
+                f"{code}: deployed (current version '{name}') but not part of the target "
                 "release. Left in place - a pipeline cannot delete another pipeline."
             )
         pipeline_reports.append(
@@ -1311,7 +1311,7 @@ def list_unknown_pipelines(
             data = call_graphql(token, query, variables)["pipelines"]
         except Exception as exception:
             message = f"Could not list this workspace's pipelines: {exception}"
-            current_run.log_error(f"[ERROR] {message}")
+            current_run.log_error(message)
             return [], {"scope": "pipeline_list", "message": message}
         items.extend(data["items"])
         total_pages = data["totalPages"]
@@ -1814,7 +1814,7 @@ def log_summary(report: dict, report_path: Path) -> None:
                 for span in entry["matching_releases"]
             )
             detail = f", matches {spans}" + (f" ({entry['position']})" if entry["position"] else "")
-        current_run.log_warning(f"[WARNING] {entry['status']}: {entry['path']} ({entry['source']}{detail})")
+        current_run.log_warning(f"{entry['status']}: {entry['path']} ({entry['source']}{detail})")
 
     if stray:
         sample = ", ".join(stray[:10]) + (f", ... and {len(stray) - 10} more" if len(stray) > 10 else "")
@@ -1828,7 +1828,7 @@ def log_summary(report: dict, report_path: Path) -> None:
     for block in report["pipelines"]:
         if block["version_name_matches_content"] is False:
             current_run.log_warning(
-                f"[WARNING] {block['code']}: its current version is named "
+                f"{block['code']}: its current version is named "
                 f"'{block['current_version_name']}' but its contents are not that release's. "
                 "The name is metadata someone typed; the hash is evidence."
             )
@@ -1842,7 +1842,7 @@ def log_summary(report: dict, report_path: Path) -> None:
 
     if report["incomplete"]:
         current_run.log_warning(
-            "[WARNING] This report is INCOMPLETE - at least one source or release manifest could not "
+            "This report is INCOMPLETE - at least one source or release manifest could not "
             "be read. It is not a clean bill of health; see the 'errors' list."
         )
 
