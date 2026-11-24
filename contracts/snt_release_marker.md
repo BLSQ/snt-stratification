@@ -24,7 +24,7 @@ still reads them and takes them to name the repository it is checking.
 **How the checker uses it.** The marker's tag is the target when the `release_tag` parameter is
 empty, and only if the marker names the repository being checked (compared without case) or names
 none. A marker naming another repository is reported in `declared_release` and logged as a
-`[WARNING]`, but not used as the target: checking its tag against this repository would compare the
+warning, but not used as the target: checking its tag against this repository would compare the
 workspace with an unrelated release that merely shares the name.
 
 One honest limitation, which the report must reflect rather than paper over: the marker is written

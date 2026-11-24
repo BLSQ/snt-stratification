@@ -62,7 +62,7 @@ Why the shape is what it is:
   other, and the deployer deploys them only when the target tag is the latest full release or newer
   ([ADR 0042](../docs/decisions/0042-bootstrap-pipelines-as-templates-on-release.md)).
 - **`schema_version` and `repo`.** A consumer reads every `schema_version` from 2 on that it knows
-  and refuses an unknown one with an `[ERROR]` (ADR 0042), so a newer manifest never half-deploys.
+  and refuses an unknown one with an error (ADR 0042), so a newer manifest never half-deploys.
   `repo` says which repository the tag belongs to.
 - **`webapps`.** One entry per `webapps/<name>/app/` bundle that holds a file, with its files hashed
   relative to `app/`. The release attaches each bundle as `webapp-<name>-<tag>.zip` with a stamped
@@ -108,7 +108,7 @@ pre-releases included:
 
 The builder checks every file against its manifest hash before packing it, so the assets cannot
 disagree with the manifest they are published with. Both deployers download the slim tarball, not
-GitHub's source tarball, and stop with an `[ERROR]` on a release without it.
+GitHub's source tarball, and stop with an error on a release without it.
 
 Each webapp zip's `version.json`:
 
@@ -156,5 +156,5 @@ whose job is to be trusted.
 **No fallback (D26).** A manifest a consumer cannot read is refused, never half-read: one without
 `schema_version` (a v1 manifest from the old `snt_development` repository, whose paths follow that
 layout) or with a version it does not know. `snt_workspace_checker` skips that release with a
-`[WARNING]` (its report is then `incomplete`), and both deployers abort with
-`[ERROR] Cannot deploy: …` before writing anything.
+warning (its report is then `incomplete`), and both deployers abort with
+`Cannot deploy: …` before writing anything.
