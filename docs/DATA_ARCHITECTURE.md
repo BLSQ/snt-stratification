@@ -237,7 +237,7 @@ Python pipelines are the only ones with a workable local development story today
 | **Copernicus CDS (ERA5)** | `https://cds.climate.copernicus.eu/api` | `snt_era5_climate_data` | climate reanalysis; zarr repository + batched requests |
 | **WorldPop** | `https://data.worldpop.org/GIS/Population` (`Global_2015_2030/R2025A`) | `snt_worldpop_extract`, `snt_map_extracts`, `snt_healthcare_access` | population rasters (`worldpopclient.py`, duplicated in 3 pipelines) |
 | **Malaria Atlas Project** | `https://data.malariaatlas.org/geoserver` (WCS) | `snt_map_extracts` | `malariaAtlasProject/map.py` |
-| **DHS** | recode files staged in the workspace | `snt_dhs_indicators` | `extract_latest_dhs_recode_filename()` in `code/snt_utils.r` |
+| **DHS** | recode files staged in the workspace | `snt_dhs_indicators` | `extract_latest_dhs_recode_filename()` in `shared/r/snt_utils.r` |
 | **Operator uploads** | OpenHEXA `File` parameter | `snt_user_population` (population CSV), `snt_dhis2_incidence` (care-seeking CSV), `snt_dhis2_population_transformation` (disaggregation CSV), `snt_healthcare_access` (FOSA locations CSV), `snt_assemble_results` (`add_layers_file`) | user-supplied override paths |
 
 > **The external-source pipelines are not lineage roots.** `snt_era5_climate_data`,
@@ -314,7 +314,8 @@ Five pipelines — `iqr`, `median`, `mean`, `path`, `magic_glasses` — all read
 > version, or the dataset version name. Never infer the method from the filename.
 
 Each variant also pushes `{CC}_routine_outliers_detected.parquet` into the **workspace database
-table `outliers_detected`** (`push_data_to_db_table`, parameter `push_db`, default `True`) — the
+table `outliers_detected`** (`push_data_to_db_table`, parameter `push_db`, default `True`;
+`False` in `snt_dhis2_outliers_imputation_magic_glasses`) — the
 only relational sink in the system, and likewise overwritten by whichever variant ran last.
 
 > ⚠️ **Needs attention.** No pipeline reads `outliers_detected`; its consumer is a Shiny app that
@@ -420,9 +421,15 @@ listed in [`catalogs/SNT_metadata_master.json`](../catalogs/README.md) and trimm
 
 Leftovers to know about:
 
-- **`deprecated/configuration/SNT_metadata.json`** — the old-format column list it read. Nothing reads it
-  now; it is deliberately *not* audited in this document. The target format it was replaced by is
-  specified in [`contracts/snt_metadata_json/`](../contracts/snt_metadata_json/README.md).
+- **`SNT_metadata.json`** — the old-format column list it read; the old repo's copy is archived in
+  its `deprecated/configuration/`, not imported here. The **workspace** copy,
+  `configuration/SNT_metadata.json`, is still read: the report notebooks of `snt_dhis2_incidence`
+  and `snt_dhis2_reporting_rate_dataset` take their map scale breaks from it
+  (`INCIDENCE_CRUDE$SCALE`, `REPORTING_RATE$SCALE`), with default breaks when the entry is missing.
+  When the file itself is missing, `load_json()` stops the report with an `[ERROR]`, and nothing
+  installs that file in a workspace set up from this repo. The format that replaces it is specified
+  in [`contracts/snt_metadata_json/`](../contracts/snt_metadata_json/README.md); the reports do not
+  read it.
 - **`SNT_RESULTS`** — removed from `SNT_config.skeleton.json`, but still a key in the older
   `SNT_config_<CC>.json` reference copies (archived in `deprecated/configuration/`) and in live workspace configs, where it is harmless:
   nothing reads it. The dataset still exists in workspaces that ran the pipeline, frozen at its
@@ -518,7 +525,9 @@ imputation variant is the recommended default; which reporting-rate variant to p
 Within a pipeline, `@snt_<name>.task` functions are sequenced by passing a `ready: bool`
 returned from the previous task as an argument — a data-dependency trick that forces ordering
 in the OpenHEXA DAG. In `snt_dhis2_extract`: population → analytics → reporting rates, then all
-five `*_ready` flags gate `add_files_to_dataset_for_extracts`.
+five `*_ready` flags gate `add_files_to_dataset_for_extracts_task`. The `try/except` around each
+download call never catches anything: calling a task only adds it to the graph, so a failing
+download fails the run ([BACKLOG PIPE-12](BACKLOG.md#pipe-12)).
 
 ### 4.4 Notebook execution contract
 
@@ -559,11 +568,14 @@ five `*_ready` flags gate `add_files_to_dataset_for_extracts`.
 
 ```
 ~/workspace/
-  configuration/SNT_metadata.json        # old-format column list; no reader left
-  code/snt_utils.r snt_report.r snt_palettes.r
+  configuration/SNT_metadata.json        # old format, old repo's workspaces; still read by two
+                                         #   report notebooks (§3.2 Stage E)
+  shared/r/snt_utils.r snt_report.r snt_palettes.r
   pipelines/<pipeline>/
       code/*.ipynb          reporting/*.ipynb    utils/*.r
+      custom/*.ipynb                     # edited copies, run only with use_custom_notebooks
       papermill_outputs/    reporting/outputs/
+  archive/self_sync/<stamp>/             # copies replaced by the self-sync (ADR 0044)
   data/
       dhis2/{extracts_raw,extracts_formatted,population_transformed,
              outliers_imputation,incidence,reporting_rate,quality_of_care}/
@@ -642,9 +654,8 @@ DHIS2_DATA_DEFINITIONS
   DHIS2_REPORTING_RATES              REPORTING_DATASETS[] xor REPORTING_INDICATORS{}
 ```
 
-Versioned variants `deprecated/configuration/SNT_config_<CC>.json` are **archived reference copies only** — not
-loadable as-is.
-`configuration/readme.txt` records population blocks removed from those variants.
+Versioned variants `deprecated/configuration/SNT_config_<CC>.json` (in the old repo, not imported
+here) are **archived reference copies only** — not loadable as-is.
 
 ---
 
@@ -696,9 +707,7 @@ plural coincide.
 
 **The fix is not a rename of the mapped value** — that value legitimately drives the singular
 indicator suffix. It needs an explicit disaggregation → population-column mapping in
-`select_population_column()`. Note also that `configuration/readme.txt` records the historical
-population blocks with the singular `POP_PREGNANT_WOMAN`, which is where the ambiguity likely
-originates. Open: [BACKLOG PIPE-5](BACKLOG.md#pipe-5).
+`select_population_column()`. Open: [BACKLOG PIPE-5](BACKLOG.md#pipe-5).
 
 ### 6.2 Known blind spots
 
@@ -725,8 +734,8 @@ originates. Open: [BACKLOG PIPE-5](BACKLOG.md#pipe-5).
 | Library | Location | Role |
 |---|---|---|
 | `snt_lib.snt_pipeline_utils` | **external** — `git+https://github.com/BLSQ/snt_utils.git`, pinned to a commit ([§7.1](#71-dependency-resolution-is-not-reproducible)) | `load_configuration_snt_from_dataset`, `validate_config`, `run_notebook`, `run_report_notebook`, `add_files_to_dataset`, `dataset_file_exists`, `get_new_dataset_version`, `get_file_from_dataset`, `save_pipeline_parameters`, `pull_scripts_from_repository`, `push_data_to_db_table`, `delete_raw_files`, `generate_html_report`, `handle_rkernel_error_with_labels` |
-| `code/snt_utils.r` | this repo (~1 550 lines) | config loading, dataset I/O, logging (`log_msg`/`pipeline_msg`), seasonality computation, cartesian completion, DHS helpers, geo helpers |
-| `code/snt_report.r`, `code/snt_palettes.r` | this repo | choropleths, binning, month colours/labels (FR) |
+| `shared/r/snt_utils.r` | this repo (~2 450 lines) | config loading, dataset I/O, logging (`log_msg`/`pipeline_msg`), seasonality computation, cartesian completion, DHS helpers, geo helpers |
+| `shared/r/snt_report.r`, `shared/r/snt_palettes.r` | this repo | choropleths, binning, month colours/labels (FR) |
 | `worldpopclient.py` | **duplicated** in `snt_worldpop_extract/`, `snt_map_extracts/`, `snt_healthcare_access/` | WorldPop raster download |
 | `malariaAtlasProject/map.py` | `snt_map_extracts/` | MAP WCS client |
 

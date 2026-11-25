@@ -1134,20 +1134,8 @@ against. Facts: [`DATA_ARCHITECTURE.md`](DATA_ARCHITECTURE.md) §7.2.
 
 ### <a id="doc-3"></a>DOC-3 · Doc claims found to be out of step with the repo
 
-Found while restructuring the docs, 2026-10-16. Each needs a check and a correction in the doc that
-owns the fact:
-
-- **`SNT_metadata.json` in the workspace is still read.** Several docs say it has no reader since
-  `snt_assemble_results` was retired. That holds for the archived repo copy, but the *workspace* file
-  `configuration/SNT_metadata.json` is still loaded by the report notebooks of `snt_dhis2_incidence`
-  and `snt_dhis2_reporting_rate_dataset` (for `SCALE` breaks). Affects
-  [`DATA_ARCHITECTURE.md` §5.1](DATA_ARCHITECTURE.md#51-workspace-filesystem) and
-  [§3.2 Stage E](DATA_ARCHITECTURE.md#32-stages).
-- **`configuration/readme.txt` does not exist** in the repo, but
-  [`DATA_ARCHITECTURE.md` §5.4](DATA_ARCHITECTURE.md#54-configuration-schema-snt_configjson) and
-  [§6.1](DATA_ARCHITECTURE.md#61-confirmed-defect--pop_pregnant_woman-vs-pop_pregnant_women) cite it.
-
-Found during the self-sync work, 2026-11-18:
+Each needs a check and a correction in the doc that owns the fact. Found during the self-sync work,
+2026-11-18:
 
 - **`Pull scripts` described as this repo's route for the R half.** [`DATA_ARCHITECTURE.md`
   §2.1](DATA_ARCHITECTURE.md#21-two-distinct-delivery-channels) (the "Runtime pull" row and the
@@ -1161,16 +1149,6 @@ Found during the self-sync work, 2026-11-18:
   current truth to update or the deployer's original problem statement to leave, and update the
   module docstring of `snt_workspace_deployer/pipeline.py` ("Replaces the per-pipeline `Pull
   scripts` toggle") with that pipeline's next code change.
-- **Paths and details in [`DATA_ARCHITECTURE.md`](DATA_ARCHITECTURE.md)**:
-  - §3.1, the DHS row: `extract_latest_dhs_recode_filename()` is in `shared/r/snt_utils.r`, not
-    `code/snt_utils.r`.
-  - §3.2, outlier imputation: "Each variant also pushes … (`push_db`, default `True`)" — in
-    `snt_dhis2_outliers_imputation_magic_glasses` the default is `False`.
-  - §4.3: the publish task is `add_files_to_dataset_for_extracts_task`; the `try/except` around
-    the tasks is [PIPE-12](#pipe-12).
-  - §5.1, the workspace tree: the shared R files are under `shared/r/`, not `code/`
-    ([ADR 0038](decisions/0038-repo-path-is-workspace-path.md)); add `pipelines/<name>/custom/` and
-    `archive/self_sync/` (ADR 0044).
 
 **Owner:** Giulia.
 
