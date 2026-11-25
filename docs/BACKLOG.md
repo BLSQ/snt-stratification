@@ -133,8 +133,14 @@ pins its parent line's `44f59462846ecbb35e86c4daa8b2f434584036b3` on `cfg-4-conf
 ([ADR 0043](decisions/0043-config-read-from-snt-configuration-dataset.md)). Both branches start
 from `release-v1`, and no tag contains either commit. For `snt_lib`, (a)–(c) no longer hold, but
 each commit is reachable only through its branch: deleting or rewriting the branch can break every
-install. **Before `v1.0.0`:** merge `self-sync-r-half` into `release-v1`, tag it, and point all 21
-files at the tag (a step in [`MIGRATION_PLAN.md`](MIGRATION_PLAN.md) Phase 5). `release-v1` itself is a branch
+install. **Before `v1.0.0`:** tag the head of the [CFG-1](#cfg-1) branch, which starts from
+`self-sync-r-half` (for example `v2.0.0`: configs with the old keys no longer validate), and point
+all 21 files and `tests/requirements-conformance.txt` at the tag (a step in
+[`MIGRATION_PLAN.md`](MIGRATION_PLAN.md) Phase 5). A tag keeps the commit reachable without any
+branch. **Never merge this line into `release-v1`:** the old `snt_development` repo, which live
+countries run, installs `snt_lib` from that branch itself (`snt_utils.git@release-v1` in its 21
+`requirements.txt`, checked 2026-11-25 in a local clone), so a merge reaches live countries, and
+after CFG-1 their configs fail `validate_config()`. `release-v1` itself is a branch
 (checked 2026-11-12 in a local clone); annotated tag `v1.0.2` → `23b8340` was its head that day,
 and the config conformance test pins it (`tests/requirements-conformance.txt`).
 `openhexa.toolbox @main` remains in 13 files, so (a)–(c) still hold for it. Left: a tag for the
@@ -216,9 +222,12 @@ outdated example config and are **ignored**. Related: [META-5](#meta-5).
 15 current key names as required and fails every pipeline at startup if one is missing. Nothing
 else in `snt_lib` uses the keys. The validator must change **before** the keys do. `snt_lib` is
 maintained by a colleague; the agreed route while they are unavailable: a branch of
-`BLSQ/snt_utils` off `release-v1` (e.g. `cfg-1-dataset-keys`; names starting with `release-v1`
-are blocked by the `snt_utils` ruleset `protect-release-branches`), and this repo's pipelines pin
-that branch, so the change is easy to undo. `snt_development` is left untouched.
+`BLSQ/snt_utils` off `self-sync-r-half` at `ca74b54`, the commit this repo's pipelines pin today
+(e.g. `cfg-1-dataset-keys`; names starting with `release-v1` are blocked by the `snt_utils`
+ruleset `protect-release-branches`), and this repo's pipelines pin that branch, so the change is
+easy to undo. Not off `release-v1`: that would drop the config-from-dataset and self-sync changes.
+The branch is never merged into `release-v1`, which live countries install from
+([DEP-1](#dep-1)); it is tagged instead. `snt_development` is left untouched.
 
 **Where the old keys appear** (84 files mention `SNT_DATASET_IDENTIFIERS`): 20 `pipeline.py`;
 about 25 notebooks under `code/` and `.r` files under `utils/` (`config_json$SNT_DATASET_IDENTIFIERS$<KEY>`);
@@ -233,7 +242,7 @@ the `release` skill, `docs/MIGRATION_PLAN.md`; the config editor's `docs/PRODUCT
 
 **Commit plan (agreed 2026-11-16), one commit at a time:**
 
-1. **`snt_utils`, new branch off `release-v1`:** the `required_dataset_keys` list in
+1. **`snt_utils`, new branch off `self-sync-r-half` (`ca74b54`):** the `required_dataset_keys` list in
    `validate_config()`, and the one expected message in `tests/test_snt_pipeline_utils.py` that
    names `DHIS2_DATASET_EXTRACTS`. Push the branch; note its name and commit SHA.
 2. **This repo, the contract:** `SNT_config.skeleton.json`; the 16 fixtures (the
