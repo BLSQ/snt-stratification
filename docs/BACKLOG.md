@@ -645,6 +645,27 @@ readme.
 **Owner:** `snt_dhis2_extract` owner (`_TBD_` in [OWNERSHIP.md](OWNERSHIP.md)). **Source:**
 self-sync commit 4 review, 2026-11-18.
 
+### <a id="pipe-13"></a>PIPE-13 · Two reports stop when the workspace `SNT_metadata.json` is missing
+
+The report notebooks of `snt_dhis2_incidence` (cell 8) and `snt_dhis2_reporting_rate_dataset`
+(cell 7) load `configuration/SNT_metadata.json` from the workspace, only to read their map scale
+breaks (`INCIDENCE_CRUDE$SCALE`, `REPORTING_RATE$SCALE`). `load_json()` stops with an `[ERROR]` when
+the file is missing, and nothing installs it in a workspace set up from this repo (deployer or
+templates): only workspaces set up for the old repo have it. So in every new workspace both reports
+fail. The run still succeeds, because each `pipeline.py` logs a report failure without failing the
+run, but no report is produced. Facts:
+[`DATA_ARCHITECTURE.md` §3.2 Stage E](DATA_ARCHITECTURE.md#32-stages).
+
+Both reports already fall back to default breaks when the file has no entry for them (incidence
+`c(100, 250, 450, 1000)`, reporting rate `c(0.5, 0.8, 0.9, 0.95, 1.00)`). The smallest fix: use
+those defaults when the file is missing too, with a log line saying so. Whether the breaks should
+later come from the new-format catalogue (`catalogs/SNT_metadata_master.json`, or the trimmed copy
+written by `snt_metadata_json_trim`) instead is a separate decision. Check the `_<CC>` variants of
+both report notebooks before editing. Must be fixed before `v1.0.0`: its release test runs every
+pipeline in new workspaces.
+
+**Owner:** `_TBD_`. **Source:** DOC-3 check of `DATA_ARCHITECTURE.md`, 2026-11-25.
+
 ---
 
 ## Country variants
