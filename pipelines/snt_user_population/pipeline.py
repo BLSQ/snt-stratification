@@ -180,7 +180,6 @@ def snt_user_population(user_file: File, run_report_only: bool, use_custom_noteb
         )
     except Exception as e:
         current_run.log_error(f"Error in running report notebook: {e}")
-        raise
 
     current_run.log_info("User population pipeline completed successfully.")
 

@@ -44,3 +44,4 @@ Recorded so they are not re-litigated. Taken by Giulia in review, 2026-09-18 (D1
 | D26 | **Promoted to [ADR 0033](../decisions/0033-release-manifest-frozen-json-schema.md)**, the repo-wide record. |
 | D27 | **Promoted to [ADR 0034](../decisions/0034-pre-releases-for-development-only.md)**, the repo-wide record. |
 | D28 | **Promoted to [ADR 0035](../decisions/0035-single-pipeline-deployer.md)**, the repo-wide record. |
+| D29 | **No `[ERROR]` / `[WARNING]` prefix in the bootstrap pipelines' messages** (2026-11-24, [R17](../CONVENTIONS.md#r17)). `current_run.log_error` / `log_warning` set the severity, so the prefix is dropped; R17 covers R notebooks only. D24 stands: each anticipated failure is still logged before raising, as `Cannot deploy: <reason and fix>`. |

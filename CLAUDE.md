@@ -117,7 +117,7 @@ the rule, never half-convert a violator. **Old ID** (where it changed): o = orch
 | [**R14**](docs/CONVENTIONS.md#r14) | Standard flags named `run_report_only` / `use_custom_notebooks` / `overwrite` | `⚠ exceptions` — `run_reports_only` in `snt_dhs_indicators` | |
 | [**R15**](docs/CONVENTIONS.md#r15) | One vocabulary per concept in operator-facing `choices=[...]` | `⚠ exceptions` — [PIPE-2](docs/BACKLOG.md#pipe-2) | |
 | [**R16**](docs/CONVENTIONS.md#r16) | `readme.md` updated in the same PR as the `pipeline.py` change it describes | `convention` | |
-| [**R17**](docs/CONVENTIONS.md#r17) | Failure messages a run surfaces (R or Python) start `[ERROR]` or `[WARNING]`, chosen deliberately | `convention` | b R17 |
+| [**R17**](docs/CONVENTIONS.md#r17) | Failure messages an R notebook surfaces start `[ERROR]` or `[WARNING]`, chosen deliberately | `convention` | b R17 |
 | [**R18**](docs/CONVENTIONS.md#r18) | Python: snake_case, line-length 110, numpydoc docstrings with `Returns` | `enforced` (`ruff` in CI) | b R18 |
 | [**R19**](docs/CONVENTIONS.md#r19) | Agents never run destructive / history-rewriting `git` or `gh` commands | `enforced` — hook + `permissions.deny` | o R1, b R19 |
 | [**R20**](docs/CONVENTIONS.md#r20) | R: roxygen2 docstrings above every function | `convention` | |

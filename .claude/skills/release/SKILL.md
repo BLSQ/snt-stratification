@@ -168,10 +168,10 @@ existing pipeline. Without it the CLI asks which pipeline to update: answer `1` 
 
 **3.3 Deployer, dry run.** Run `snt-workspace-deployer` with GitHub repository
 `BLSQ/snt-stratification`, Release tag `<tag>`, OpenHEXA API connection `oh`, Backup existing files
-on and **Dry run on**. **Expected:** a pre-release `[WARNING]`, "would …" lines, and the last line
+on and **Dry run on**. **Expected:** a pre-release warning, "would …" lines, and the last line
 `Pipelines: P inspected, none registered (dry run).` Nothing changes.
 
-**3.4 Deployer, for real** (Dry run off). **Expected:** the same `[WARNING]` and no `[ERROR]`.
+**3.4 Deployer, for real** (Dry run off). **Expected:** the same warning and no error.
 - The last line is `Pipelines: P/P deployed.`. The bootstrap pipelines are included, because a
   pre-release target counts as newer than the latest full release (ADR 0042).
 - The deployer itself logs "already up to date, skipped" if 3.2 named it `<tag>`, or
@@ -302,7 +302,7 @@ pre-release, on **the exact commit of that rc**. Don't untick "pre-release" on t
    a, b = (json.load(open(d + '/release_manifest.json')) for d in ('rc', 'full'))
    print('files equal:', a['files'] == b['files'], '| webapps equal:', {k: v['files'] for k, v in a['webapps'].items()} == {k: v['files'] for k, v in b['webapps'].items()})"
    ```
-4. **In one of the rc's test workspaces**, deploy `vX.Y.Z`. **Expected:** no pre-release `[WARNING]`, and
+4. **In one of the rc's test workspaces**, deploy `vX.Y.Z`. **Expected:** no pre-release warning, and
    every pipeline `… (same files, relabelled)`; the bootstrap ones too, since the target is now the
    latest full release. Then run the checker twice. With an empty tag, expect `match` on all E
    entries. With `none`, expect best fit `vX.Y.Z`: this is the first time attribution can score a

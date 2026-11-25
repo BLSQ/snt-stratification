@@ -25,7 +25,7 @@ release resolution, version naming, failure messages. Spec and test plan:
 > scripts already in the workspace, which may come from another release. If the release changed a
 > function in `shared/r/` that its notebooks use, the pipeline fails at run time or gives different
 > results, and OpenHEXA does not report the mismatch. Each run therefore compares `shared/r/` with the
-> release and logs a `[WARNING]` naming every file that differs or is missing. The warning says *that*
+> release and logs a warning naming every file that differs or is missing. The warning says *that*
 > they differ, not whether it breaks anything: compare those files between the two releases on GitHub.
 > To bring `shared/r/` in line, deploy the whole release with `snt_workspace_deployer`.
 
@@ -37,7 +37,7 @@ This pipeline does not read `SNT_config.json` and has no country-specific parame
   * **Name:** Pipeline to deploy
   * **Description:** The pipeline's directory name (`snt_dhis2_extract`) or OpenHEXA code
     (`snt-dhis2-extract`); case and surrounding spaces are ignored. A name the release does not
-    contain stops the run with an `[ERROR]` listing the release's pipelines.
+    contain stops the run with an error listing the release's pipelines.
   * **Default:** none.
 * **`github_repo`**, **`release_tag`**, **`api_connection`**: as in
   [`snt_workspace_deployer`](../snt_workspace_deployer/readme.md#parameters). Default repository:
@@ -67,13 +67,13 @@ This pipeline does not read `SNT_config.json` and has no country-specific parame
 1. **Credentials, release and manifest:** as in the deployer, steps 1–2.
    With `release_tag` empty, the log reads `No release tag given: deploying the latest release: '<tag>'.`
 2. **Find the pipeline:** match `pipeline_name` to a key of the manifest's `pipelines` block; stop with
-   an `[ERROR]` listing them if none matches.
+   an error listing them if none matches.
 3. **Bootstrap guard:** a bootstrap pipeline (`kind: bootstrap`: either deployer or the checker) asked
    for from a release older than GitHub's latest full release (by `published_at`) stops the run with
-   an `[ERROR]`: a deployer never replaces itself, or another bootstrap pipeline, with an older copy
+   an error: a deployer never replaces itself, or another bootstrap pipeline, with an older copy
    (ADR 0042). With no full release yet, every release counts as the newest.
 4. **Download the slim tarball** `<repo name>-<tag>.tar.gz` of the release, once; a release without
-   it stops the run with an `[ERROR]`.
+   it stops the run with an error.
 5. **Sync its R scripts** (only with `pull_r_scripts` on): copy the manifest's `filesystem_files` under
    `pipelines/<name>/` into the workspace, archiving each existing copy first when `backup_existing`
    is on. The log line counts the files synced and says where the previous copies went:
@@ -83,11 +83,11 @@ This pipeline does not read `SNT_config.json` and has no country-specific parame
 6. **Deploy the pipeline:** as in the deployer, step 7: skipped when already at the release, otherwise
    a new version named after the tag (or `<tag>+redeploy-<date>`), created if missing. Logged as
    `Pipeline <name> successfully deployed!` (also when skipped as already up to date); a failure stops
-   the run with an `[ERROR]`.
+   the run with an error.
 7. **Check the shared R library:** hash every filesystem file under no pipeline's folder (in practice
    `shared/r/**/*.r`) in the workspace and compare it with the manifest. All equal: an info line,
    `Shared R library (shared/r/, used by all pipelines, not updated by this run): all N file(s) match …`.
-   Otherwise one `[WARNING]` naming each differing or missing file (the first 20, then a count).
+   Otherwise one warning naming each differing or missing file (the first 20, then a count).
 8. **No release marker:** `.snt_release` is not written, and an existing one is left as it is.
 
 ## Inputs

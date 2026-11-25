@@ -20,7 +20,7 @@ some pipelines, or skip creating missing ones. It:
    and downloads `release_manifest.json` from its assets;
 2. downloads the release's **slim tarball** asset, `<repo name>-<tag>.tar.gz`, which holds exactly
    the manifest's files ([`release_manifest.md`](../../contracts/release_manifest.md#release-assets-beside-the-manifest)),
-   and extracts it. A release without that asset stops the run with an `[ERROR]`;
+   and extracts it. A release without that asset stops the run with an error;
 3. copies exactly the manifest's `filesystem_files` into `workspace.files_path`, at their repository
    paths, archiving any existing copy under `archive/<release_tag>/` first;
 4. deploys each pipeline through the OpenHEXA API (see below), zipping `pipelines.<name>.path` and
@@ -31,7 +31,7 @@ some pipelines, or skip creating missing ones. It:
 
 `split_manifest()` takes the filesystem files from `filesystem_files` and the pipelines from the
 `pipelines` block; it derives no route from a path, because a notebook ships both in its pipeline's
-zip and to the filesystem. `download_manifest()` refuses, with `[ERROR] Cannot deploy: …` before
+zip and to the filesystem. `download_manifest()` refuses, with `Cannot deploy: …` before
 anything is written, a manifest whose `schema_version` it cannot read: one without the key (a v1
 manifest from the old `snt_development` repository) or a newer one
 ([`release_manifest.md`](../../contracts/release_manifest.md) §2.1).
@@ -40,7 +40,7 @@ manifest from the old `snt_development` repository) or a newer one
 A deployer must never replace itself, or another bootstrap pipeline (`kind: bootstrap`), with an
 older copy. It deploys them only when the release is GitHub's latest full release or was published
 at the same time or after it (`published_at`, the checker's order); with no full release yet, every
-release counts as the newest. From an older release they are skipped with an `[INFO]`, and the run
+release counts as the newest. From an older release they are skipped with an info message, and the run
 deploys the other pipelines and succeeds.
 
 **Version naming on deploy (2026-09-30, D22).** OpenHEXA refuses two versions of one pipeline with
@@ -66,7 +66,7 @@ version with that release's files like any other.
 **Failures reach the run's Messages (2026-10-01, D24).** OpenHEXA shows a raised exception only in
 the run's logs, so a run could stop with an `INFO` line as the last message and no reason given
 (observed with an empty tag resolving to `v0.4.0-test`, which has no manifest). Every anticipated
-failure now goes through `abort_run()`, which logs `[ERROR] Cannot deploy: <reason and fix>` before
+failure now goes through `abort_run()`, which logs `Cannot deploy: <reason and fix>` before
 raising, and the pipeline function catches anything else and logs it as an unexpected error. A
 GitHub 404 on the release is diagnosed into its actual cause: repository missing or private, no
 published release, only pre-releases, or unknown tag.
@@ -109,7 +109,7 @@ deployer and does not replace it: D21 still holds for `snt_workspace_deployer`.
 Parameters: `pipeline_name` plus the deployer's own, and `pull_r_scripts` (default on). `pipeline_name`
 is free text, either the directory name (`snt_dhis2_extract`) or the OpenHEXA code
 (`snt-dhis2-extract`), with case and padding ignored. It is checked against the manifest's `pipelines`
-block, and an unknown name stops the run with an `[ERROR]` listing the release's pipelines. A dropdown
+block, and an unknown name stops the run with an error listing the release's pipelines. A dropdown
 is not possible: OpenHEXA's `choices` is a static list in the code and would go stale with each release.
 
 What it does differently from the deployer:
@@ -117,9 +117,9 @@ What it does differently from the deployer:
 | Step | `snt_workspace_deployer` | `snt_pipeline_deployer` |
 |---|---|---|
 | Pipeline versions | Every pipeline of the release | The one named. Same D22 naming, same create-if-missing |
-| Bootstrap pipeline from a release older than the latest full one | Skipped with an `[INFO]` | **Refused** with an `[ERROR]`: it is the one pipeline asked for (ADR 0042) |
+| Bootstrap pipeline from a release older than the latest full one | Skipped with an info message | **Refused** with an error: it is the one pipeline asked for (ADR 0042) |
 | Its `filesystem_files` under `pipelines/<name>/` (notebooks, `utils/*.r`) | Every pipeline's | Only this pipeline's, and only with `pull_r_scripts` on |
-| `shared/r/**` (the R library shared by all pipelines) | Copied | **Never copied.** Compared with the release, and each file that differs is named in a `[WARNING]` |
+| `shared/r/**` (the R library shared by all pipelines) | Copied | **Never copied.** Compared with the release, and each file that differs is named in a warning |
 | `.snt_release` | Written | **Not written**: the workspace is not at the release |
 | Version description | `Deployed by snt_workspace_deployer …` | `Deployed by snt_pipeline_deployer …` |
 
@@ -132,7 +132,7 @@ release. When the two are compatible this works. When release `X` changed a func
 that its notebooks rely on (a renamed function, a new argument, a changed return shape), the pipeline
 fails at run time, or worse, runs and produces different results. Nothing in OpenHEXA reports this.
 The deployer's run therefore compares every shared file (a filesystem file under no pipeline's
-folder) with the release's sha256 and logs one `[WARNING]` naming each
+folder) with the release's sha256 and logs one warning naming each
 file that differs or is missing. That message tells you there is a difference, not whether it breaks
 anything: check the diff of the files it names between the two releases on GitHub. The way out is to
 deploy the whole release with `snt_workspace_deployer`.
@@ -160,7 +160,7 @@ With `pull_r_scripts` off, the same reasoning extends to the pipeline's own note
 or `…; 4 existing file(s) overwritten, no backup (Backup existing files is off)`. The shared-library
 check reads
 `Shared R library (shared/r/, used by all pipelines, not updated by this run): all N file(s) match release <tag>.`,
-or the same prefix in a `[WARNING]` listing the files that differ.
+or the same prefix in a warning listing the files that differ.
 
 **Verified:** `ruff check` clean; `get_pipeline` yields `pipeline_name, github_repo, release_tag,
 api_connection, pull_r_scripts, backup_existing, dry_run`; offline tests of name resolution,
@@ -173,7 +173,7 @@ manifest v2 included, has been run in a workspace.
 
 1. `dry_run` on, a pipeline that exists. Logs: the R scripts it would sync (only `pipelines/<name>/`),
    "would register/relabel", the shared-library comparison, "No .snt_release marker written". Nothing changes.
-2. A misspelled `pipeline_name`. `[ERROR] Cannot deploy: release … has no pipeline …`, listing them.
+2. A misspelled `pipeline_name`. `Cannot deploy: release … has no pipeline …`, listing them.
 3. The same pipeline for real. One new version; `archive/<tag>/pipelines/<name>/…` holds the replaced
    files, and the sync line names that folder; other pipelines and `shared/r/` untouched. Ends on
    `Pipeline <name> successfully deployed!`.
@@ -194,11 +194,11 @@ reports, enriched `.snt_release`) is the next step and has not been started. Cha
   when it already carries the tag.
 * **D23 (2026-10-01):** `release_tag` is optional; empty deploys GitHub's latest release, and the
   resolved tag names the versions, the archive folder and `.snt_release`.
-* **D24 (2026-10-01):** every failure is logged as an `[ERROR]` message to the run's Messages before
+* **D24 (2026-10-01):** every failure is logged as an error message to the run's Messages before
   the run stops (`abort_run()`, plus a catch-all in the pipeline function), and a GitHub 404 on the
   release is diagnosed into its cause.
 * **D27 (2026-10-02):** a pre-release (only ever deployed by typing its tag) is deployed as usual,
-  with a `[WARNING]` in the run's Messages that it is for development and testing only.
+  with a warning in the run's Messages that it is for development and testing only.
   Run at `v0.1.0`, a pre-release deployed by typing its tag.
 
 **Verified so far:** `ruff check` and `ruff format --check` clean; `get_pipeline` parses the deployer
@@ -207,7 +207,7 @@ stub of `deploy_new_version()` (fake `upload_version`, fake `current_run`) passe
 relabel, plain register, `+redeploy-` for a taken current name, fallback when an older version holds
 the tag, dry run, no current version. That stub was thrown away; recreate it before extending.
 **Verified in `snt-development-sandbox` on 2026-10-01 (D23, D24 only):** an empty tag resolves to the
-latest release (`v0.4.0-test`), and its missing manifest now stops the run with an `[ERROR]` message in
+latest release (`v0.4.0-test`), and its missing manifest now stops the run with an error message in
 Messages. **Verified at `v0.1.0`, in a fresh test workspace (2026-11-13 → 16):** steps 1 and 2 of
 the test plan below, the "same tag again" case included (Phase 4 results in
 [`MIGRATION_PLAN.md`](../MIGRATION_PLAN.md#phase-4-results)). **Not verified:** steps 3–9, nor the
@@ -230,9 +230,9 @@ by a human):
 6. Dry run of steps 3 and 5: log lines only, nothing registered.
 7. Also untested from before: `backup_existing` against a workspace that already holds files.
 8. D24 messages: a misspelled tag, and a public repository with no release. Each should end on an
-   `[ERROR] Cannot deploy:` line in Messages naming the cause.
+   error line `Cannot deploy: …` in Messages naming the cause.
 9. Bootstrap guard: once a full release exists, deploy an older pre-release. The bootstrap pipelines
-   are skipped with an `[INFO]`, the others deploy.
+   are skipped with an info message, the others deploy.
 
 **Known consequences to check or decide:**
 

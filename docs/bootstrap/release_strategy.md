@@ -87,7 +87,7 @@ What already supports it:
   Run for `v0.1.0`, a tag on `main`; not yet run for a tag on a branch commit.
 * **Countries cannot pick one up by accident.** An empty `release_tag` resolves through
   `/releases/latest`, which skips pre-releases (D23), so a staging release is deployed only by typing
-  its tag, and the deployer then logs a `[WARNING]` (D27).
+  its tag, and the deployer then logs a warning (D27).
 * **Country reports do not see them.** The checker leaves every pre-release out unless one is the
   target ([`checker.md`](checker.md) §4.3, D27).
 * **The branch can be deleted after merge.** The tag keeps its commit, so the pre-release stays

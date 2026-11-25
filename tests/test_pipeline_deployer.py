@@ -135,7 +135,7 @@ def test_pipeline_analytics_selects_only_its_own_folder() -> None:
 
 
 def test_shared_library_drift_names_differing_and_missing_files() -> None:
-    """A changed or missing shared file is named in one [WARNING]; pipeline folders are not checked."""
+    """A changed or missing shared file is named in one warning; pipeline folders are not checked."""
     files = {"shared/r/same.r": sha("same"), "shared/r/changed.r": sha("new"), "shared/r/gone.r": sha("x")}
     files["pipelines/snt_dhis2_extract/utils/extract.r"] = sha("not shared")
     with tempfile.TemporaryDirectory() as tmp:
@@ -148,7 +148,7 @@ def test_shared_library_drift_names_differing_and_missing_files() -> None:
 
     [(level, message)] = log.lines
     assert level == "log_warning"
-    assert message.startswith("[WARNING]")
+    assert message.startswith("Shared R library (shared/r/")
     assert "2/3 file(s)" in message
     assert "shared/r/changed.r" in message
     assert "shared/r/gone.r (missing)" in message
@@ -198,14 +198,14 @@ def test_v2_manifest_is_readable() -> None:
     ],
 )
 def test_unreadable_manifest_version_stops_the_run(version: object, expected: str) -> None:
-    """A v1 manifest (no schema_version) or an unknown version stops the run with an [ERROR]."""
+    """A v1 manifest (no schema_version) or an unknown version stops the run with an error."""
     manifest = {k: v for k, v in V2_MANIFEST.items() if k != "schema_version"}
     if version is not None:
         manifest["schema_version"] = version
     dep.current_run = log = Log()
     with pytest.raises(dep.DeploymentAbortedError) as raised:
         dep.check_manifest_version(manifest, "v0.1.0")
-    assert str(raised.value).startswith("[ERROR] Cannot deploy:")
+    assert str(raised.value).startswith("Cannot deploy:")
     assert expected in str(raised.value)
     assert log.lines == [("log_error", str(raised.value))]
 
@@ -323,16 +323,14 @@ MIXED = {
 
 
 def test_older_release_skips_bootstrap_pipelines_with_info(monkeypatch: pytest.MonkeyPatch) -> None:
-    """An older release still deploys its snt pipelines; its bootstrap ones are left out with an [INFO]."""
+    """An older release still deploys its snt pipelines; its bootstrap ones are skipped, logged as info."""
     monkeypatch.setattr(deployer, "latest_full_release", lambda repo: LATEST)
     deployer.current_run = log = Log()
     kept = deployer.without_older_bootstrap("BLSQ/x", release("v1.0.0", "2026-12-01T09:00:00Z"), MIXED)
     assert kept == {"snt_map_extracts": {"kind": "snt"}}
     [(level, message)] = log.lines
     assert level == "log_info"
-    assert message.startswith(
-        "[INFO] Bootstrap pipelines skipped (snt_workspace_checker, snt_workspace_deployer)"
-    )
+    assert message.startswith("Bootstrap pipelines skipped (snt_workspace_checker, snt_workspace_deployer)")
 
 
 def test_latest_release_keeps_bootstrap_pipelines(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -355,16 +353,14 @@ def test_no_bootstrap_pipeline_asks_github_nothing(monkeypatch: pytest.MonkeyPat
 
 
 def test_single_deployer_refuses_an_older_bootstrap_pipeline(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Asked for a bootstrap pipeline from an older release, the variant stops with an [ERROR]."""
+    """Asked for a bootstrap pipeline from an older release, the variant stops with an error."""
     monkeypatch.setattr(dep, "latest_full_release", lambda repo: LATEST)
     dep.current_run = Log()
     with pytest.raises(dep.DeploymentAbortedError) as raised:
         dep.refuse_older_bootstrap(
             "BLSQ/x", release("v1.0.0", "2026-12-01T09:00:00Z"), "snt_workspace_deployer"
         )
-    assert str(raised.value).startswith(
-        "[ERROR] Cannot deploy: snt_workspace_deployer is a bootstrap pipeline"
-    )
+    assert str(raised.value).startswith("Cannot deploy: snt_workspace_deployer is a bootstrap pipeline")
     assert "older than the latest full release v1.1.0" in str(raised.value)
 
 

@@ -287,7 +287,7 @@ not assume every current output already complies.
 ## Logging
 
 <a id="r17"></a>
-### R17 — Failure messages a run surfaces start `[ERROR]` or `[WARNING]`, chosen deliberately
+### R17 — Failure messages an R notebook surfaces start `[ERROR]` or `[WARNING]`, chosen deliberately
 
 Python: `current_run.log_info / log_warning / log_error / log_debug`. R: `log_msg(msg, level)`, or
 `pipeline_msg()` when the code may run outside a pipeline.
@@ -296,8 +296,8 @@ Python: `current_run.log_info / log_warning / log_error / log_debug`. R: `log_ms
 mapped to OpenHEXA severity by
 `error_label_severity_map={"[ERROR]": "error", "[WARNING]": "warning"}`. A `[WARNING]`-labelled
 failure suppresses HTML report generation but does **not** fail the run — so labelling a real
-data-loss condition `[WARNING]` hides it. The same holds for the Python pipelines: the deployer's
-`[ERROR] Cannot deploy: …` (bootstrap D24) relies on the prefix.
+data-loss condition `[WARNING]` hides it. Python messages need no prefix: `current_run.log_error` /
+`log_warning` set the severity themselves.
 
 Keep messages actionable: at minimum, name the missing file — `load_dataset_file()` in
 `shared/r/snt_utils.r` (the shared loader most pipelines call to read a dataset file) does this by

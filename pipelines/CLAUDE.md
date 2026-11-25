@@ -257,7 +257,7 @@ could not verify. Their docs are in [`../docs/bootstrap/`](../docs/bootstrap/); 
 | [`snt_release_marker.md`](../contracts/snt_release_marker.md) | Reading or writing `.snt_release` |
 | [`context/snt_development.md`](../docs/bootstrap/context/snt_development.md) | What an old-repo release contains |
 | [`release_strategy.md`](../docs/bootstrap/release_strategy.md), [`roadmap.md`](../docs/bootstrap/roadmap.md) | Big-picture questions, testing a PR, planning ahead |
-| [`decisions.md`](../docs/bootstrap/decisions.md) | Before reopening any choice (`D1–D28`; the architectural ones are ADRs 0026–0035) |
+| [`decisions.md`](../docs/bootstrap/decisions.md) | Before reopening any choice (`D1–D29`; the architectural ones are ADRs 0026–0035) |
 | [`sandbox.md`](../docs/bootstrap/sandbox.md) | The former test bed (manifest v1 fixture releases); releases are now tested as pre-releases of this repo (D-18) |
 | [`HISTORY.md`](../docs/bootstrap/HISTORY.md) | Before re-investigating something that seems solved |
 
