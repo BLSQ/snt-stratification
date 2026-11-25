@@ -122,13 +122,15 @@ Notes that the table cannot carry:
 | Channel | Carries | Trigger | Mechanism |
 |---|---|---|---|
 | **CI push → template** | `pipeline.py`, `requirements.txt` (Python only) | push to `main` touching those paths | `.github/workflows/push_<pipeline>.yaml` → `blsq/openhexa-cli-action@v1` → `openhexa pipelines push <dir>` into `snt-development`, which publishes a **new version of the SNT template pipeline**; subscribed country workspaces update automatically (§2.2) |
-| **Runtime pull** | `pipelines/<name>/code/*.ipynb`, `reporting/*.ipynb`, `utils/*.r` (all R) | operator runs the pipeline with **`Pull scripts` = ON** in the OpenHEXA UI | `pull_scripts_from_repository()` from `snt_lib`, reading this repo — no template involvement, no automation (§2.2.1) |
+| **Runtime pull** | `pipelines/<name>/code/*.ipynb`, `reporting/*.ipynb`, `utils/*.r` (all R) | operator runs the pipeline with **`Pull scripts` = ON** in the OpenHEXA UI | `pull_scripts_from_repository()` from `snt_lib`, reading the old `snt_development` repo — no template involvement, no automation (§2.2.1) |
 
-**This asymmetry is the single most important operational fact in the system**, and it exists
-because OpenHEXA supports Python pipelines but not R (§2.2.1). Merging a notebook change to
-`main` changes *nothing* in any workspace until somebody runs that pipeline with `Pull scripts`
-toggled on. The Python half, by contrast, can reach every country workspace automatically through
-the template mechanism — so the two halves of one pipeline drift apart by default.
+**In the old repo, this asymmetry is the single most important operational fact**, and it exists
+because OpenHEXA supports Python pipelines but not R (§2.2.1). Merging a notebook change to the old
+repo's `main` changes *nothing* in any workspace until somebody runs that pipeline with `Pull
+scripts` toggled on. The Python half, by contrast, can reach every country workspace automatically
+through the template mechanism — so the two halves of one pipeline drift apart by default. This
+repo's pipelines have no `Pull scripts`: each copies its own R half on every run (self-sync,
+[ADR 0044](decisions/0044-self-sync-replaces-pull-scripts.md)).
 
 Corollary: the CI path filters only watch `pipeline.py` / `requirements.txt` / `readme.txt`, so
 a notebook-only PR produces **no CI run at all** — absence of a green check is expected, not a
@@ -146,7 +148,7 @@ automatically whenever the source template publishes a new version. That opt-in 
 changes propagate across all countries without touching each workspace by hand.
 
 ```
-  this repo ──push (CI)──▶  snt-development ws  ──▶  SNT template pipelines
+  old repo ──push (CI)───▶  snt-development ws  ──▶  SNT template pipelines
                              (the reference ws)              │
                                                              │ install / auto-update
                             ┌────────────────┬───────────────┼────────────────┐
@@ -198,15 +200,20 @@ messages meaningful for that reason. Verified 2026-08-26: all 20 workflows targe
 none of the analytics — which is where essentially all the business logic lives — can travel
 through the template system.
 
-That asymmetry is the reason `pull_scripts` exists. The R notebooks and `.r` helpers are fetched
-from this repository *at run time*, by a parameter an operator has to remember to toggle, rather
-than being versioned and propagated with the pipeline they belong to. So a country workspace can
-be running the newest `pipeline.py` (auto-updated via the template) against months-old R
-analytics (never pulled) — with nothing anywhere reporting the mismatch.
+In the old repo, that asymmetry is the reason `pull_scripts` exists. The R notebooks and `.r`
+helpers are fetched from the old repo *at run time*, by a parameter an operator has to remember to
+toggle, rather than being versioned and propagated with the pipeline they belong to. So a country
+workspace can be running the newest `pipeline.py` (auto-updated via the template) against
+months-old R analytics (never pulled) — with nothing anywhere reporting the mismatch.
 
-This is a known, acknowledged pain point; solutions are being discussed with the OpenHEXA
-developers ([BACKLOG OH-1](BACKLOG.md#oh-1)). Until it changes, treat the two halves of every pipeline as **independently
-versioned**, and see [`CLAUDE.md` rule 2](../CLAUDE.md#the-five-rules-that-matter-most).
+This repo closes most of that gap. Its pipelines bundle their notebooks and `utils/*.r` in the
+pipeline version and copy them to the workspace on every run (`sync_pipeline_scripts()` from
+`snt_lib`, [ADR 0044](decisions/0044-self-sync-replaces-pull-scripts.md)), so the two halves move
+together. The shared R library `shared/r/` is not synced: only the deployer installs it
+([BACKLOG REL-6](BACKLOG.md#rel-6)). Versioning the R half in OpenHEXA itself is still under
+discussion with the OpenHEXA developers ([BACKLOG OH-1](BACKLOG.md#oh-1)). For a live country on
+the old repo, treat the two halves of every pipeline as **independently versioned**, and see
+[`CLAUDE.md` rule 2](../CLAUDE.md#the-five-rules-that-matter-most).
 
 A second, smaller consequence sits on the *authoring* side: because the R code lives in the
 workspace at run time, the `utils/*.r` helpers a notebook `source()`s are read from the workspace
@@ -733,7 +740,7 @@ indicator suffix. It needs an explicit disaggregation → population-column mapp
 
 | Library | Location | Role |
 |---|---|---|
-| `snt_lib.snt_pipeline_utils` | **external** — `git+https://github.com/BLSQ/snt_utils.git`, pinned to a commit ([§7.1](#71-dependency-resolution-is-not-reproducible)) | `load_configuration_snt_from_dataset`, `validate_config`, `run_notebook`, `run_report_notebook`, `add_files_to_dataset`, `dataset_file_exists`, `get_new_dataset_version`, `get_file_from_dataset`, `save_pipeline_parameters`, `pull_scripts_from_repository`, `push_data_to_db_table`, `delete_raw_files`, `generate_html_report`, `handle_rkernel_error_with_labels` |
+| `snt_lib.snt_pipeline_utils` | **external** — `git+https://github.com/BLSQ/snt_utils.git`, pinned to a commit ([§7.1](#71-dependency-resolution-is-not-reproducible)) | `load_configuration_snt_from_dataset`, `validate_config`, `run_notebook`, `run_report_notebook`, `add_files_to_dataset`, `dataset_file_exists`, `get_new_dataset_version`, `get_file_from_dataset`, `save_pipeline_parameters`, `sync_pipeline_scripts`, `get_notebook_overrides`, `push_data_to_db_table`, `delete_raw_files`, `generate_html_report`, `handle_rkernel_error_with_labels` |
 | `shared/r/snt_utils.r` | this repo (~2 450 lines) | config loading, dataset I/O, logging (`log_msg`/`pipeline_msg`), seasonality computation, cartesian completion, DHS helpers, geo helpers |
 | `shared/r/snt_report.r`, `shared/r/snt_palettes.r` | this repo | choropleths, binning, month colours/labels (FR) |
 | `worldpopclient.py` | **duplicated** in `snt_worldpop_extract/`, `snt_map_extracts/`, `snt_healthcare_access/` | WorldPop raster download |

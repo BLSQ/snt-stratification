@@ -1134,21 +1134,13 @@ against. Facts: [`DATA_ARCHITECTURE.md`](DATA_ARCHITECTURE.md) §7.2.
 
 ### <a id="doc-3"></a>DOC-3 · Doc claims found to be out of step with the repo
 
-Each needs a check and a correction in the doc that owns the fact. Found during the self-sync work,
-2026-11-18:
-
-- **`Pull scripts` described as this repo's route for the R half.** [`DATA_ARCHITECTURE.md`
-  §2.1](DATA_ARCHITECTURE.md#21-two-distinct-delivery-channels) (the "Runtime pull" row and the
-  paragraph under the table), [§2.2.1](DATA_ARCHITECTURE.md#221-r-is-outside-this-mechanism--the-core-pain-point)
-  ("the reason `pull_scripts` exists") and the `snt_lib` row of the dependency table in §7
-  (it lists `pull_scripts_from_repository`, not `sync_pipeline_scripts`,
-  `get_notebook_overrides`). Rewrite them: this repo's pipelines self-sync
-  ([ADR 0044](decisions/0044-self-sync-replaces-pull-scripts.md)), and `Pull scripts` is the old
-  repo's route. Also decide whether
-  [`bootstrap/release_strategy.md`](bootstrap/release_strategy.md) ("The problem", lines 10–30) is
-  current truth to update or the deployer's original problem statement to leave, and update the
-  module docstring of `snt_workspace_deployer/pipeline.py` ("Replaces the per-pipeline `Pull
-  scripts` toggle") with that pipeline's next code change.
+One claim left, found during the self-sync work, 2026-11-18: the module docstring of
+[`snt_workspace_deployer/pipeline.py`](../pipelines/snt_workspace_deployer/pipeline.py) says its
+copy of the R half "Replaces the per-pipeline `Pull scripts` toggle". This repo's pipelines have no
+such toggle: each copies its own R half on every run
+([ADR 0044](decisions/0044-self-sync-replaces-pull-scripts.md)), and the deployer also installs the
+shared R library `shared/r/`. Correct it with that pipeline's next code change, then delete this
+item.
 
 **Owner:** Giulia.
 
