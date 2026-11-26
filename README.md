@@ -200,15 +200,23 @@ Before opening a PR, walk the
 
 ## 📦 Release management
 
-Each GitHub release of this repo gets a `release_manifest.json`, built by
-[`.github/workflows/generate_manifest.yaml`](https://github.com/BLSQ/snt_development/blob/94cfc383c0f8804d2eba264f26a4bd3d372d94da/.github/workflows/generate_manifest.yaml): every file
-the release ships, with its hash. The tools that deploy a release into a workspace and check it
-against one live in their own repo,
-[`BLSQ/snt_workspace_bootstrap`](https://github.com/BLSQ/snt_workspace_bootstrap).
+A release is a GitHub release of this repo, tagged `vX.Y.Z`: one tested combination of pipelines,
+webapps and bootstrap pipelines. What it carries and how it is numbered:
+[`ARCHITECTURE.md` §1.4](docs/ARCHITECTURE.md#14-release-train).
 
-The manifest's shape is a **contract** between the two repos, defined by
-[`release_manifest.schema.json`](https://github.com/BLSQ/snt_workspace_bootstrap/blob/main/docs/contracts/release_manifest.schema.json)
-there. Do not change the shape without updating that schema in the same change.
+- **Built** on each published release by [`release.yaml`](.github/workflows/release.yaml):
+  `release_manifest.json`, every file the release ships with its hash
+  ([`tools/build_manifest.py`](tools/build_manifest.py)), plus a slim tarball and the webapp zips
+  ([`tools/build_release_assets.py`](tools/build_release_assets.py)).
+- **Installed and checked** in a workspace by the bootstrap pipelines of this repo:
+  [`snt_workspace_deployer`](pipelines/snt_workspace_deployer/),
+  [`snt_pipeline_deployer`](pipelines/snt_pipeline_deployer/) and
+  [`snt_workspace_checker`](pipelines/snt_workspace_checker/).
+- **Cut, tested and promoted** with the [`release` skill](.claude/skills/release/SKILL.md).
+
+The manifest's shape is a **contract** between the release workflow and the bootstrap pipelines,
+defined by [`contracts/release_manifest.schema.json`](contracts/release_manifest.schema.json). Do
+not change the shape without updating that schema in the same change.
 → [R22](docs/CONVENTIONS.md#r22)
 
 ---

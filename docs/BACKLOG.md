@@ -180,9 +180,12 @@ outdated example config and are **ignored**. Related: [META-5](#meta-5).
 15 current key names as required and fails every pipeline at startup if one is missing. Nothing
 else in `snt_lib` uses the keys. The validator must change **before** the keys do. `snt_lib` is
 maintained by a colleague; the agreed route while they are unavailable: a branch of
-`BLSQ/snt_utils` off `release-v1` (e.g. `cfg-1-dataset-keys`; names starting with `release-v1`
-are blocked by the `snt_utils` ruleset `protect-release-branches`), and this repo's pipelines pin
-that branch, so the change is easy to undo. `snt_development` is left untouched.
+`BLSQ/snt_utils` off `self-sync-r-half` at `ca74b54`, the commit this repo's pipelines pin today
+(e.g. `cfg-1-dataset-keys`; names starting with `release-v1` are blocked by the `snt_utils`
+ruleset `protect-release-branches`), and this repo's pipelines pin that branch, so the change is
+easy to undo. Not off `release-v1`: that would drop the config-from-dataset and self-sync changes.
+The branch is never merged into `release-v1`, which live countries install from
+([DEP-1](#dep-1)); it is tagged instead. `snt_development` is left untouched.
 
 **Where the old keys appear** (84 files mention `SNT_DATASET_IDENTIFIERS`): 20 `pipeline.py`;
 about 25 notebooks under `code/` and `.r` files under `utils/` (`config_json$SNT_DATASET_IDENTIFIERS$<KEY>`);
@@ -197,7 +200,7 @@ the `release` skill, `docs/MIGRATION_PLAN.md`; the config editor's `docs/PRODUCT
 
 **Commit plan (agreed 2026-11-16), one commit at a time:**
 
-1. **`snt_utils`, new branch off `release-v1`:** the `required_dataset_keys` list in
+1. **`snt_utils`, new branch off `self-sync-r-half` (`ca74b54`):** the `required_dataset_keys` list in
    `validate_config()`, and the one expected message in `tests/test_snt_pipeline_utils.py` that
    names `DHIS2_DATASET_EXTRACTS`. Push the branch; note its name and commit SHA.
 2. **This repo, the contract:** `SNT_config.skeleton.json`; the 16 fixtures (the
@@ -599,6 +602,27 @@ readme.
 
 **Owner:** `snt_dhis2_extract` owner (`_TBD_` in [OWNERSHIP.md](OWNERSHIP.md)). **Source:**
 self-sync commit 4 review, 2026-11-18.
+
+### <a id="pipe-13"></a>PIPE-13 · Two reports stop when the workspace `SNT_metadata.json` is missing
+
+The report notebooks of `snt_dhis2_incidence` (cell 8) and `snt_dhis2_reporting_rate_dataset`
+(cell 7) load `configuration/SNT_metadata.json` from the workspace, only to read their map scale
+breaks (`INCIDENCE_CRUDE$SCALE`, `REPORTING_RATE$SCALE`). `load_json()` stops with an `[ERROR]` when
+the file is missing, and nothing installs it in a workspace set up from this repo (deployer or
+templates): only workspaces set up for the old repo have it. So in every new workspace both reports
+fail. The run still succeeds, because each `pipeline.py` logs a report failure without failing the
+run, but no report is produced. Facts:
+[`DATA_ARCHITECTURE.md` §3.2 Stage E](DATA_ARCHITECTURE.md#32-stages).
+
+Both reports already fall back to default breaks when the file has no entry for them (incidence
+`c(100, 250, 450, 1000)`, reporting rate `c(0.5, 0.8, 0.9, 0.95, 1.00)`). The smallest fix: use
+those defaults when the file is missing too, with a log line saying so. Whether the breaks should
+later come from the new-format catalogue (`catalogs/SNT_metadata_master.json`, or the trimmed copy
+written by `snt_metadata_json_trim`) instead is a separate decision. Check the `_<CC>` variants of
+both report notebooks before editing. Must be fixed before `v1.0.0`: its release test runs every
+pipeline in new workspaces.
+
+**Owner:** `_TBD_`. **Source:** DOC-3 check of `DATA_ARCHITECTURE.md`, 2026-11-25.
 
 ---
 
@@ -1090,56 +1114,13 @@ against. Facts: [`DATA_ARCHITECTURE.md`](DATA_ARCHITECTURE.md) §7.2.
 
 ### <a id="doc-3"></a>DOC-3 · Doc claims found to be out of step with the repo
 
-Found while restructuring the docs, 2026-10-16. Each needs a check and a correction in the doc that
-owns the fact:
-
-- **`SNT_metadata.json` in the workspace is still read.** Several docs say it has no reader since
-  `snt_assemble_results` was retired. That holds for the archived repo copy, but the *workspace* file
-  `configuration/SNT_metadata.json` is still loaded by the report notebooks of `snt_dhis2_incidence`
-  and `snt_dhis2_reporting_rate_dataset` (for `SCALE` breaks). Affects
-  [`DATA_ARCHITECTURE.md` §5.1](DATA_ARCHITECTURE.md#51-workspace-filesystem) and
-  [§3.2 Stage E](DATA_ARCHITECTURE.md#32-stages).
-- **`configuration/readme.txt` does not exist** in the repo, but
-  [`DATA_ARCHITECTURE.md` §5.4](DATA_ARCHITECTURE.md#54-configuration-schema-snt_configjson) and
-  [§6.1](DATA_ARCHITECTURE.md#61-confirmed-defect--pop_pregnant_woman-vs-pop_pregnant_women) cite it.
-
-Found during the self-sync work, 2026-11-18:
-
-- **`Pull scripts` described as this repo's route for the R half.** [`DATA_ARCHITECTURE.md`
-  §2.1](DATA_ARCHITECTURE.md#21-two-distinct-delivery-channels) (the "Runtime pull" row and the
-  paragraph under the table), [§2.2.1](DATA_ARCHITECTURE.md#221-r-is-outside-this-mechanism--the-core-pain-point)
-  ("the reason `pull_scripts` exists") and the `snt_lib` row of the dependency table in §7
-  (it lists `pull_scripts_from_repository`, not `sync_pipeline_scripts`,
-  `get_notebook_overrides`). Rewrite them: this repo's pipelines self-sync
-  ([ADR 0044](decisions/0044-self-sync-replaces-pull-scripts.md)), and `Pull scripts` is the old
-  repo's route. Also decide whether
-  [`bootstrap/release_strategy.md`](bootstrap/release_strategy.md) ("The problem", lines 10–30) is
-  current truth to update or the deployer's original problem statement to leave, and update the
-  module docstring of `snt_workspace_deployer/pipeline.py` ("Replaces the per-pipeline `Pull
-  scripts` toggle") with that pipeline's next code change.
-- **Paths and details in [`DATA_ARCHITECTURE.md`](DATA_ARCHITECTURE.md)**:
-  - §3.1, the DHS row: `extract_latest_dhs_recode_filename()` is in `shared/r/snt_utils.r`, not
-    `code/snt_utils.r`.
-  - §3.2, outlier imputation: "Each variant also pushes … (`push_db`, default `True`)" — in
-    `snt_dhis2_outliers_imputation_magic_glasses` the default is `False`.
-  - §4.3: the publish task is `add_files_to_dataset_for_extracts_task`; the `try/except` around
-    the tasks is [PIPE-12](#pipe-12).
-  - §5.1, the workspace tree: the shared R files are under `shared/r/`, not `code/`
-    ([ADR 0038](decisions/0038-repo-path-is-workspace-path.md)); add `pipelines/<name>/custom/` and
-    `archive/self_sync/` (ADR 0044).
-
-Found during the country-variants work, 2026-11-23:
-
-- **[`README.md`](../README.md) "📦 Release management" describes the repos before the monorepo.**
-  It says the manifest is built by `generate_manifest.yaml` (linked in the old `snt_development`
-  repo), and that the deploy and check tools and the manifest schema live in
-  `BLSQ/snt_workspace_bootstrap`. Today the manifest is built by
-  [`tools/build_manifest.py`](../tools/build_manifest.py) and attached to each release by
-  [`release.yaml`](../.github/workflows/release.yaml); the deployer and checker are
-  `pipelines/snt_workspace_*` in this repo; the schema is
-  [`contracts/release_manifest.schema.json`](../contracts/release_manifest.schema.json). Rewrite the
-  section to link those, the [`release` skill](../.claude/skills/release/SKILL.md) and
-  [`ARCHITECTURE.md` §1.4](ARCHITECTURE.md#14-release-train), rather than restate them (R25).
+One claim left, found during the self-sync work, 2026-11-18: the module docstring of
+[`snt_workspace_deployer/pipeline.py`](../pipelines/snt_workspace_deployer/pipeline.py) says its
+copy of the R half "Replaces the per-pipeline `Pull scripts` toggle". This repo's pipelines have no
+such toggle: each copies its own R half on every run
+([ADR 0044](decisions/0044-self-sync-replaces-pull-scripts.md)), and the deployer also installs the
+shared R library `shared/r/`. Correct it with that pipeline's next code change, then delete this
+item.
 
 **Owner:** Giulia.
 

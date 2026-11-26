@@ -237,8 +237,10 @@ its two workspaces, with that country's connection and periods.
   from this candidate. Record it, and don't go on until it is settled: every later step reads the
   extract.
 - **A failure in only one** is a finding. Stop and read that run's Messages.
-- **The extract failed everywhere at `v0.1.0`.** The BFA DHIS2 sent invalid JSON for the
-  organisation units (`Expecting ',' delimiter`), and the old code failed the same way. The
+- **Burkina Faso: the extract may fail because of the DHIS2 server.** At `v0.1.0` the BFA DHIS2
+  sent invalid JSON for the organisation units (`Expecting ',' delimiter`), and the old code failed
+  the same way. It was checked and confirmed as a problem on the DHIS2 server, not in this repo's
+  code, so there is nothing to fix here: expect it again in Burkina Faso. If it happens, the
   workaround: skip step 1 and share **one** existing `snt-dhis2-extracts` dataset into both
   workspaces. Check that its slug equals `DHIS2_DATASET_EXTRACTS` in the config and that neither
   workspace has a local copy of its own. Record that the extract went unverified.
