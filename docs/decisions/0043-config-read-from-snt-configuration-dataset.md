@@ -1,7 +1,7 @@
 # 0043. Every consumer reads `SNT_config.json` from the `SNT_CONFIGURATION` dataset
 
 Date: 2026-11-16
-Status: Accepted
+Status: Accepted (amended by [0047](0047-config-editor-publishes-to-snt-configuration.md): the `snt_config_publish` pipeline, run by the config editor, publishes the versions, and a version may also hold the editor's `SNT_config.log.json`)
 
 ## Context
 

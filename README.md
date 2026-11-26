@@ -70,7 +70,7 @@ the stage letters above are used throughout (stage `A2` here is written `A′` t
 |---|---|
 | [`pipelines/<name>/`](pipelines/) | One folder per pipeline, folder name = `@pipeline` id: `pipeline.py`, `requirements.txt`, `readme.md` (the pipeline's user-facing contract), and its R half in `code/`, `reporting/`, `utils/`. Kinds (SNT, support, bootstrap) are listed in [`pipelines/registry.json`](pipelines/registry.json). No CI deploys anything yet. |
 | [`shared/r/`](shared/r/) | Shared R library used across pipelines (`snt_utils`, `snt_report`, `snt_palettes`); was `code/`. |
-| [`webapps/`](webapps/) | The orchestrator (`orchestrator/app/` is the deployable bundle) and the config editor (spec stage, `app/` empty), each with its own `docs/` and `design/`. |
+| [`webapps/`](webapps/) | The orchestrator (`orchestrator/app/` is the deployable bundle) and the config editor (a single-file prototype in `design/`, `app/` empty), each with its own `docs/` and `design/`. |
 | [`contracts/`](contracts/README.md) | Every cross-unit contract: the `SNT_config.json` skeleton, the `SNT_metadata.json` schema, the release manifest and status report schemas, the orchestrator's schemas. The live config lives in each workspace. |
 | [`catalogs/`](catalogs/README.md) | Universal references shipped with each release (`SNT_metadata_master.json`). |
 | [`docs/`](docs/) | Docs that span several units: architecture, glossary, standards, ownership, backlog, decisions, the migration plan; `docs/bootstrap/` for the three bootstrap pipelines. |

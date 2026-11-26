@@ -65,10 +65,11 @@ who made it move on. Format after Michael Nygard's
 | [0040](0040-templates-kept-alongside-the-deployer.md) | Templates stay as a deploy route, alongside the deployer | Accepted, amended by 0042, 0045 | 2026-11-02 |
 | [0041](0041-new-templates-publishing-workspace.md) | The new templates are published from their own workspace | Accepted, amended by 0045 | 2026-11-02 |
 | [0042](0042-bootstrap-pipelines-as-templates-on-release.md) | Bootstrap pipelines are published as templates on each full release | Accepted, amended by 0045 | 2026-11-12 |
-| [0043](0043-config-read-from-snt-configuration-dataset.md) | Every consumer reads `SNT_config.json` from the `SNT_CONFIGURATION` dataset | Accepted | 2026-11-16 |
+| [0043](0043-config-read-from-snt-configuration-dataset.md) | Every consumer reads `SNT_config.json` from the `SNT_CONFIGURATION` dataset | Accepted, amended by 0047 | 2026-11-16 |
 | [0044](0044-self-sync-replaces-pull-scripts.md) | Pipelines self-sync their R half; `custom/` is the escape hatch | Accepted, amended by 0046 | 2026-11-17 |
 | [0045](0045-how-the-new-templates-are-published.md) | How the new templates are published: `snt-templates`, named after the `@pipeline` id, one workflow | Accepted | 2026-11-18 |
 | [0046](0046-country-variants-in-the-repo.md) | Country variants are committed beside their generic notebook | Accepted | 2026-11-23 |
+| [0047](0047-config-editor-publishes-to-snt-configuration.md) | The config editor publishes to `SNT_CONFIGURATION` through a pipeline, with its log beside the config | Accepted | 2026-11-26 |
 
 ## Imported ADRs: old number → new number
 

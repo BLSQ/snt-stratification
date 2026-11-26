@@ -19,7 +19,7 @@ it.
 | 1 | All-`NA` guard in `snt_dhis2_incidence` | W4 severity | ❓ open |
 | 2 | ~~R gate equivalent to the Python one~~ | §5.1 completeness | ✅ answered 2026-11-17: there is no R gate |
 | 3 | Upstream `POP_PREGNANT_WOMEN` fix | CLAUDE.md rule 3 | ❓ open, ongoing |
-| 4 | OpenHEXA workspace write mechanism | §7 step 2 | ❓ open |
+| 4 | ~~OpenHEXA workspace write mechanism~~ | §7 step 2 | ✅ answered 2026-11-26: webapp writes are being removed; a pipeline writes |
 | 5 | OpenHEXA user identity in the page | §11 q4 | ❓ open |
 | 6 | §12.1 paths and symbol names | §12 accuracy | ❓ open |
 | 7 | A sixth country config | "fixed" assumptions | ❓ open, ongoing |
@@ -79,7 +79,16 @@ what the pipelines currently expect. The moment someone fixes the defect upstrea
 actively harmful and must be reversed here. Nothing will notify us. Re-check whenever the pipelines
 repo moves.
 
-## 4. How does an OpenHEXA web app write to the workspace filesystem?
+## 4. ~~How does an OpenHEXA web app write to the workspace filesystem?~~
+
+**Answered 2026-11-26: a webapp should not write; a pipeline does.** A webapp can still write
+datasets through its GraphQL proxy under the `DATASETS_WRITE` scope, but the OpenHEXA developers
+said webapp writes, to datasets and files, are kept only for existing uses and will be removed. So
+the editor runs the `snt_config_publish` pipeline (`PIPELINES_RUN`), which writes the
+`SNT_CONFIGURATION` version the pipelines read
+([ADR 0047](../../../docs/decisions/0047-config-editor-publishes-to-snt-configuration.md)). This also
+answers the "workspace-side component" case below, and gives the real `validate_config()` the last
+word before publishing. The original question follows.
 
 **Where to look:** OpenHEXA docs and the MCP tooling; confirm with the platform team.
 

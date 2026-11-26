@@ -498,7 +498,8 @@ Note the shapes fan-out: the three external-source pipelines are **downstream of
 
 Not drawn either, because every box has it: **the config is an input of every pipeline and every
 notebook**, read from the latest version of the `SNT_CONFIGURATION` dataset
-([§5.4](#54-configuration-schema-snt_configjson)) before anything else runs.
+([§5.4](#54-configuration-schema-snt_configjson)) before anything else runs. Its one writer is the
+support pipeline `snt_config_publish`, run by the config editor, besides uploads by hand.
 
 ---
 
@@ -645,8 +646,11 @@ the file name has no `{CC}_` prefix: it is read before the country is known.
 - **When it is missing** (no dataset, no version, no file, failed download, invalid JSON): the run
   stops with `[ERROR] No usable SNT_config.json in the latest version of dataset
   SNT_CONFIGURATION (snt-configuration): …`, linking to the how-to.
-- **How to provide it:** upload the whole file as a new version, by hand in the OpenHEXA UI until
-  the config editor writes it: [how-to](../contracts/snt_config/README.md#snt-configuration-dataset).
+- **How to provide it:** a new version holding the whole file, published by the
+  [`snt_config_publish`](../pipelines/snt_config_publish/readme.md) pipeline, which the config
+  editor runs (with the editor's log `SNT_config.log.json` beside it,
+  [ADR 0047](decisions/0047-config-editor-publishes-to-snt-configuration.md)), or uploaded by hand
+  in the OpenHEXA UI: [how-to](../contracts/snt_config/README.md#snt-configuration-dataset).
   The file must also pass `validate_config()`, which the SNT pipelines run right after loading it:
   a file missing a key the validator requires (for example
   `SNT_DATASET_IDENTIFIERS.SNT_POPULATION_USER_PROVIDED`) loads and then fails.

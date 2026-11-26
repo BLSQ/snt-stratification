@@ -4,6 +4,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>SNT Config Editor — prototype</title>
+    <!-- Local development only: lets a page opened from disk or localhost call a real
+         workspace's /graphql/ (docs/OPENHEXA_WEBAPP_RUNTIME.md#local-development-devjs).
+         On a deployed webapp it returns at once and does nothing. -->
+    <script src="https://api.openhexa.org/webapps/dev.js"></script>
     <style>
       :root {
         --bg: #f6f7f9;
@@ -327,6 +331,11 @@
         background: var(--ok-bg);
         color: var(--ok);
       }
+      .c-err {
+        border-color: var(--err);
+        background: var(--err-bg);
+        color: var(--err);
+      }
 
       /* ---------- uid chips ---------- */
       .uidrow {
@@ -570,7 +579,7 @@
   </head>
   <body>
     <div class="proto">
-      <span
+      <span id="protoMsg"
         >Temporary version — files are downloaded to your computer; nothing is
         saved to the workspace.</span
       >
@@ -915,7 +924,11 @@
             <button id="btnExport2" class="primary" onclick="publish()">
               Export SNT_config.json
             </button>
+            <button id="btnDownload" class="hidden" onclick="downloadValid()">
+              Download SNT_config.json
+            </button>
             <div class="tiny" id="savehint"></div>
+            <div id="pubResult"></div>
           </div>
         </div>
       </aside>
@@ -929,7 +942,7 @@
    ================================================================== */
 
       /* ============================ constants ============================ */
-      const EDITOR_VERSION = "0.3.0-prototype";
+      const EDITOR_VERSION = "0.4.0-prototype";
       const LEVELS = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => `level_${n}_name`);
 
       const DATASET_IDS = {
@@ -1244,7 +1257,162 @@
           } catch (e) {}
         },
       };
-      const store = LocalStore; // WorkspaceStore lands here in v1 step 2
+      /* ============================ DatasetStore (spec §7, ADR 0047) ============================
+   Inside OpenHEXA, a valid config is published as a new version of the
+   SNT_CONFIGURATION dataset, the one every SNT pipeline reads. The webapp does not
+   write the dataset itself (OpenHEXA is removing webapp writes): it runs the
+   snt_config_publish pipeline with the file and its log as parameters, and the
+   pipeline checks the file with validate_config() and publishes it. Drafts stay in
+   this browser, as with LocalStore. Webapp: private, scopes PIPELINES_READ and
+   PIPELINES_RUN. */
+      const OH =
+        window.OPENHEXA && window.OPENHEXA.workspaceSlug
+          ? window.OPENHEXA
+          : null; // injected by OpenHEXA, or by dev.js once connected
+      const CONFIG_DATASET_NAME = "SNT_CONFIGURATION"; // ADR 0043
+      const CONFIG_FILE = "SNT_config.json";
+      const CONFIG_LOG_FILE = "SNT_config.log.json";
+      const PUBLISH_PIPELINE = "snt_config_publish";
+      const RUN_POLL_MS = 3000;
+      const RUN_POLL_MAX = 200; // 10 minutes, then stop watching
+      const RUN_DONE = ["success", "failed", "stopped", "skipped"];
+      const HOWTO_URL =
+        "https://github.com/BLSQ/snt-stratification/blob/main/contracts/snt_config/README.md#snt-configuration-dataset";
+
+      async function gql(query, variables = {}) {
+        const res = await fetch("/graphql/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query, variables }),
+        });
+        const body = await res.text();
+        let json = null;
+        try {
+          json = JSON.parse(body);
+        } catch (e) {}
+        const errs =
+          json && json.errors ? json.errors.map((e) => e.message).join("; ") : "";
+        if (!res.ok)
+          throw new Error(`HTTP ${res.status}: ${errs || body.slice(0, 300)}`);
+        if (errs) throw new Error(errs);
+        return json.data;
+      }
+
+      /* The pipeline's code depends on how it was installed (snt-config-publish when
+         pushed from source, another name from a template), so match code or name with
+         punctuation and case removed, as the orchestrator does. */
+      const normCode = (s) =>
+        String(s == null ? "" : s)
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, "");
+      async function findPublishPipeline() {
+        const d = await gql(
+          `query ($ws: String!) {
+            pipelines(workspaceSlug: $ws, page: 1, perPage: 100) { items { id code name } }
+          }`,
+          { ws: OH.workspaceSlug },
+        );
+        const want = normCode(PUBLISH_PIPELINE);
+        const hit = d.pipelines.items.find(
+          (p) => normCode(p.code) === want || normCode(p.name) === want,
+        );
+        if (!hit)
+          throw new Error(
+            `The pipeline ${PUBLISH_PIPELINE} is not installed in this workspace. Install it (it is part of each SNT release), then publish again.`,
+          );
+        return hit;
+      }
+
+      const RUN_ERROR_TEXT = {
+        PERMISSION_DENIED: "You are not allowed to run pipelines in this workspace.",
+        INVALID_CONFIG: `The installed ${PUBLISH_PIPELINE} does not take the parameters this editor sends: update it to the current release.`,
+        PIPELINE_DOES_NOT_SUPPORT_PARAMETERS: `The installed ${PUBLISH_PIPELINE} does not take the parameters this editor sends: update it to the current release.`,
+        PIPELINE_RUNS_LIMIT_REACHED: "The workspace has reached its limit of running pipelines: try again later.",
+      };
+      async function startPublishRun(pipelineId, text, logText) {
+        const r = (
+          await gql(
+            `mutation ($input: RunPipelineInput!) {
+              runPipeline(input: $input) { success errors run { id status } }
+            }`,
+            {
+              input: {
+                id: pipelineId,
+                config: { config_json: text, editor_log_json: logText },
+              },
+            },
+          )
+        ).runPipeline;
+        if (!r.success) {
+          const e = r.errors || [];
+          throw new Error(
+            `${PUBLISH_PIPELINE} did not start: ${e.map((c) => RUN_ERROR_TEXT[c] || c).join(" ")}`,
+          );
+        }
+        return r.run.id;
+      }
+
+      const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+      /* Poll until the run ends; null if it is still running after RUN_POLL_MAX polls.
+         `terminating` is not an end state. */
+      async function waitForRun(runId, onStatus) {
+        for (let i = 0; i < RUN_POLL_MAX; i++) {
+          const run = (
+            await gql(
+              `query ($id: UUID!) {
+                pipelineRun(id: $id) { status messages { message priority } }
+              }`,
+              { id: runId },
+            )
+          ).pipelineRun;
+          if (onStatus) onStatus(run.status);
+          if (RUN_DONE.includes(run.status)) return run;
+          await sleep(RUN_POLL_MS);
+        }
+        return null;
+      }
+      const cleanMsg = (m) => m.message.replace(/^\[(ERROR|WARNING)\]\s*/, "");
+
+      const DatasetStore = {
+        ...LocalStore, // drafts: unchanged, in this browser
+        name: "DatasetStore",
+        async publishValid(doc, log, text, onStatus) {
+          const p = await findPublishPipeline();
+          const runId = await startPublishRun(p.id, text, JSON.stringify(log, null, 2));
+          const run = await waitForRun(runId, onStatus);
+          if (!run)
+            throw new Error(
+              `${PUBLISH_PIPELINE} is still running after 10 minutes. Check its run under Pipelines in this workspace before publishing again.`,
+            );
+          const msgs = run.messages || [];
+          if (run.status !== "success") {
+            const errs = msgs
+              .filter((m) => m.priority === "ERROR" || m.priority === "CRITICAL")
+              .map(cleanMsg);
+            throw new Error(
+              `The ${PUBLISH_PIPELINE} run ended "${run.status}"${errs.length ? ": " + errs.join(" ") : "; its log under Pipelines says why."}`,
+            );
+          }
+          const found = msgs
+            .map((m) => m.message)
+            .join("\n")
+            .match(/as version '([^']+)'/);
+          const versionName = found ? found[1] : null;
+          this._push({
+            file: `${CONFIG_DATASET_NAME} · version ${versionName || "?"} · ${CONFIG_FILE}`,
+            log: CONFIG_LOG_FILE,
+            status: "VALID",
+            sha: log.config_sha256,
+          });
+          return {
+            version: { name: versionName },
+            created: msgs.some((m) => /^Created the dataset/.test(m.message)),
+            warnings: msgs.filter((m) => m.priority === "WARNING").map(cleanMsg),
+            downloadable: false,
+          };
+        },
+      };
+      const store = OH ? DatasetStore : LocalStore;
 
       /* ============================ state ============================ */
       function blank() {
@@ -2056,17 +2224,23 @@
           ? `<label class="ackbox"><input type="checkbox" ${needAck ? "" : "checked"}
          onchange="toggleAck(this.checked)">
        <span>I have read the ${v.warnings.length} warning${v.warnings.length > 1 ? "s" : ""} and want to
-       export anyway.</span></label>`
+       ${OH ? "publish" : "export"} anyway.</span></label>`
           : "";
         [
           document.getElementById("btnExport"),
           document.getElementById("btnExport2"),
-        ].forEach((b) => (b.disabled = !v.is_valid || needAck));
+          document.getElementById("btnDownload"),
+        ].forEach((b) => (b.disabled = !v.is_valid || needAck || publishing));
         document.getElementById("savehint").textContent = !v.is_valid
-          ? "Fix the blocking errors to export. Drafts save at any completeness."
+          ? `Fix the blocking errors to ${OH ? "publish" : "export"}. Drafts save at any completeness.`
           : needAck
-            ? "Acknowledge the warnings to enable the export."
-            : "Export writes SNT_config.json + a .log.json sidecar.";
+            ? `Acknowledge the warnings to enable the ${OH ? "publishing" : "export"}.`
+            : OH
+              ? `Publish runs the ${PUBLISH_PIPELINE} pipeline: it checks ${CONFIG_FILE} with validate_config() and publishes it with ${CONFIG_LOG_FILE} as a new version of the ${CONFIG_DATASET_NAME} dataset. Download saves them to your computer instead.`
+              : "Export writes SNT_config.json + a .log.json sidecar.";
+        const pr = document.getElementById("pubResult");
+        pr.className = pubResult ? `callout c-${pubResult.kind}` : "hidden";
+        pr.innerHTML = pubResult ? pubResult.html : "";
 
         renderPanel(v);
         renderPreview(v);
@@ -2154,13 +2328,13 @@
       }
       function renderHistory() {
         const h = store.listHistory();
-        document.getElementById("histWhere").innerHTML =
-          runtime === "step1"
-            ? `Under <code>LocalStore</code> these are simulated. Drafts live in <b>this browser only</b> —
-       downloading the draft file is the only way to move work to another machine. Step 2's
-       <code>WorkspaceStore</code> writes them to
-       <code>/configuration/snt_config_history/</code> and removes that limitation.`
-            : `In the real step-2 build these are files under <code>/configuration/snt_config_history/</code>.`;
+        document.getElementById("histWhere").innerHTML = OH
+          ? `Drafts live in <b>this browser only</b> — downloading the draft file is the only way to
+       move work to another machine. Each publish is a new version of the
+       <code>${CONFIG_DATASET_NAME}</code> dataset in this workspace.`
+          : `Under <code>LocalStore</code> these are simulated. Drafts live in <b>this browser only</b> —
+       downloading the draft file is the only way to move work to another machine. Inside an
+       OpenHEXA workspace, the editor publishes to the <code>${CONFIG_DATASET_NAME}</code> dataset instead.`;
         document.getElementById("history").innerHTML = h.length
           ? h
               .map(
@@ -2310,22 +2484,76 @@
         }
       }
 
-      async function publish() {
+      /* The valid file and its sidecar, or null when publishing is not allowed yet. */
+      async function validPayload() {
         const v = validate();
-        if (!v.is_valid) return;
-        if (v.warnings.length && state.ack !== ackKeyOf(v)) return;
+        if (!v.is_valid) return null;
+        if (v.warnings.length && state.ack !== ackKeyOf(v)) return null;
         const doc = buildDoc(); // no _EDITOR_METADATA — spec §6.3
         const text = JSON.stringify(doc, null, 2);
         const sha = await configSha256(doc);
-        const log = sidecar("VALID", v, sha, "SNT_config.json");
+        const log = sidecar("VALID", v, sha, CONFIG_FILE);
         log.file_sha256 = await fileSha256(text);
-        const base = fileBase("VALID");
-        await store.publishValid(doc, log);
-        previousPayload = doc;
-        previousFile = `${base}.json`;
-        downloadText("SNT_config.json", text);
-        downloadText(`${base}.log.json`, JSON.stringify(log, null, 2));
-        render();
+        return { doc, text, log, base: fileBase("VALID") };
+      }
+
+      let publishing = false,
+        pubResult = null; // { kind: "info" | "ok" | "err", html }
+      async function publish() {
+        if (publishing) return;
+        const p = await validPayload();
+        if (!p) return;
+        publishing = true;
+        const progress = (status) => {
+          pubResult = {
+            kind: "info",
+            html: `Publishing through the <b>${PUBLISH_PIPELINE}</b> pipeline${status ? ` — run ${escHtml(status)}` : ""}…
+              It checks the file with <code>validate_config()</code>; this usually takes a minute or two.`,
+          };
+          render();
+        };
+        if (OH) progress("");
+        else render();
+        try {
+          const res = await store.publishValid(p.doc, p.log, p.text, progress);
+          previousPayload = p.doc;
+          if (res.downloadable) {
+            previousFile = `${p.base}.json`;
+            downloadText(CONFIG_FILE, p.text);
+            downloadText(`${p.base}.log.json`, JSON.stringify(p.log, null, 2));
+            pubResult = null;
+          } else {
+            previousFile = `${CONFIG_DATASET_NAME}/${res.version.name || "?"}/${CONFIG_FILE}`;
+            pubResult = {
+              kind: res.warnings.length ? "warn" : "ok",
+              html: `Published as ${res.version.name ? `version <b>${escHtml(res.version.name)}</b>` : "a new version"} of
+                <b>${CONFIG_DATASET_NAME}</b>${res.created ? " (dataset created)" : ""}.
+                The next pipeline run reads it. Find it under <b>Datasets</b> in this workspace.${
+                  res.warnings.length
+                    ? `<br>${res.warnings.map((w) => escHtml(w)).join("<br>")}`
+                    : ""
+                }`,
+            };
+          }
+        } catch (e) {
+          pubResult = {
+            kind: "err",
+            html: `Not published. ${escHtml(e.message)}<br>
+              <a href="${HOWTO_URL}" target="_blank" rel="noopener">How the ${CONFIG_DATASET_NAME} dataset works</a>.
+              You can still download the file.`,
+          };
+        } finally {
+          publishing = false;
+          render();
+        }
+      }
+
+      /* Inside OpenHEXA: the same files, to this computer instead of the dataset. */
+      async function downloadValid() {
+        const p = await validPayload();
+        if (!p) return;
+        downloadText(CONFIG_FILE, p.text);
+        downloadText(`${p.base}.log.json`, JSON.stringify(p.log, null, 2));
       }
 
       /* ---- reopening drafts ---- */
@@ -2395,6 +2623,16 @@
       }
 
       /* ============================ boot ============================ */
+      if (OH) {
+        document.getElementById("protoMsg").innerHTML =
+          `Workspace <b>${escHtml(OH.workspaceSlug)}</b> — drafts stay in this browser; publishing runs the
+          <b>${PUBLISH_PIPELINE}</b> pipeline, which adds a new version of the <b>${CONFIG_DATASET_NAME}</b> dataset.`;
+        ["btnExport", "btnExport2"].forEach(
+          (id) =>
+            (document.getElementById(id).textContent = `Publish to ${CONFIG_DATASET_NAME}`),
+        );
+        document.getElementById("btnDownload").classList.remove("hidden");
+      }
       buildStatic();
       const boot = store.loadDraft();
       if (boot && boot.doc) {
