@@ -102,7 +102,7 @@ Not owned by any one pipeline; a change here affects many.
 | `.github/workflows/push_snt_*.yaml` | `_TBD_` | Never change `workspace: "snt-development"`. |
 | `CLAUDE.md`, `.claude/` | @sPuntinG | Agent guardrails and the rule Register. |
 | `docs/` | @sPuntinG | Architecture, glossary, standards. |
-| `snt_lib` / `snt_utils` ([external repo](https://github.com/BLSQ/snt_utils)) | `_TBD_` | **Outside this repo**, and unpinned — changes there reach every pipeline on its next deploy. |
+| `snt_lib` / `snt_utils` ([external repo](https://github.com/BLSQ/snt_utils)) | `_TBD_` | **Outside this repo**, pinned to a tag — a change there reaches the pipelines only through a PR here that bumps the pin. |
 
 **Country-specific escape hatches** exist in three forms: branches hardcoded in
 `snt_dhis2_extract` (BFA, NER), `<generic_name>_<CC>.ipynb` notebook variants that run instead of

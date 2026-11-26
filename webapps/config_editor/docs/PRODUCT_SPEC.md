@@ -754,8 +754,8 @@ section exists so that risk is managed rather than discovered.
 ### 12.2 The duplication problem — say it plainly
 
 **`validate_config()` exists twice: in Python upstream, and reimplemented in JavaScript here.** There
-is no mechanism today that keeps them in agreement, and the upstream dependency is unpinned, so it
-can tighten under any redeploy with no PR in either repo and no CI signal.
+is no mechanism today that keeps them in agreement. The upstream dependency is pinned to a tag, so
+it changes only through a PR here that bumps the pin, but nothing makes that PR update this app.
 
 The failure is silent in both directions. The worse one: upstream adds a required field, this app
 keeps exporting files without it, and every country the app touched produces a config that no

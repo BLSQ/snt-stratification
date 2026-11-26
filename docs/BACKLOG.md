@@ -200,7 +200,7 @@ the `release` skill, `docs/MIGRATION_PLAN.md`; the config editor's `docs/PRODUCT
 
 **Commit plan (agreed 2026-11-16), one commit at a time:**
 
-1. **`snt_utils`, new branch off `self-sync-r-half` (`ca74b54`):** the `required_dataset_keys` list in
+1. **`snt_utils`, new branch off tag `v2.0.0`:** the `required_dataset_keys` list in
    `validate_config()`, and the one expected message in `tests/test_snt_pipeline_utils.py` that
    names `DHIS2_DATASET_EXTRACTS`. Push the branch; note its name and commit SHA.
 2. **This repo, the contract:** `SNT_config.skeleton.json`; the 16 fixtures (the
@@ -227,7 +227,7 @@ configs installed from this repo before the rename need the 11 keys renamed by h
 Every config has `"METRICS": {"ACTUAL_REPORTS": "float", "EXPECTED_REPORTS": "float"}`. The value is
 always `"float"`, which looks like a placeholder that only avoids an empty value. It may be used during
 extraction: no such use is visible in this repo, but if it exists it is probably in `snt_lib`
-(external, unpinned). A search of this repo cannot settle it, so "no usage found" is not proof that
+(external). A search of this repo cannot settle it, so "no usage found" is not proof that
 the value is unused.
 
 **Source:** the `snt_development` version of [`contracts/snt_config/README.md`](../contracts/snt_config/README.md) (formerly `configuration/README.md`).
