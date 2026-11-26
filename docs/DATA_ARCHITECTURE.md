@@ -740,9 +740,9 @@ indicator suffix. It needs an explicit disaggregation → population-column mapp
 
 | Library | Location | Role |
 |---|---|---|
-| `snt_lib.snt_pipeline_utils` | **external** — `git+https://github.com/BLSQ/snt_utils.git`, pinned to a tag ([§7.1](#71-dependency-pins)) | `load_configuration_snt_from_dataset`, `validate_config`, `run_notebook`, `run_report_notebook`, `add_files_to_dataset`, `dataset_file_exists`, `get_new_dataset_version`, `get_file_from_dataset`, `save_pipeline_parameters`, `pull_scripts_from_repository`, `push_data_to_db_table`, `delete_raw_files`, `generate_html_report`, `handle_rkernel_error_with_labels` |
-| `code/snt_utils.r` | this repo (~1 550 lines) | config loading, dataset I/O, logging (`log_msg`/`pipeline_msg`), seasonality computation, cartesian completion, DHS helpers, geo helpers |
-| `code/snt_report.r`, `code/snt_palettes.r` | this repo | choropleths, binning, month colours/labels (FR) |
+| `snt_lib.snt_pipeline_utils` | **external** — `git+https://github.com/BLSQ/snt_utils.git`, pinned to a tag ([§7.1](#71-dependency-pins)) | `load_configuration_snt_from_dataset`, `validate_config`, `run_notebook`, `run_report_notebook`, `add_files_to_dataset`, `dataset_file_exists`, `get_new_dataset_version`, `get_file_from_dataset`, `save_pipeline_parameters`, `sync_pipeline_scripts`, `get_notebook_overrides`, `push_data_to_db_table`, `delete_raw_files`, `generate_html_report`, `handle_rkernel_error_with_labels` |
+| `shared/r/snt_utils.r` | this repo (~2 450 lines) | config loading, dataset I/O, logging (`log_msg`/`pipeline_msg`), seasonality computation, cartesian completion, DHS helpers, geo helpers |
+| `shared/r/snt_report.r`, `shared/r/snt_palettes.r` | this repo | choropleths, binning, month colours/labels (FR) |
 | `worldpopclient.py` | **duplicated** in `snt_worldpop_extract/`, `snt_map_extracts/`, `snt_healthcare_access/` | WorldPop raster download |
 | `malariaAtlasProject/map.py` | `snt_map_extracts/` | MAP WCS client |
 
