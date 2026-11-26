@@ -143,7 +143,8 @@ With `pull_r_scripts` off, the same reasoning extends to the pipeline's own note
 **Other limits:**
 
 * A pipeline's own R scripts are the `filesystem_files` under its `pipelines.<name>.path`. A pipeline
-  with none (`snt_metadata_json_trim`, `create_pipeline_cards`, the bootstrap pipelines) has nothing
+  with none (`snt_metadata_json_trim`, `create_pipeline_cards`, `snt_config_publish`, the bootstrap
+  pipelines) has nothing
   to sync.
 * An existing `.snt_release` is left as it is, so it still names the last *whole*-release deploy. The
   checker reports a workspace deployed this way as a mix of releases; give it the tag you deployed as

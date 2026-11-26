@@ -106,7 +106,8 @@ Available under these scopes but unused: `readFileContent` (an alternative catal
 [UI-10](BACKLOG.md#ui-10)), `getFileByPath`.
 
 ⚠️ **Public webapps cannot call the proxy at all.** The orchestrator must stay **private**; making
-it public silently kills every query and the app cannot boot.
+it public silently kills every query and the app cannot boot. Whether a public webapp can call
+anything at all is being checked: [OH-8](BACKLOG.md#oh-8).
 
 Scopes are **webapp metadata**, not part of the bundle — how to set and check them:
 [`DEPLOYMENT.md`](../webapps/orchestrator/docs/DEPLOYMENT.md#setting-scopes).

@@ -636,7 +636,8 @@ file `SNT_config.json` in the **latest version** of the OpenHEXA dataset `SNT_CO
 `snt-configuration`, one per workspace. The slug is hardcoded, not in `SNT_DATASET_IDENTIFIERS`, and
 the file name has no `{CC}_` prefix: it is read before the country is known.
 
-- **Who reads it:** every `pipeline.py`, through `snt_lib`'s `load_configuration_snt_from_dataset()`
+- **Who reads it:** every `pipeline.py` except `snt_config_publish`, which receives the file as a
+  run parameter and writes the dataset, through `snt_lib`'s `load_configuration_snt_from_dataset()`
   (then `validate_config()`, in all but `snt_metadata_json_trim`); and every notebook, through
   `load_snt_config_from_dataset()` in `shared/r/snt_utils.r`. Each logs the version's name and id.
 - **What a run records:** the 20 pipelines that call `save_pipeline_parameters()` add
