@@ -441,11 +441,11 @@ version:
 1. **`snt_lib.validate_config()` is now confirmed** — its source was supplied and §1.3 reflects it
    exactly, checked by running it against the skeleton and all five country configs, and again on
    2026-11-12 against `snt_lib` `v1.0.2` through the conformance fixtures
-   ([`README.md`](README.md#conformance-fixtures--fixtures)). The residual risk is that the
-   pipelines install `snt_lib` from the moving branch `@release-v1`
-   ([DEP-1](../../docs/BACKLOG.md#dep-1)): its requirements can tighten under any redeploy, with no
-   PR in this repo. The conformance test is pinned, so it signals such a change only when its pin is
-   bumped.
+   ([`README.md`](README.md#conformance-fixtures--fixtures)). The pipelines and the
+   conformance test pin the same tag, `v2.0.0`
+   ([`DATA_ARCHITECTURE.md` §7.1](../../docs/DATA_ARCHITECTURE.md#71-dependency-pins)), whose
+   `validate_config()` is unchanged from `v1.0.2`. The residual risk is a later bump of one pin
+   without the other.
 2. **Only the five committed reference copies were read**, not the live `SNT_config.json` in each
    country workspace. Drift between them is possible and unmeasured. Run a handful of real
    workspace configs through the app's importer early — that is the cheapest way to discover format

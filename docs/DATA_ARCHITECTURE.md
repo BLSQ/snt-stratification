@@ -740,45 +740,25 @@ indicator suffix. It needs an explicit disaggregation → population-column mapp
 
 | Library | Location | Role |
 |---|---|---|
-| `snt_lib.snt_pipeline_utils` | **external** — `git+https://github.com/BLSQ/snt_utils.git`, pinned to a commit ([§7.1](#71-dependency-resolution-is-not-reproducible)) | `load_configuration_snt_from_dataset`, `validate_config`, `run_notebook`, `run_report_notebook`, `add_files_to_dataset`, `dataset_file_exists`, `get_new_dataset_version`, `get_file_from_dataset`, `save_pipeline_parameters`, `sync_pipeline_scripts`, `get_notebook_overrides`, `push_data_to_db_table`, `delete_raw_files`, `generate_html_report`, `handle_rkernel_error_with_labels` |
+| `snt_lib.snt_pipeline_utils` | **external** — `git+https://github.com/BLSQ/snt_utils.git`, pinned to a tag ([§7.1](#71-dependency-pins)) | `load_configuration_snt_from_dataset`, `validate_config`, `run_notebook`, `run_report_notebook`, `add_files_to_dataset`, `dataset_file_exists`, `get_new_dataset_version`, `get_file_from_dataset`, `save_pipeline_parameters`, `sync_pipeline_scripts`, `get_notebook_overrides`, `push_data_to_db_table`, `delete_raw_files`, `generate_html_report`, `handle_rkernel_error_with_labels` |
 | `shared/r/snt_utils.r` | this repo (~2 450 lines) | config loading, dataset I/O, logging (`log_msg`/`pipeline_msg`), seasonality computation, cartesian completion, DHS helpers, geo helpers |
 | `shared/r/snt_report.r`, `shared/r/snt_palettes.r` | this repo | choropleths, binning, month colours/labels (FR) |
 | `worldpopclient.py` | **duplicated** in `snt_worldpop_extract/`, `snt_map_extracts/`, `snt_healthcare_access/` | WorldPop raster download |
 | `malariaAtlasProject/map.py` | `snt_map_extracts/` | MAP WCS client |
 
-### 7.1 Dependency resolution is not reproducible
+### 7.1 Dependency pins
 
-**`snt_lib` is pinned to one commit.** The 21 `requirements.txt` that install it (every SNT and
-support pipeline) carry the same line:
+Both Git dependencies are pinned to tags, so redeploying an unchanged pipeline installs the same
+code, and an upstream change reaches the pipelines only through a PR here that bumps the tag.
 
-```
-snt_lib @ git+https://git@github.com/BLSQ/snt_utils.git@44f59462846ecbb35e86c4daa8b2f434584036b3
-```
+| Dependency | Pin | Files |
+|---|---|---|
+| `snt_lib` | `git+https://git@github.com/BLSQ/snt_utils.git@v2.0.0` | all 21 that install it (every SNT and support pipeline) |
+| `openhexa.toolbox` | `git+https://github.com/BLSQ/openhexa-toolbox@v2.11.4` | 13 |
+| `openhexa.toolbox` | `…/openhexa-toolbox@v2.10.0` | `snt_era5_climate_data` |
 
-That commit is on the `snt_utils` branch `cfg-4-config-from-dataset`
-([ADR 0043](decisions/0043-config-read-from-snt-configuration-dataset.md)). Redeploying installs
-the same `snt_lib`, and an upstream change reaches the pipelines only through a PR here that bumps
-the SHA. It is not a tag, and the commit is reachable only through that branch.
-
-**`openhexa.toolbox` is not.** 13 files install it from a moving branch:
-
-```
-openhexa.toolbox @ git+https://github.com/BLSQ/openhexa-toolbox@main
-```
-
-`@main` resolves to whatever the tip of `main` happens to be *at the moment the pipeline is
-deployed*, and the installed commit is never recorded. (One file pins `@v2.10.0`; the others have
-no toolbox line.) What this means in practice:
-
-| | Effect |
-|---|---|
-| **Same code, different runtime** | Redeploying an unchanged `pipeline.py` weeks apart can install different `openhexa.toolbox` code, so behaviour changes with no diff in this repo. |
-| **Invisible blast radius** | A change in `BLSQ/openhexa-toolbox` — a renamed helper, a new required argument — propagates to those 13 pipelines on their next deploy, with no PR and no CI signal here. |
-| **Un-diagnosable failures** | After a broken run, "which version of `openhexa.toolbox` did this use?" cannot be answered. |
-
-Mitigation is the one already applied to `snt_lib`: pin a fixed point, a tag or a commit SHA,
-turning upgrades into reviewable, revertible one-line PRs, at the cost of someone bumping the refs.
-Open: [BACKLOG DEP-1](BACKLOG.md#dep-1).
+The other pipelines have no toolbox line and use the image's (§7.4). The config conformance test
+pins the same `snt_lib` tag in its own file (`tests/requirements-conformance.txt`).
 
 ### 7.1.1 Pipeline versions: three different numbers — ⚠️ pain point
 
@@ -859,12 +839,10 @@ decided here, not in this repo. Read from the registry manifest on 2026-08-27
 
 Two consequences worth knowing:
 
-- **⚠️ The image pins `openhexa.toolbox=2.11.3`; every `requirements.txt` in this repo overrides it
-  with `@main`.** So a *notebook* run interactively in JupyterLab sees the image's pinned 2.11.3,
-  while a *pipeline* run sees whatever the tip of `main` was at deploy time. The two halves of the
-  same pipeline can therefore run against different toolbox versions. This sharpens the pinning
-  argument in [§7.1](#71-dependency-resolution-is-not-reproducible): the image already does the
-  right thing, and the repo undoes it.
+- **⚠️ The image pins `openhexa.toolbox=2.11.3`; 14 `requirements.txt` in this repo override it**
+  with `v2.11.4`, or `v2.10.0` for ERA5 ([§7.1](#71-dependency-pins)). So a *notebook* run
+  interactively in JupyterLab sees 2.11.3, while the same notebook run by its pipeline sees the
+  pipeline's pin: the two halves of one pipeline run against different toolbox versions.
 - **Two R packages the code uses are not named in the image build**: `data.table` (67 call sites)
   and `rmapshaper` (4). They evidently resolve transitively today, since the notebooks run — but a
   transitive dependency is not a guarantee, and an upstream image rebuild could drop either
