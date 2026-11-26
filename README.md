@@ -243,7 +243,6 @@ Stated plainly, so nobody spends a day rediscovering them:
 | | |
 |---|---|
 | **No tests for the SNT pipelines** | CI runs `ruff` and `pytest`, but `pytest` covers only the bootstrap pipelines, contracts and tools; the R notebooks are verified by reading and by running them in a workspace. |
-| **Dependencies are unpinned** | Both entries in every `requirements.txt` install from a Git branch, so two deploys of identical code can produce different runtimes. → [detail](docs/BACKLOG.md#dep-1) |
 | **No full offline development** | R notebooks are edited locally but execute on the workspace kernel. → [the loop](pipelines/CLAUDE.md#editing-r-notebooks-the-vs-code-remote-kernel-loop) |
 | **Run order is not written down yet** | Tracked in [`docs/DATA_ARCHITECTURE.md` §4.2](docs/DATA_ARCHITECTURE.md). |
 

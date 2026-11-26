@@ -143,8 +143,8 @@ return the verdict it states.
 
 **Python side:** [`tests/test_config_conformance.py`](../../tests/test_config_conformance.py), run in
 CI against `snt_lib` pinned in
-[`tests/requirements-conformance.txt`](../../tests/requirements-conformance.txt) (`v1.0.2`, the
-commit `@release-v1` pointed to on 2026-11-12). Locally the `validate_config()` checks skip unless
+[`tests/requirements-conformance.txt`](../../tests/requirements-conformance.txt) (`v2.0.0`, the
+tag the pipelines pin). Locally the `validate_config()` checks skip unless
 `snt_lib` is installed:
 
 ```bash

@@ -112,42 +112,6 @@ separate. Decide, then set it in the `main` ruleset.
 
 ## Dependencies & reproducibility
 
-### <a id="dep-1"></a>DEP-1 · Pin the Git dependencies to fixed refs
-
-Every `requirements.txt` installs `snt_lib` from a Git ref, and 13 of the 20 also install
-`openhexa.toolbox` from `@main`. Nothing records which commit was actually installed. So
-(a) redeploying an identical `pipeline.py` a month later can produce a different runtime; (b) a
-change to `snt_utils`, such as a new required argument on `run_notebook()`, reaches every SNT pipeline
-on its next deploy, with no PR here and no CI signal; (c) "which version of `snt_lib` did this run
-use?" cannot be answered afterwards.
-
-The fix is to name a fixed point instead of a moving branch: a tag (`…/snt_utils.git@v1.4.0`) or a
-commit SHA. Upgrades then become a reviewable, revertible one-line PR. The cost is that someone has
-to bump the refs. Tags are the usual compromise.
-
-**Current repo state (checked 2026-11-18):** of the 21 files that install `snt_lib`, the 20 SNT
-pipelines pin `snt_utils.git@ca74b54aa31601f501f1f8f109c0b9268acadf35`, the head of the
-`snt_utils` branch `self-sync-r-half`
-([ADR 0044](decisions/0044-self-sync-replaces-pull-scripts.md)), and `snt_metadata_json_trim`
-pins its parent line's `44f59462846ecbb35e86c4daa8b2f434584036b3` on `cfg-4-config-from-dataset`
-([ADR 0043](decisions/0043-config-read-from-snt-configuration-dataset.md)). Both branches start
-from `release-v1`, and no tag contains either commit. For `snt_lib`, (a)–(c) no longer hold, but
-each commit is reachable only through its branch: deleting or rewriting the branch can break every
-install. **Before `v1.0.0`:** merge `self-sync-r-half` into `release-v1`, tag it, and point all 21
-files at the tag (a step in [`MIGRATION_PLAN.md`](MIGRATION_PLAN.md) Phase 5). `release-v1` itself is a branch
-(checked 2026-11-12 in a local clone); annotated tag `v1.0.2` → `23b8340` was its head that day,
-and the config conformance test pins it (`tests/requirements-conformance.txt`).
-`openhexa.toolbox @main` remains in 13 files, so (a)–(c) still hold for it. Left: a tag for the
-`snt_lib` pin, and a fixed ref for `openhexa.toolbox`. See [DOC-3](#doc-3).
-
-Related: the workspace image pins `openhexa.toolbox=2.11.3`, which `@main` overrides at pipeline
-run time, so a notebook run interactively and the same notebook run by the pipeline can see
-different toolbox versions. Decide whether that split is worth closing as part of this item.
-Facts: [`DATA_ARCHITECTURE.md` §7.1](DATA_ARCHITECTURE.md#71-dependency-resolution-is-not-reproducible),
-[§7.4](DATA_ARCHITECTURE.md#74-the-workspace-runtime-image).
-
-**Source:** CLAUDE.md *Suggestions*; DATA_ARCHITECTURE §9 #8 and #13.
-
 ### <a id="dep-2"></a>DEP-2 · A reproducible local environment for the R half
 
 The Python desk tools are covered (`dev/environment.yml` + `pyproject.toml`). Reproducing the **R**
@@ -753,7 +717,8 @@ ticket key alone (`SNT25-363`) or a short description, in the country notebooks 
 `sync_pipeline_scripts` in `snt_lib/snt_pipeline_utils.py` (`BLSQ/snt_utils`) says country variants
 are never touched. Since ADR 0046 that holds only for a variant **not** shipped in the pipeline
 version: a shipped one is copied, and a hand edit to it archived, like any notebook. Correct the
-docstring on the branch this repo pins ([DEP-1](#dep-1)).
+docstring in a new `snt_utils` tag, and bump the `snt_lib` pin in the pipelines'
+`requirements.txt` to it.
 
 Optional, in the same change: when `resolve_notebook()` picks a variant, compare its
 `snt_variant.base_sha256` with the generic notebook's sha256 and log a `[WARNING]` when they differ,
