@@ -180,12 +180,12 @@ outdated example config and are **ignored**. Related: [META-5](#meta-5).
 15 current key names as required and fails every pipeline at startup if one is missing. Nothing
 else in `snt_lib` uses the keys. The validator must change **before** the keys do. `snt_lib` is
 maintained by a colleague; the agreed route while they are unavailable: a branch of
-`BLSQ/snt_utils` off `self-sync-r-half` at `ca74b54`, the commit this repo's pipelines pin today
+`BLSQ/snt_utils` off tag `v2.0.0`, the tag this repo's pipelines pin today
 (e.g. `cfg-1-dataset-keys`; names starting with `release-v1` are blocked by the `snt_utils`
 ruleset `protect-release-branches`), and this repo's pipelines pin that branch, so the change is
 easy to undo. Not off `release-v1`: that would drop the config-from-dataset and self-sync changes.
-The branch is never merged into `release-v1`, which live countries install from
-([DEP-1](#dep-1)); it is tagged instead. `snt_development` is left untouched.
+The branch is never merged into `release-v1`, which live countries install from;
+it is tagged instead. `snt_development` is left untouched.
 
 **Where the old keys appear** (84 files mention `SNT_DATASET_IDENTIFIERS`): 20 `pipeline.py`;
 about 25 notebooks under `code/` and `.r` files under `utils/` (`config_json$SNT_DATASET_IDENTIFIERS$<KEY>`);
