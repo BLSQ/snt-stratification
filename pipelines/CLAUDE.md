@@ -230,7 +230,8 @@ repo. The first release is `v0.1.0`, a pre-release verified in a test workspace 
 
 - **`snt_workspace_deployer`** installs one GitHub release, whole, from its slim tarball asset: the
   manifest's `filesystem_files` to the workspace filesystem, every `pipelines/<name>/` through the
-  OpenHEXA API, then `.snt_release` (tag and repo). The only component that changes a workspace.
+  OpenHEXA API, each webapp from its `webapp-<name>-<tag>.zip` asset (found by slug, private, its
+  scopes; ADR 0048), then `.snt_release` (tag and repo). The only component that changes a workspace.
   Bootstrap pipelines only from the latest full release or newer (ADR 0042).
 - **`snt_pipeline_deployer`** deploys **one** named pipeline into a workspace that already holds
   real work: never the shared R library (`shared/r/`), never `.snt_release`. Its shared functions are

@@ -109,8 +109,9 @@ print(f, 'filesystem files +', z, 'files in pipeline versions =', f + z, 'checke
 ```
 
 `v0.1.0` gave 25 pipelines (20 `snt`, 2 `support`, 3 `bootstrap`) and 90 + 169 = 259 entries.
-Below, **P** stands for the pipeline count, **F** for the filesystem-file count and **E** for the
-entry count.
+Below, **P** stands for the pipeline count, **F** for the filesystem-file count, **E** for the
+entry count and **W** for the webapp count (the manifest's `webapps`; 2 since the config editor
+moved into `app/`).
 
 ## 3. Verify in fresh test workspaces, one pair per supported country
 
@@ -168,20 +169,28 @@ existing pipeline. Without it the CLI asks which pipeline to update: answer `1` 
 
 **3.3 Deployer, dry run.** Run `snt-workspace-deployer` with GitHub repository
 `BLSQ/snt-stratification`, Release tag `<tag>`, OpenHEXA API connection `openhexa-deploy`, Backup existing files
-on and **Dry run on**. **Expected:** a pre-release warning, "would …" lines, and the last line
-`Pipelines: P inspected, none registered (dry run).` Nothing changes.
+on and **Dry run on**. **Expected:** a pre-release warning, "would …" lines, then
+`Pipelines: P inspected, none registered (dry run).`, a `DRY RUN would create webapp …` line per
+webapp, and the last line `Webapps: W inspected, none changed (dry run).` Nothing changes.
 
 **3.4 Deployer, for real** (Dry run off). **Expected:** the same warning and no error.
-- The last line is `Pipelines: P/P deployed.`. The bootstrap pipelines are included, because a
-  pre-release target counts as newer than the latest full release (ADR 0042).
+- `Pipelines: P/P deployed.`, then the last line `Webapps: W/W installed or up to date.`. The
+  bootstrap pipelines are included, because a pre-release target counts as newer than the latest
+  full release (ADR 0042).
+- Webapps → `snt-config-editor` and `snt-pipelines-orchestrator-cockpit`, both private, with the
+  scopes of their `webapps/<name>/webapp.json` (API access tab). The config editor opens. Before
+  `create_pipeline_cards` has run, the orchestrator explains the missing catalog (W3), which is
+  expected; run `create-pipeline-cards` once (no parameters), reload, and it boots
+  ([ADR 0048](../../../docs/decisions/0048-workspace-deployer-installs-the-webapps.md)).
 - The deployer itself logs "already up to date, skipped" if 3.2 named it `<tag>`, or
   `… (same files, relabelled)` if 3.2 named it `v1`.
 - Pipelines → P pipelines, codes `snt-<name>`, each current version named `<tag>`.
 - Files → `pipelines/…` and `shared/r/…` (F files), plus `.snt_release` naming `<tag>` and
   `BLSQ/snt-stratification`.
 
-**3.5 Same tag again.** **Expected:** every pipeline logs "already up to date, skipped", the last
-line is `Pipelines: P/P deployed.`, and no new versions appear.
+**3.5 Same tag again.** **Expected:** every pipeline logs "already up to date, skipped", and so does
+every webapp ("already serves release `<tag>`'s bundle, skipped"); `Pipelines: P/P deployed.`, the
+last line `Webapps: W/W installed or up to date.`, and no new pipeline or webapp versions appear.
 
 Run 3.6–3.8 **before** 3.9, because the chain's report files show up as `untracked`.
 

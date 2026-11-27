@@ -1299,11 +1299,12 @@ fits (D-23). In this order:
       item below). It records whether the webapp step goes into `v1.0.0`.
       → [ADR 0048](decisions/0048-workspace-deployer-installs-the-webapps.md), 2026-11-27: the
       webapp step ships in `v1.0.0`.
-- [ ] Config editor into `app/`: `webapps/config_editor/design/index.html` becomes `app/index.html`
+- [x] Config editor into `app/`: `webapps/config_editor/design/index.html` becomes `app/index.html`
       (English only, D-23), so each release carries `webapp-config_editor-<tag>.zip`. The French
       copy `design/index_FR.html` stays, kept in step by hand and uploaded by hand until
       [EDIT-1](BACKLOG.md#edit-1). Can run alongside S5.
-- [ ] Deployer webapp step ([REL-2](BACKLOG.md#rel-2)), after the ADR. The manifest's webapp
+      → PR #25, 2026-11-27.
+- [x] Deployer webapp step, after the ADR. The manifest's webapp
       entries carry name, slug and scopes (R22). After the pipelines, the deployer fetches each
       `webapp-<name>-<tag>.zip` release asset (webapp files are not in the slim tarball), finds the
       app by slug, creates it (static, private, scopes set by the API) or updates it (`files` +
@@ -1313,6 +1314,10 @@ fits (D-23). In this order:
       USER_READ` (W8). Config editor: scopes `PIPELINES_READ, PIPELINES_RUN`
       ([ADR 0047](decisions/0047-config-editor-publishes-to-snt-configuration.md)), needs
       `snt_config_publish` installed.
+      → on `phase-7/deployer-webapps`, 2026-11-27: name, slug and scopes in a
+      `webapps/<name>/webapp.json` per app; the step always runs (no parameter); an app found at the
+      slug is adopted. Offline tests only; the test-workspace check is the §8 Phase 7 line.
+      [Deployer readme](../pipelines/snt_workspace_deployer/readme.md), step 8.
 - [ ] Keep the runtime contracts unchanged: webapp slug `snt-pipelines-orchestrator-cockpit`, bucket key
       `utils_pipelines/…` (APP-12), template name `Create pipeline_cards.json`, `GENERATOR_KEY_MATCH`.
 
@@ -1353,7 +1358,7 @@ Later, each its own ticket:
 | Deployer downloads the whole repo tarball | Slim release tarball asset (Phase 3) |
 | Everyone with write access can change everything | Branch protection. CODEOWNERS per area declined for now (D-15); to be discussed with the team |
 | `.gitignore` `*.json` trap silently drops webapp/contract JSON | Allowlist + `git check-ignore` check in Phase 1 |
-| Webapp deployment by the deployer is not built yet (no CLI/SDK route, OH-4) | Not caused or fixed by the monorepo. Spike S5 proved the route: the deployer's `openhexa-deploy` token creates and updates the static webapps through the GraphQL API ([Phase 0 findings](#phase-0-findings)). What remains is building the deployer step (REL-2, Phase 7). Until then, stamped zips keep the manual route reproducible |
+| Webapp deployment by the deployer is untested in a workspace (no CLI/SDK route, OH-4) | Not caused or fixed by the monorepo. Spike S5 proved the route: the deployer's `openhexa-deploy` token creates and updates the static webapps through the GraphQL API ([Phase 0 findings](#phase-0-findings)). The deployer step is built (Phase 7) and tested offline; the §8 Phase 7 run checks it on an rc. Until then, stamped zips keep the manual route reproducible |
 | Two live systems (old repo/templates + new) for a long period | D-4 maintenance-only + explicit archive criteria |
 | `snt_lib` stays external for now: config, Pull-scripts and path changes still need cross-repo PRs | Pin a tag (D-3). Plan `snt_lib` releases as named steps in Phases 1, 5 and 6. Long term: bring it in (§10) |
 
@@ -1428,6 +1433,7 @@ Later, each its own ticket:
 | 2026-11-18 | Phase 6 opened before `v1.0.0`, to show colleagues the new templates. Pre-release `v0.2.0` cut from `main` (not verified). Workspace `snt-templates` created; all 25 pipelines pushed from the tarball and published as templates by hand, codes `snt-<name>`, no suffixes. **D-21** (ADR 0045): names = `@pipeline` id; one workflow, `push_templates.yaml`, for every kind, with a manual trigger and an `allow_prerelease` box; `release.yaml`'s bootstrap job removed. On `phase-6/templates`: commit 1 (workflows, ADR, R23 fixes), commit 2 (this file) | CI, PR, merge. Then run `push_templates` by hand against `v0.2.0`, build the demo workspace from the templates, checker `match` — see the [Phase 6 items](#phase-6--new-template-set-for-teams-not-using-the-deployer) |
 | 2026-11-27 | **Phase 7 re-scoped, D-23** (team agreement): the workspace deployer is the main route for pipelines and webapps; the new SNT and support templates are parked as a backup (Phase 6), REL-7 still done; both webapps through the deployer, the config editor first; the editor ships English only from `app/`. The deploy connection was renamed `oh` → `openhexa-deploy` first (PR #22), and the docs now say its token is personal. On `phase-7/replan`: Phase 7 rewritten as an ordered checklist (S5 → results and ADR → editor into `app/` → deployer step), "scopes stay manual" dropped (the API sets them); BACKLOG REL-2 rewritten, new group `EDIT-*` (EDIT-1 language switch, EDIT-2 multi-file bundle). No code | REL-7 by hand; spike S5 in a test workspace — see [Phase 7](#phase-7--webapps-on-the-release-train-d-2-d-23). The editor move into `app/` can run alongside |
 | 2026-11-27 | REL-7 done by hand (template `snt_config_publish`, version 1, in `snt-templates`); deleted from the BACKLOG. **Spike S5 passed** in `snt-app-dev`: the `openhexa-deploy` token creates and updates private static webapps with their scopes; updates are published at once and carry the commit message; the run's own token is refused for writes but reads the files, which hash exactly. Found: a slug taken under another name gives a silent `-<6 hex>` duplicate. Results in [Phase 0 findings](#phase-0-findings), `roadmap.md` §4 and `openhexa_deployment.md`. On `phase-7/s5-results`: commit 1, then commit 2, [ADR 0048](decisions/0048-workspace-deployer-installs-the-webapps.md): the workspace deployer installs both webapps, looked up by slug, private, scopes from the manifest; **the webapp step ships in `v1.0.0`**; bootstrap D8 superseded for the deployer | The editor into `app/` (PR 3, `phase-7/config-editor-app`), then the deployer step (PR 4, `phase-7/deployer-webapps`), whose three questions are asked at its start |
+| 2026-11-27 | PR 3 merged (#25): the English config editor ships from `webapps/config_editor/app/`. PR 4 on `phase-7/deployer-webapps`, Giulia's three answers: name, slug and scopes in one `webapps/<name>/webapp.json` per app; the webapp step always runs; an app found at the slug is adopted. Commit 1: manifest webapp entries carry `name`, `slug`, `scopes` (R22), with invariant 7, the name slugs to the slug (OpenHEXA uses python-slugify; a deleted app keeps its slug). Commit 2: `snt_workspace_deployer` installs the webapps after the pipelines, by slug, private, scopes, tag as commit message, skip when served files match; 12 offline tests. Commit 3: docs, REL-2 deleted (two decision-record links repointed, text unchanged) | Push the deployer to a test workspace and run §8 Phase 7 on an rc |
 
 ---
 

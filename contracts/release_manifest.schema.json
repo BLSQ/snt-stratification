@@ -48,7 +48,7 @@
     },
     "webapps": {
       "type": "object",
-      "description": "{webapp name: webapp spec}, one entry per webapps/<name>/ whose app/ bundle holds at least one file that is not hidden (.gitkeep and other dotfiles are not part of a bundle). The release also attaches each bundle as webapp-<name>-<tag>.zip, with a version.json stamped at release time. Each entry also carries the app's OpenHEXA name, slug and scopes, read from webapps/<name>/webapp.json (ADR 0048). Read by no consumer until Phase 7 (the deployer and the checker ignore it). Optional; may be empty.",
+      "description": "{webapp name: webapp spec}, one entry per webapps/<name>/ whose app/ bundle holds at least one file that is not hidden (.gitkeep and other dotfiles are not part of a bundle). The release also attaches each bundle as webapp-<name>-<tag>.zip, with a version.json stamped at release time. Each entry also carries the app's OpenHEXA name, slug and scopes, read from webapps/<name>/webapp.json (ADR 0048). Read by snt_workspace_deployer, which installs each app from its zip (ADR 0048); snt_pipeline_deployer and snt_workspace_checker ignore it. Optional; may be empty.",
       "propertyNames": { "$ref": "#/$defs/directory_name" },
       "additionalProperties": { "$ref": "#/$defs/webapp" }
     }

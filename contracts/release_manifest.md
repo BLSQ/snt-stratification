@@ -71,7 +71,8 @@ Why the shape is what it is:
   `repo` says which repository the tag belongs to.
 - **`webapps`.** One entry per `webapps/<name>/app/` bundle that holds a file, with its files hashed
   relative to `app/`. The release attaches each bundle as `webapp-<name>-<tag>.zip` with a stamped
-  `version.json` (not listed). No consumer reads the block until Phase 7.
+  `version.json` (not listed). `snt_workspace_deployer` reads it to install each app from its zip;
+  the single-pipeline deployer and the checker ignore it (checker blind spot D8).
 - **`webapps.<name>.name`, `slug` and `scopes`**, copied from `webapps/<name>/webapp.json`, are
   what a deployer needs to install the app ([ADR 0048](../docs/decisions/0048-workspace-deployer-installs-the-webapps.md)):
   it looks the app up by `slug`, creates it under `name` if absent, and keeps it private with

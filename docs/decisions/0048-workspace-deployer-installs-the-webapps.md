@@ -52,7 +52,7 @@ Options weighed:
   versions already are.
 - `v1.0.0` now also waits for the editor's move into `app/`, the manifest's new webapp fields and
   the deployer step, and its release candidate is verified with both apps installed.
-- Settled with the deployer change ([REL-2](../BACKLOG.md#rel-2)): where the name, slug and scopes
+- Settled with the deployer change ([REL-2](../../pipelines/snt_workspace_deployer/readme.md#functionality-overview)): where the name, slug and scopes
   are written down, and what the deployer does with an app it finds under the right slug that it did
   not create (an app uploaded by hand).
 - Not verified: whether another workspace member can edit an app the token created.
