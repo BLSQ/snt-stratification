@@ -38,6 +38,7 @@ work and is managed by Giulia; this file holds the repo-level items behind it.
 | [Bootstrap pipelines](#bootstrap-pipelines) | `BOOT-*` |
 | [Releases & deploy](#releases--deploy) | `REL-*` |
 | [Orchestrator webapp](#orchestrator-webapp) | `APP-*`, `UI-*`, `OPS-*`, `GEN-*`, `PLAT-*`, `PM-*` |
+| [Config editor webapp](#config-editor-webapp) | `EDIT-*` |
 | [Documentation](#documentation) | `DOC-*` |
 | [Questions for the OpenHEXA developers](#questions-for-the-openhexa-developers) | `OH-*` |
 | [Questions for the SNT team (domain)](#questions-for-the-snt-team-domain) | `DOM-*` |
@@ -822,11 +823,19 @@ webapp release zip ([ADR 0037](decisions/0037-one-release-train.md)).
 
 ### <a id="rel-2"></a>REL-2 · Webapp deployer
 
-Likely a "webapps" section in `pipelines/snt_workspace_deployer`'s release manifest,
-using `updateWebapp(files: …)`; needs a CUSTOM-connection token like the pipeline deployer. Check
-what git-backed webapp versions already give.
+`snt_workspace_deployer` installs **both** webapps (the orchestrator and the config editor; the
+editor first if only one) from the same release as the pipelines, with the token it already uses
+for pipelines: the CUSTOM connection `openhexa-deploy`
+([`bootstrap/openhexa_deployment.md`](bootstrap/openhexa_deployment.md#authentication-use-the-openhexa-deploy-connection-token-not-the-runs-token)).
+The manifest's webapp entries carry name, slug and scopes. The deployer fetches each
+`webapp-<name>-<tag>.zip` release asset (webapp files are not in the slim tarball), finds the app by
+slug, and creates it (`createWebapp`: static, private, `allowedOperations` set by the API) or
+updates it (`updateWebapp`: `files` + `filesToDelete`, the tag as commit message). It skips an app
+whose served files already hash to the manifest's. `createWebapp` has no slug input: the slug comes
+from the name, so the orchestrator's name must produce `snt-pipelines-orchestrator-cockpit`.
 
-Planned: [`MIGRATION_PLAN.md`](MIGRATION_PLAN.md) Phase 7, gated on spike S5.
+Planned: [`MIGRATION_PLAN.md`](MIGRATION_PLAN.md#phase-7--webapps-on-the-release-train-d-2-d-23)
+Phase 7 (D-23). **Blocked on** spike S5 only; a CLI/SDK command ([OH-4](#oh-4)) is not needed.
 
 **Source:** `snt_webapp_orchestrator` BACKLOG.
 
@@ -1100,6 +1109,33 @@ Owned by the PM; full text and recommended version in
 - <a id="pm-3"></a>**PM-3** · Team run model and "who is running what" (v2) — §10 item 5.
 - <a id="pm-4"></a>**PM-4** · Connections and setup ownership (v2) — §10 item 6.
 - <a id="pm-6"></a>**PM-6** · Full narrative layer / onboarding tour (v2, parked) — §7 and §9.
+
+---
+
+## Config editor webapp
+
+The SNT config editor ([`webapps/config_editor/`](../webapps/config_editor/)), which publishes
+`SNT_config.json` to `SNT_CONFIGURATION`
+([ADR 0047](decisions/0047-config-editor-publishes-to-snt-configuration.md)). Agreed: releases
+will carry it in English only for now, once it moves into `app/`
+([`MIGRATION_PLAN.md`](MIGRATION_PLAN.md#phase-7--webapps-on-the-release-train-d-2-d-23), D-23).
+
+### <a id="edit-1"></a>EDIT-1 · English/French switch in the editor
+
+Give the editor a language switch like the orchestrator's, so one deployed app serves English and
+French users. It replaces the hand-kept French copy `design/index_FR.html`, which differs only in
+user-facing text, is in no release and is uploaded by hand. A later stage; soon if the rest of
+Phase 7 goes quickly.
+
+**Source:** Phase 7 re-scope, 2026-11-27.
+
+### <a id="edit-2"></a>EDIT-2 · Split the editor into a multi-file bundle
+
+The agreed direction: the editor becomes a multi-file bundle (html + css + js, no build step), as
+the orchestrator is ([ADR 0016](decisions/0016-multi-file-bundle-no-build.md)). Not urgent. Natural
+to do together with [EDIT-1](#edit-1), or before it: a split file makes the switch easier.
+
+**Source:** Phase 7 re-scope, 2026-11-27.
 
 ---
 
