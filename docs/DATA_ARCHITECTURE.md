@@ -498,7 +498,8 @@ Note the shapes fan-out: the three external-source pipelines are **downstream of
 
 Not drawn either, because every box has it: **the config is an input of every pipeline and every
 notebook**, read from the latest version of the `SNT_CONFIGURATION` dataset
-([§5.4](#54-configuration-schema-snt_configjson)) before anything else runs.
+([§5.4](#54-configuration-schema-snt_configjson)) before anything else runs. Its one writer is the
+support pipeline `snt_config_publish`, run by the config editor, besides uploads by hand.
 
 ---
 
@@ -635,7 +636,8 @@ file `SNT_config.json` in the **latest version** of the OpenHEXA dataset `SNT_CO
 `snt-configuration`, one per workspace. The slug is hardcoded, not in `SNT_DATASET_IDENTIFIERS`, and
 the file name has no `{CC}_` prefix: it is read before the country is known.
 
-- **Who reads it:** every `pipeline.py`, through `snt_lib`'s `load_configuration_snt_from_dataset()`
+- **Who reads it:** every `pipeline.py` except `snt_config_publish`, which receives the file as a
+  run parameter and writes the dataset, through `snt_lib`'s `load_configuration_snt_from_dataset()`
   (then `validate_config()`, in all but `snt_metadata_json_trim`); and every notebook, through
   `load_snt_config_from_dataset()` in `shared/r/snt_utils.r`. Each logs the version's name and id.
 - **What a run records:** the 20 pipelines that call `save_pipeline_parameters()` add
@@ -645,8 +647,11 @@ the file name has no `{CC}_` prefix: it is read before the country is known.
 - **When it is missing** (no dataset, no version, no file, failed download, invalid JSON): the run
   stops with `[ERROR] No usable SNT_config.json in the latest version of dataset
   SNT_CONFIGURATION (snt-configuration): …`, linking to the how-to.
-- **How to provide it:** upload the whole file as a new version, by hand in the OpenHEXA UI until
-  the config editor writes it: [how-to](../contracts/snt_config/README.md#snt-configuration-dataset).
+- **How to provide it:** a new version holding the whole file, published by the
+  [`snt_config_publish`](../pipelines/snt_config_publish/readme.md) pipeline, which the config
+  editor runs (with the editor's log `SNT_config.log.json` beside it,
+  [ADR 0047](decisions/0047-config-editor-publishes-to-snt-configuration.md)), or uploaded by hand
+  in the OpenHEXA UI: [how-to](../contracts/snt_config/README.md#snt-configuration-dataset).
   The file must also pass `validate_config()`, which the SNT pipelines run right after loading it:
   a file missing a key the validator requires (for example
   `SNT_DATASET_IDENTIFIERS.SNT_POPULATION_USER_PROVIDED`) loads and then fails.
@@ -753,8 +758,8 @@ code, and an upstream change reaches the pipelines only through a PR here that b
 
 | Dependency | Pin | Files |
 |---|---|---|
-| `snt_lib` | `git+https://git@github.com/BLSQ/snt_utils.git@v2.0.0` | all 21 that install it (every SNT and support pipeline) |
-| `openhexa.toolbox` | `git+https://github.com/BLSQ/openhexa-toolbox@v2.11.4` | 13 |
+| `snt_lib` | `git+https://git@github.com/BLSQ/snt_utils.git@v2.0.0` | all 22 that install it (every SNT and support pipeline) |
+| `openhexa.toolbox` | `git+https://github.com/BLSQ/openhexa-toolbox@v2.11.4` | 14 |
 | `openhexa.toolbox` | `…/openhexa-toolbox@v2.10.0` | `snt_era5_climate_data` |
 
 The other pipelines have no toolbox line and use the image's (§7.4). The config conformance test
@@ -839,7 +844,7 @@ decided here, not in this repo. Read from the registry manifest on 2026-08-27
 
 Two consequences worth knowing:
 
-- **⚠️ The image pins `openhexa.toolbox=2.11.3`; 14 `requirements.txt` in this repo override it**
+- **⚠️ The image pins `openhexa.toolbox=2.11.3`; 15 `requirements.txt` in this repo override it**
   with `v2.11.4`, or `v2.10.0` for ERA5 ([§7.1](#71-dependency-pins)). So a *notebook* run
   interactively in JupyterLab sees 2.11.3, while the same notebook run by its pipeline sees the
   pipeline's pin: the two halves of one pipeline run against different toolbox versions.

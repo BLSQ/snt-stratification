@@ -67,11 +67,19 @@ in `SCOPE_GRANTS`; check there before selecting a new nested field:
 | `PIPELINES_READ` | `pipeline`, `pipelines`, `pipelineByCode`, `pipelineRun`, `pipelineVersion` |
 | `PIPELINES_RUN` | `runPipeline`, `stopPipeline` |
 | `FILES_READ` | `prepareObjectDownload`, `getFileByPath`, `readFileContent` |
-| `DATASETS_READ` | `dataset`, `datasets`, `datasetVersion`, `datasetLink` |
+| `DATASETS_READ` | `dataset`, `datasets`, `datasetVersion`, `datasetLink`, `datasetLinkBySlug`, `datasetVersionFile`; also `Workspace.datasets` (reached through `workspace`, so with `USER_READ` too) |
+| `DATASETS_WRITE` | ⚠️ **Being removed — do not build on it.** Mutations `createDataset`, `updateDataset`, `createDatasetVersion`, `updateDatasetVersion`, `createDatasetVersionFile` |
 | `DATABASE_READ` | `executeSavedQuery` (a Data Studio saved query by slug, shared with the workspace; `executeSQL` is always refused) |
 
-`FILES_WRITE` and `DATASETS_WRITE` also exist, but the upstream doc does not list what they grant —
-check before relying on them. `__typename`, `__schema` and `__type` are always allowed.
+**Webapps will not write.** The OpenHEXA developers said on 2026-11-26 that webapp writes, to
+datasets (`DATASETS_WRITE`) and to the filesystem (`FILES_WRITE`), are kept only for existing uses
+and will be removed. A webapp that needs to write runs a pipeline that does it (`PIPELINES_RUN`),
+as the config editor does with `snt_config_publish`
+([ADR 0047](decisions/0047-config-editor-publishes-to-snt-configuration.md)). A webapp without the
+scope gets `HTTP 403: Fields not allowed: CreateDatasetResult.dataset, …, Mutation.createDataset.
+Enable scope(s): DATASETS_WRITE`. The `DATASETS_*` rows were read from `SCOPE_GRANTS` on
+openhexa-app `main` on 2026-11-26. `__typename`, `__schema` and `__type` are
+always allowed.
 
 **The orchestrator needs exactly four: `PIPELINES_READ`, `PIPELINES_RUN`, `FILES_READ`,
 `USER_READ`.**
@@ -98,7 +106,8 @@ Available under these scopes but unused: `readFileContent` (an alternative catal
 [UI-10](BACKLOG.md#ui-10)), `getFileByPath`.
 
 ⚠️ **Public webapps cannot call the proxy at all.** The orchestrator must stay **private**; making
-it public silently kills every query and the app cannot boot.
+it public silently kills every query and the app cannot boot. Whether a public webapp can call
+anything at all is being checked: [OH-8](BACKLOG.md#oh-8).
 
 Scopes are **webapp metadata**, not part of the bundle — how to set and check them:
 [`DEPLOYMENT.md`](../webapps/orchestrator/docs/DEPLOYMENT.md#setting-scopes).

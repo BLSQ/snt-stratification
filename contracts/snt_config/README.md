@@ -2,9 +2,9 @@
 
 Reference for the structure of the SNT configuration file. **Nothing in this folder is read by a
 pipeline.** In a workspace, the config is the file `SNT_config.json` in the latest version of the
-dataset `SNT_CONFIGURATION`: one file, one country, one workspace
-([ADR 0043](../../docs/decisions/0043-config-read-from-snt-configuration-dataset.md)). People upload
-it by hand ([below](#snt-configuration-dataset)); in future the config editor will write it.
+dataset `SNT_CONFIGURATION`: one config, one country, one workspace
+([ADR 0043](../../docs/decisions/0043-config-read-from-snt-configuration-dataset.md)). The config
+editor publishes it, or people upload it by hand ([below](#snt-configuration-dataset)).
 
 | File | What it is | Trust it? |
 |---|---|---|
@@ -29,7 +29,19 @@ or the file is missing, the run stops with an error that links here:
 [ERROR] No usable SNT_config.json in the latest version of dataset SNT_CONFIGURATION (snt-configuration): <reason>. Provide a valid SNT_config.json file. See <link to this section>
 ```
 
-Until the config editor writes the dataset, set it up by hand in the OpenHEXA workspace:
+**With the config editor** (deployed as a private webapp in the workspace,
+[`webapps/config_editor/`](../../webapps/config_editor/CLAUDE.md)): fill in the form and click
+**Publish to SNT_CONFIGURATION**. The editor runs the
+[`snt_config_publish`](../../pipelines/snt_config_publish/readme.md) pipeline, which must be
+installed in the workspace. The pipeline checks the file with `validate_config()`, creates the
+dataset if there is none, checks its name and slug, and adds a new version named
+`SNT_{CC}_{YYYYMMDD_HHMM}` (UTC) holding `SNT_config.json` and the editor's log
+`SNT_config.log.json`
+([ADR 0047](../../docs/decisions/0047-config-editor-publishes-to-snt-configuration.md)). The
+pipelines read only `SNT_config.json`. Without the editor, you can run `snt_config_publish` by hand
+and paste the file's text into its first parameter.
+
+**By hand**, in the OpenHEXA workspace:
 
 1. **Create the dataset once.** In **Datasets**, create a dataset named exactly
    `SNT_CONFIGURATION`. One per workspace.

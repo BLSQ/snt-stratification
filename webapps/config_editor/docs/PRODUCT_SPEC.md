@@ -362,8 +362,9 @@ question 1) — do not enforce a rule the team has not agreed.
 > every notebook reads `SNT_config.json` from the latest version of the OpenHEXA dataset
 > `SNT_CONFIGURATION` (slug `snt-configuration`). A valid config is therefore published as a new
 > version of that dataset, not written to `/configuration`. Where §6–7 name that path or
-> `load_configuration_snt()`, they predate this. How the editor stores drafts, validates and
-> writes the version is decided when it is built. Until then, people upload the file by hand:
+> `load_configuration_snt()`, they predate this. How the editor writes the version, and that drafts
+> stay in the browser: [ADR 0047](../../../docs/decisions/0047-config-editor-publishes-to-snt-configuration.md)
+> and the note at the top of §7. The hand upload still works:
 > [how-to](../../../contracts/snt_config/README.md#snt-configuration-dataset).
 
 ### 6.1 The principle
@@ -527,10 +528,17 @@ snapshots become dataset file versions with no change to their shape.
 
 ## 7. Save layer — one interface, staged backends
 
-**An OpenHEXA web app deployed in a workspace can write to the workspace filesystem.** So
-`/configuration` is reachable, and the download-only first step is a deliberate staging choice, not
-a platform limit. *(To be verified against the OpenHEXA MCP tools when the writing step is built —
-the exact mechanism and permissions are not yet confirmed here.)*
+> **Note, 2026-11-26: step 2 is `DatasetStore`**
+> ([ADR 0047](../../../docs/decisions/0047-config-editor-publishes-to-snt-configuration.md)).
+> Inside OpenHEXA, `publishValid` runs the `snt_config_publish` pipeline with the file and its log;
+> the pipeline checks the file with `validate_config()` and publishes `SNT_config.json` +
+> `SNT_config.log.json` as one new version of `SNT_CONFIGURATION` (scopes `PIPELINES_READ`,
+> `PIPELINES_RUN`). Drafts stay in `localStorage` with a download. `WorkspaceStore` below, and the
+> `/configuration` paths in §6, predate ADR 0043 and are not built.
+
+~~**An OpenHEXA web app deployed in a workspace can write to the workspace filesystem.**~~ No
+longer true in the long term: OpenHEXA is removing webapp writes (note above), which is why a
+pipeline writes.
 
 Staging the work this way keeps the first milestone free of any platform dependency: the form and
 the validation engine — which are the whole product — get built and reviewed before anything touches
@@ -539,8 +547,8 @@ a filesystem.
 | Stage | `saveDraft` | `publishValid` | Status |
 |---|---|---|---|
 | `LocalStore` | `localStorage` + a Download button | Download `SNT_config.json` + `.log.json` | **v1 step 1 — proof of concept** |
-| `WorkspaceStore` | Writes `snt_config_draft.json` + a history snapshot into `/configuration` | Writes live `SNT_config.json` + history snapshot + `.log.json` sidecar | **v1 step 2 — the real target** |
-| `DatasetStore` | — | Also registers a new version in the `SNT_CONFIGURATION` OpenHEXA dataset | long-term goal |
+| `WorkspaceStore` | Writes `snt_config_draft.json` + a history snapshot into `/configuration` | Writes live `SNT_config.json` + history snapshot + `.log.json` sidecar | not built — superseded by `DatasetStore` (ADR 0043) |
+| `DatasetStore` | As `LocalStore` | Runs `snt_config_publish`, which adds a version of `SNT_CONFIGURATION` with `SNT_config.json` + `SNT_config.log.json` | **v1 step 2 — built in the prototype ([ADR 0047](../../../docs/decisions/0047-config-editor-publishes-to-snt-configuration.md))** |
 
 ```ts
 interface ConfigStore {
@@ -704,8 +712,10 @@ Blocking a *correct* app, not a *working* one. From `config_analysis_notes.md` �
 4. **Author identity source.** Does the OpenHEXA webapp context expose the logged-in user to the
    page? If yes, prefill `author`; if not, the app asks for a name once and remembers it.
    `source: "openhexa" | "manual"` in the metadata exists to record which.
-5. **Retention/registration in the `SNT_CONFIGURATION` dataset** — one dataset per country, or one
-   dataset with per-country files? Affects nothing in v1 but shapes `DatasetStore`.
+5. ~~**Retention/registration in the `SNT_CONFIGURATION` dataset**~~ — settled: one dataset per
+   workspace ([ADR 0043](../../../docs/decisions/0043-config-read-from-snt-configuration-dataset.md)),
+   a new version per publish, old versions kept
+   ([ADR 0047](../../../docs/decisions/0047-config-editor-publishes-to-snt-configuration.md)).
 6. **Does any country actually run two DHIS2 instances for SNT — and if so, how?** A national SNIS
    and an NMDR hold the same indicators under different UIDs, so each needs its own config, while
    the pipelines read exactly one file, `SNT_config.json` in the latest version of

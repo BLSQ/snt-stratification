@@ -24,10 +24,10 @@ A **unit** is something deployed on its own. Each is one folder (R26).
 |---|---|---|
 | **SNT pipelines** (20, `kind: snt`) | `pipelines/<name>/` | Turn DHIS2 routine data and external sources into ADM2-level data layers, published as OpenHEXA datasets. Python orchestrates; R notebooks compute |
 | **Shared R library** | `shared/r/` | `snt_utils.r`, `snt_report.r`, `snt_palettes.r`, sourced by the notebooks |
-| **Support pipelines** (2, `kind: support`) | `pipelines/create_pipeline_cards/`, `pipelines/snt_metadata_json_trim/` | Build the orchestrator's catalog; trim the SNT Explorer master list to one workspace |
+| **Support pipelines** (3, `kind: support`) | `pipelines/create_pipeline_cards/`, `pipelines/snt_metadata_json_trim/`, `pipelines/snt_config_publish/` | Build the orchestrator's catalog; trim the SNT Explorer master list to one workspace; publish a valid `SNT_config.json` for the config editor |
 | **Bootstrap pipelines** (3, `kind: bootstrap`) | `pipelines/snt_workspace_deployer/`, `snt_pipeline_deployer/`, `snt_workspace_checker/` | Install a release (whole, or one pipeline) into a workspace; check which release a workspace matches |
 | **Orchestrator webapp** | `webapps/orchestrator/` | Guided, bilingual cockpit: see the status of each SNT pipeline, configure it and run it |
-| **Config editor webapp** | `webapps/config_editor/` | Produce a valid `SNT_config.json`. Spec stage, no code yet |
+| **Config editor webapp** | `webapps/config_editor/` | Produce a valid `SNT_config.json` and publish it to `SNT_CONFIGURATION`. A single-file prototype in `design/`; `app/` empty |
 
 Kinds are recorded in [`pipelines/registry.json`](../pipelines/registry.json), not in the path:
 the repo path of every file that lands in a workspace equals its workspace path
@@ -47,7 +47,8 @@ the repo path of every file that lands in a workspace equals its workspace path
                                            ▼
  ┌───────────────────── one OpenHEXA workspace (one country) ─────────────────────┐
  │                                                                                │
- │  SNT_CONFIGURATION dataset ◄── operator by hand / config editor (planned)      │
+ │  SNT_CONFIGURATION dataset ◄── snt_config_publish ◄── config editor webapp     │
+ │                            ◄── operator by hand                                │
  │          │ read by every pipeline                                              │
  │          ▼                                                                     │
  │  SNT pipelines ── run ──► pipelines/<name>/code/*.ipynb + shared/r/*.r         │
@@ -72,7 +73,7 @@ Every arrow that crosses a unit boundary is a **contract**: a file whose shape a
 depends on. The list, with producer, consumers and schema for each, is
 [`contracts/README.md`](../contracts/README.md). The main ones:
 
-- **`SNT_config.json`** — operator or config editor → every pipeline.
+- **`SNT_config.json`** — config editor → `snt_config_publish`, or operator by hand → every pipeline.
 - **Datasets and their files** — each SNT pipeline → downstream pipelines and the SNT Explorer
   ([`DATA_ARCHITECTURE.md` §3](DATA_ARCHITECTURE.md#3-data-lineage)).
 - **`SNT_metadata.json`** — master list → `snt_metadata_json_trim` → SNT Explorer.

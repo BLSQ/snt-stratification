@@ -872,6 +872,17 @@ before relying on the template route ([`MIGRATION_PLAN.md`](MIGRATION_PLAN.md) P
 
 **Source:** self-sync discussion, 2026-11-17; self-sync pilot test in `snt-testing`, 2026-11-17.
 
+### <a id="rel-7"></a>REL-7 · Publish `snt_config_publish` as a template before the next full release
+
+`snt_config_publish` is a new support pipeline
+([ADR 0047](decisions/0047-config-editor-publishes-to-snt-configuration.md)). Before the next full
+release, push it once by hand to `snt-templates` and publish it as a template named after its
+`@pipeline` id ([adding a pipeline, step 7](CONVENTIONS.md#adding-or-changing-a-pipeline)). Until
+then [`push_templates.yaml`](../.github/workflows/push_templates.yaml) fails on it, because `--code`
+only selects a pipeline that already exists there.
+
+**Source:** config editor dataset write, 2026-11-26.
+
 ---
 
 ## Orchestrator webapp
@@ -1249,6 +1260,18 @@ them; does generating a new token invalidate the old one (which would break the 
 can the JWT deploy a pipeline version?
 
 **Source:** Giulia's OpenHEXA deployment notes (local), 2026-09.
+
+### <a id="oh-8"></a>OH-8 · What may a public webapp call through the GraphQL proxy?
+
+[`OPENHEXA_WEBAPP_RUNTIME.md`](OPENHEXA_WEBAPP_RUNTIME.md#allowed_operations-scopes) says public
+webapps cannot call the proxy at all. Two observations suggest the rule is narrower: during the
+config editor's dataset-write work a public webapp got an HTTP 403 from the proxy, and openhexa-app
+`backend/hexa/webapps/scopes.py` defines a scope set for public webapps. Ask the OpenHEXA developers
+what a public webapp may call, then correct the runtime doc. Until then both webapps stay private:
+the orchestrator, and the config editor
+([ADR 0047](decisions/0047-config-editor-publishes-to-snt-configuration.md)).
+
+**Source:** config editor dataset write, 2026-11-26.
 
 ---
 

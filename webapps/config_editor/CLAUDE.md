@@ -17,10 +17,19 @@ copies drift.
 
 ## Current state
 
-Docs and spec only. No app code yet: `app/` is empty. [`design/index.html`](design/index.html) is a
-standalone throwaway prototype for reviewing the UX — not the codebase.
-[`design/index_FR.html`](design/index_FR.html) is its French copy (only user-facing text differs);
-change both files together, by hand, until the real app replaces them.
+`app/` is empty. [`design/index.html`](design/index.html) is a standalone single-file prototype,
+and the version people use: uploaded as a private OpenHEXA webapp, it publishes valid configs to
+the `SNT_CONFIGURATION` dataset by running the
+[`snt_config_publish`](../../pipelines/snt_config_publish/readme.md) pipeline
+([ADR 0047](../../docs/decisions/0047-config-editor-publishes-to-snt-configuration.md)); opened from
+disk, it only downloads. [`design/index_FR.html`](design/index_FR.html) is its French copy (only
+user-facing text differs); change both files together, by hand, until the real app in `app/`
+replaces them.
+
+**Deploying it:** a private static webapp whose only file is the chosen `index*.html`, uploaded as
+`index.html`, with the scopes `PIPELINES_READ` and `PIPELINES_RUN`, in a workspace where
+`snt_config_publish` is installed. The webapp writes nothing itself: OpenHEXA is removing webapp
+writes ([runtime notes](../../docs/OPENHEXA_WEBAPP_RUNTIME.md#allowed_operations-scopes)).
 
 ## Decisions already made — do not relitigate
 
@@ -31,12 +40,21 @@ change both files together, by hand, until the real app replaces them.
   download-only (proof of concept), step 2 saves into the workspace. Both are v1. Spec §7. **The save target is now the `SNT_CONFIGURATION` dataset**, not
   `/configuration`: the pipelines read the latest version of that dataset
   ([ADR 0043](../../docs/decisions/0043-config-read-from-snt-configuration-dataset.md); note at the
-  top of spec §6). How step 2 writes is decided when it is built.
+  top of spec §6).
+- **How step 2 writes** ([ADR 0047](../../docs/decisions/0047-config-editor-publishes-to-snt-configuration.md)):
+  `DatasetStore` runs the `snt_config_publish` pipeline with the file and its log as parameters
+  (`config_json`, `editor_log_json`), follows the run, and shows the version name or the
+  pipeline's `[ERROR]`. The pipeline does the rest: `validate_config()`, the dataset's slug and name
+  checks (creating it if missing), and the version `SNT_{CC}_{YYYYMMDD_HHMM}` (UTC) holding
+  `SNT_config.json` + `SNT_config.log.json`. `DatasetStore` is used only when `window.OPENHEXA` is
+  set; otherwise `LocalStore` downloads. **Lockstep:** the parameter codes, the log line the editor
+  reads the version name from (`as version '…'`) and the pipeline's name live in both
+  [`pipeline.py`](../../pipelines/snt_config_publish/pipeline.py) and the two `index*.html`; change
+  them together.
 - **All persistence goes through the `ConfigStore` interface** (spec §7). No form or validation code
   may touch `localStorage`, `fetch`, or a path directly.
 - **`SNT_config.json` is published only when valid**, as a new version of `SNT_CONFIGURATION`.
-  Drafts never reach that dataset. Where they live is decided with step 2; spec §6 designed them as
-  `snt_config_history/` and `snt_config_draft.json` beside the old disk path.
+  Drafts never reach that dataset: they stay in the browser, with a download.
 - **Metadata placement:** `_EDITOR_METADATA` inline in drafts, stripped on promotion and written to a
   `.log.json` sidecar for valid files. Spec §6.3.
 - **Indicator keys:** the skeleton's 18, plus a free-text "other key" escape hatch that warns.
