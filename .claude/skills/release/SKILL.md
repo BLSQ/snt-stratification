@@ -87,7 +87,7 @@ gh release view <tag> --repo BLSQ/snt-stratification --json isPrerelease,assets 
 ```
 
 **Expected:** `true`, then `release_manifest.json`, `snt-stratification-<tag>.tar.gz` and one
-`webapp-<name>-<tag>.zip` per bundle in `webapps/*/app/` (today: `orchestrator`). If the `assets`
+`webapp-<name>-<tag>.zip` per bundle in `webapps/*/app/` (today: `config_editor` and `orchestrator`). If the `assets`
 job failed:
 - with no code at fault (a runner or network error), re-run it. `--clobber` replaces whatever was
   attached;

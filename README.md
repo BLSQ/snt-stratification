@@ -70,7 +70,7 @@ the stage letters above are used throughout (stage `A2` here is written `A′` t
 |---|---|
 | [`pipelines/<name>/`](pipelines/) | One folder per pipeline, folder name = `@pipeline` id: `pipeline.py`, `requirements.txt`, `readme.md` (the pipeline's user-facing contract), and its R half in `code/`, `reporting/`, `utils/`. Kinds (SNT, support, bootstrap) are listed in [`pipelines/registry.json`](pipelines/registry.json). No CI deploys anything yet. |
 | [`shared/r/`](shared/r/) | Shared R library used across pipelines (`snt_utils`, `snt_report`, `snt_palettes`); was `code/`. |
-| [`webapps/`](webapps/) | The orchestrator (`orchestrator/app/` is the deployable bundle) and the config editor (a single-file prototype in `design/`, `app/` empty), each with its own `docs/` and `design/`. |
+| [`webapps/`](webapps/) | The orchestrator (`orchestrator/app/` is the deployable bundle) and the config editor (a single file, `config_editor/app/index.html`, in English), each with its own `docs/` and `design/`. |
 | [`contracts/`](contracts/README.md) | Every cross-unit contract: the `SNT_config.json` skeleton, the `SNT_metadata.json` schema, the release manifest and status report schemas, the orchestrator's schemas. The live config lives in each workspace. |
 | [`catalogs/`](catalogs/README.md) | Universal references shipped with each release (`SNT_metadata_master.json`). |
 | [`docs/`](docs/) | Docs that span several units: architecture, glossary, standards, ownership, backlog, decisions, the migration plan; `docs/bootstrap/` for the three bootstrap pipelines. |
@@ -285,7 +285,7 @@ readable at these commits.
   `contracts/snt_config/config_field_matrix.md`, `docs/MIGRATION_PLAN.md`,
   `pipelines/snt_dhis2_outliers_imputation_path/code/snt_dhis2_outliers_imputation_path.ipynb`,
   `pipelines/snt_dhis2_reporting_rate_dataset/code/snt_dhis2_reporting_rate_dataset.ipynb`,
-  `pipelines/snt_metadata_json_trim/readme.md`, `webapps/config_editor/design/index.html`,
+  `pipelines/snt_metadata_json_trim/readme.md`, `webapps/config_editor/app/index.html`,
   `webapps/config_editor/docs/PRODUCT_SPEC.md`,
   `webapps/orchestrator/design/wireframes/orchestrator_wireframe_cockpit_narrative.html`,
   `webapps/orchestrator/docs/BACKLOG.md`.

@@ -1109,8 +1109,8 @@ Owned by the PM; full text and recommended version in
 
 The SNT config editor ([`webapps/config_editor/`](../webapps/config_editor/)), which publishes
 `SNT_config.json` to `SNT_CONFIGURATION`
-([ADR 0047](decisions/0047-config-editor-publishes-to-snt-configuration.md)). Agreed: releases
-will carry it in English only for now, once it moves into `app/`
+([ADR 0047](decisions/0047-config-editor-publishes-to-snt-configuration.md)). Releases carry it
+in English only for now, from `app/index.html`
 ([`MIGRATION_PLAN.md`](MIGRATION_PLAN.md#phase-7--webapps-on-the-release-train-d-2-d-23), D-23).
 
 ### <a id="edit-1"></a>EDIT-1 · English/French switch in the editor

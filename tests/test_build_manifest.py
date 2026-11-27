@@ -202,4 +202,5 @@ def test_this_repo_builds_a_valid_manifest() -> None:
         name: entry["kind"] for name, entry in registry.items()
     }
     assert any(p.startswith("shared/r/") for p in manifest["filesystem_files"])
-    assert "config_editor" not in manifest["webapps"]  # its app/ holds only .gitkeep
+    assert set(manifest["webapps"]) == {"config_editor", "orchestrator"}
+    assert list(manifest["webapps"]["config_editor"]["files"]) == ["index.html"]
