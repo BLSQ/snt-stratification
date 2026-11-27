@@ -51,8 +51,8 @@ and documented separately:
 **Success:**
 - A fresh test workspace can be bootstrapped end to end from a GitHub release of the new repo:
   pipelines, R half, webapps, with a version marker, and the checker reports `match`.
-- A second fresh workspace can be set up from the **new template set**. Its pipeline codes equal
-  `snt-<name>`, so the deployer and checker can take it over later.
+- The **new template set** stays a working emergency backup (parked, D-23): a workspace set up from
+  it gets pipeline codes equal to `snt-<name>`, so the deployer and checker can take it over.
 - One CLAUDE.md router, one Register, one BACKLOG and one ADR sequence for everything.
 
 ---
@@ -83,6 +83,7 @@ and documented separately:
 | D-20 | **Self-sync replaces Pull scripts** (was OD-9), before `v1.0.0` because removing the flag is a breaking change and, left in, it pulls the old repo's notebooks over a release. Each SNT pipeline copies its bundled notebooks and `utils/*.r` to the workspace on every run when the sha256 differs, archiving the replaced copy under `archive/self_sync/<stamp>/`. Escape hatch: edited notebooks in `pipelines/<name>/custom/`, run when the new flag `use_custom_notebooks` is on; `_<CC>` variants stay automatic; every non-repo notebook logs a `[WARNING]` and is recorded in `{CC}_parameters.json` (`NOTEBOOK_OVERRIDES`). `shared/r/` is not synced (REL-6). Recorded as [ADR 0044](decisions/0044-self-sync-replaces-pull-scripts.md) | 2026-11-17 |
 | D-21 | **How the new templates are published** (Phase 6). Publishing workspace **`snt-templates`**. Source pipeline display name = template name = `@pipeline` id, so template-created codes are `snt-<name>` (S3 corrected). Each pipeline is pushed and published as a template by hand once. **One workflow**, `push_templates.yaml`, pushes every `snt`, `support` and `bootstrap` pipeline (`release.yaml`'s bootstrap job removed), on each full release and **by hand** for a published release tag; a pre-release tag needs the `allow_prerelease` box. Shown to colleagues first with a manual run of pre-release `v0.2.0`; no fake full release (a permanent tag that would become GitHub "latest", feeding untested code to the deployer's blank tag, its bootstrap guard and the checker's attribution). Recorded as [ADR 0045](decisions/0045-how-the-new-templates-are-published.md) | 2026-11-18 |
 | D-22 | **Country variants are committed beside their generic notebook** (was OD-10). A `<generic>_<CC>.ipynb` variant goes in `code/` or `reporting/` next to the generic one and ships in the pipeline version, so self-sync, the deployer and templates deliver it; a hook called by `pipeline.py` goes in `code/` as `<CC>_<name>.ipynb`. Only credentials, country data, notebook outputs and personal data block publishing; Jira and Sheets links and DHIS2 identifiers are approved item by item until the PM rules on them. Each variant carries a `snt_variant` metadata header (what it was forked from), checked in CI, which warns when the generic notebook has moved on. A variant change reaches its country with the next release; `custom/` is the urgent path and stays unversioned. Releases are verified once per supported country. Left out for now: `snt_seasonality_rainfall_NER.ipynb` (probably obsolete) and `snt_dhis2_formatting_pyramid_BDI.ipynb` (probably superseded). Recorded as [ADR 0046](decisions/0046-country-variants-in-the-repo.md) | 2026-11-23 |
+| D-23 | **The workspace deployer is the main route into a workspace, for pipelines and webapps** (team agreement; Phase 7 re-scoped). (1) `snt_workspace_deployer` is the main and safest route for pipelines. The new SNT and support templates (Phase 6) are **parked**: kept as an emergency backup, as they are, with no further investment; REL-7 is the one item still done, so `push_templates.yaml` stays green on full releases. The bootstrap templates are unchanged: they are how the deployer itself reaches a workspace (D-17). (2) The CUSTOM connection `openhexa-deploy` (renamed from `oh` before `v1.0.0`, PR #22) stays: a workspace member sets it up by hand with their **personal** API key, so deploys are attributed to that member, as OpenHEXA already does ([`openhexa_deployment.md`](bootstrap/openhexa_deployment.md#authentication-use-the-openhexa-deploy-connection-token-not-the-runs-token)). The deployer reuses it for webapps **if spike S5 passes**. (3) **Both webapps** go through the deployer; if only one, the **config editor**. (4) The config editor ships in releases **English only** for now: `design/index.html` becomes `app/index.html`, and the French copy stays in `design/`, uploaded by hand. A language switch (EDIT-1) and a multi-file bundle (EDIT-2) are recorded for later. (5) Whether the deployer's webapp step goes into `v1.0.0` is decided after S5 | 2026-11-27 |
 
 ## 3. Open decisions (owner: Giulia unless stated)
 
@@ -273,7 +274,9 @@ in **new test workspaces** (names TBD, e.g. `snt-mono-test`, `snt-mono-templates
 - [x] Spike S4 — can the orchestrator read `PipelineRun.config` (the run's `run_report_only` value)
       through the webapp proxy with `PIPELINES_READ`? Grep `reference/openhexa/schema.generated.graphql`
       first. → **yes**, 2026-11-03.
-- [ ] Spike S5 (optional, Phase 7 input) — `updateWebapp(files:)` with a CUSTOM-connection token.
+- [ ] Spike S5 (Phase 7 input; no longer optional, D-23) — can the deployer's `openhexa-deploy`
+      token create and update static webapps (`createWebapp`, `updateWebapp(files:)`)? The checks
+      and the pass rule are in [Phase 7](#phase-7--webapps-on-the-release-train-d-2-d-23).
 - [x] Pre-publication audit list (first pass done 2026-11-03; second pass **passed** 2026-11-05, P1-7; see findings): which files in the source trees are unfit for a public repo? Known
       candidates: the persona questionnaire (`docs/research/personas/…`, answers from real people),
       country-specific `_<CC>` notebooks with DHIS2 UIDs, workspace slugs, Jira references,
@@ -1173,6 +1176,12 @@ not here:
   map knowing.
 
 ### Phase 6 — New template set (for teams not using the deployer)
+
+> **Parked 2026-11-27 (D-23).** The workspace deployer is the main route; the new SNT and support
+> templates are kept as an emergency backup, as they are, with no further investment. The open
+> items below stay `[ ]` and are not worked on. The one item still done is REL-7, so
+> `push_templates.yaml` stays green on full releases.
+
 Decisions: D-21, [ADR 0045](decisions/0045-how-the-new-templates-are-published.md). Shown first
 with pre-release `v0.2.0` (cut 2026-11-18 from `main` `9bda3cd`, not verified: `release` skill §3
 skipped; manifest 25 pipelines, 259 checker entries).
@@ -1214,22 +1223,72 @@ skipped; manifest 25 pipelines, 259 checker entries).
       without duplicates. For the `v0.2.0` demo: R image, `SNT_CONFIGURATION` dataset, `shared/r/`
       uploaded by hand from the tarball (REL-6), pipelines from the templates with auto-update on,
       the checker with tag `v0.2.0`, one pipeline run.
+- [ ] [REL-7](BACKLOG.md#rel-7) · Publish `snt_config_publish` as a template before the next full
+      release: pushed by hand once to `snt-templates` and published as a template. The one item
+      still done while this phase is parked.
 
-### Phase 7 — Webapps on the release train (D-2)
-- [ ] The orchestrator reads `version.json` from its bundle and shows it in the footer (REL-1). The
-      release zips carry it since Phase 3 commit 8: `version`, `commit`, `built_at`
-      ([`release_manifest.md`](../contracts/release_manifest.md#release-assets-beside-the-manifest)).
-- [ ] Manual deploy route documented in `docs/RELEASES.md`: download `webapp-<name>-<tag>.zip` from
-      the release and upload it. Never deploy from `main`.
-- [ ] Checker: compare the deployed webapp files with the manifest hashes (needs the files to be
-      readable; S5).
-- [ ] Deployer webapp support (REL-2), gated on S5 / OpenHEXA OH-4. Scopes stay manual (they aren't
-      part of the bundle).
+### Phase 7 — Webapps on the release train (D-2, D-23)
+The workspace deployer installs both webapps from the release, the config editor first if only one
+fits (D-23). In this order:
+
+- [ ] **Spike S5** (no repo code; `ignore/spikes/spike_webapp_deploy/`, git-ignored, like S1/S2).
+      A throwaway pipeline in a test workspace reads the `openhexa-deploy` token and records the raw
+      GraphQL response of each check. The questions are those of
+      [`bootstrap/roadmap.md` §4](bootstrap/roadmap.md#4-web-apps-d8).
+      1. `createWebapp` (static, 3 files, one of them `.json`) with the run's `HEXA_TOKEN` (expected:
+         refused) and with the `openhexa-deploy` token (expected: created). Who is `createdBy`; can
+         another workspace member edit the app afterwards?
+      2. Slug from the name (there is no slug input): does the name
+         `snt-pipelines-orchestrator-cockpit`, and a title-case name, give that exact slug? What does
+         a second create return (`ALREADY_EXISTS`)?
+      3. `isPublic: false` and `allowedOperations` set at create, then read back.
+      4. `updateWebapp(files, filesToDelete, commitMessage: "<tag>")`: does the live server accept
+         `commitMessage` (our vendored schema, SDK 2.22.7, lacks it)? Is the change served at once
+         (`GitSource.publishedVersion`, `previewUrl`), or does it need `publishedVersionId`?
+      5. Size: the real orchestrator `app.js` (137 KB) in one call.
+      6. Read back with `HEXA_TOKEN`: `webapp { files(ref) }` / `readWebappFile` give content that
+         can be hashed (for the checker).
+      7. Real bundles: the orchestrator zip from release `v0.2.0` and the editor's
+         `design/index.html`; open both: the orchestrator boots, the editor finds
+         `snt_config_publish`.
+
+      **S5 passes** if checks 1, 3, 4 (served) and 5 work. If it fails: the OH-4 question goes to
+      the OpenHEXA developers, and the manual zip route becomes this phase's route.
+- [ ] S5 results recorded: Phase 0 findings, the `roadmap.md` §4 questions answered, the
+      authentication section of `bootstrap/openhexa_deployment.md` (webapps). If S5 passed, an ADR
+      "the workspace deployer installs the webapps", superseding the "manual, scopes set
+      separately" stance (bootstrap D8 for the deployer; the checker stays blind until its own
+      item below). It records whether the webapp step goes into `v1.0.0`.
+- [ ] Config editor into `app/`: `webapps/config_editor/design/index.html` becomes `app/index.html`
+      (English only, D-23), so each release carries `webapp-config_editor-<tag>.zip`. The French
+      copy `design/index_FR.html` stays, kept in step by hand and uploaded by hand until
+      [EDIT-1](BACKLOG.md#edit-1). Can run alongside S5.
+- [ ] Deployer webapp step ([REL-2](BACKLOG.md#rel-2)), after the ADR. The manifest's webapp
+      entries carry name, slug and scopes (R22). After the pipelines, the deployer fetches each
+      `webapp-<name>-<tag>.zip` release asset (webapp files are not in the slim tarball), finds the
+      app by slug, creates it (static, private, scopes set by the API) or updates it (`files` +
+      `filesToDelete`, commit message = tag), skips it when the served files already hash to the
+      manifest's, and logs `DRY RUN would …` in a dry run. Orchestrator: slug
+      `snt-pipelines-orchestrator-cockpit`, scopes `PIPELINES_READ, PIPELINES_RUN, FILES_READ,
+      USER_READ` (W8). Config editor: scopes `PIPELINES_READ, PIPELINES_RUN`
+      ([ADR 0047](decisions/0047-config-editor-publishes-to-snt-configuration.md)), needs
+      `snt_config_publish` installed.
 - [ ] Keep the runtime contracts unchanged: webapp slug `snt-pipelines-orchestrator-cockpit`, bucket key
       `utils_pipelines/…` (APP-12), template name `Create pipeline_cards.json`, `GENERATOR_KEY_MATCH`.
 
+Later, each its own ticket:
+
+- [ ] The orchestrator reads `version.json` from its bundle and shows it in the footer (REL-1). The
+      release zips carry it since Phase 3 commit 8: `version`, `commit`, `built_at`
+      ([`release_manifest.md`](../contracts/release_manifest.md#release-assets-beside-the-manifest)).
+- [ ] Checker: compare the deployed webapp files with the manifest hashes (reverses checker D8;
+      needs the files to be readable, S5 check 6).
+- [ ] Manual fallback route documented: download `webapp-<name>-<tag>.zip` from the release and
+      upload it. Never deploy from `main`.
+
 ### Phase 8 — Adoption and sunset
-- [ ] New country workspaces start from the new repo (deployer or new templates).
+- [ ] New country workspaces start from the new repo with the workspace deployer (D-23); the new
+      templates are the backup.
 - [ ] Optional migration guide for existing workspaces: it is a re-bootstrap into a **new** workspace,
       not an in-place change.
 - [ ] Old repos: README banner "Moved → new repo", then `snt_development` goes maintenance-only (D-4).
@@ -1254,7 +1313,7 @@ skipped; manifest 25 pipelines, 259 checker entries).
 | Deployer downloads the whole repo tarball | Slim release tarball asset (Phase 3) |
 | Everyone with write access can change everything | Branch protection. CODEOWNERS per area declined for now (D-15); to be discussed with the team |
 | `.gitignore` `*.json` trap silently drops webapp/contract JSON | Allowlist + `git check-ignore` check in Phase 1 |
-| Webapp deployment still can't be automated (no CLI/SDK route, OH-4) | Not caused or fixed by the monorepo. Stamped zips make the manual route reproducible |
+| Webapp deployment by the deployer is unproven until spike S5 (no CLI/SDK route, OH-4) | Not caused or fixed by the monorepo. S5 (Phase 7) tests the deployer's `openhexa-deploy` token against `createWebapp` / `updateWebapp`. If it fails, OH-4 goes to the OpenHEXA developers, and stamped zips keep the manual route reproducible |
 | Two live systems (old repo/templates + new) for a long period | D-4 maintenance-only + explicit archive criteria |
 | `snt_lib` stays external for now: config, Pull-scripts and path changes still need cross-repo PRs | Pin a tag (D-3). Plan `snt_lib` releases as named steps in Phases 1, 5 and 6. Long term: bring it in (§10) |
 
@@ -1296,7 +1355,9 @@ skipped; manifest 25 pipelines, 259 checker entries).
   orchestrator in the test workspace.
 - **Phase 6:** template-built workspace has codes = `snt-<name>`. The checker reports `match`. The
   deployer takes it over without duplicates.
-- **Phase 7:** the footer shows the tag. The checker's webapp hash comparison matches.
+- **Phase 7:** a deployer run on an rc in a test workspace installs both webapps (private, right
+  scopes, the orchestrator opens); a second run with the same tag skips them; a newer tag updates
+  them. Later items: the footer shows the tag; the checker's webapp hash comparison matches.
 
 ## 9. Session log
 
@@ -1325,6 +1386,7 @@ skipped; manifest 25 pipelines, 259 checker entries).
 | 2026-11-17 | Orchestrator items of Phase 5 on `phase-5/orchestrator`, commits 1–4: D-12 (status board reads the last 5 runs with `config`; completion from the newest full run; `run_reports_only` in `snt_dhs_indicators` handled too); the report-only flag hidden from the form (Giulia's call, recorded in the orchestrator `PRODUCT_SPEC.md` §5); APP-9 (live name from the catalog, `ohName` = template name as fallback; the 5 listed values corrected, the other 13 not re-checked); the `create_pipeline_cards` README. Checked offline only. Known effect left as is: after a report-only run finishes in the session, the Outputs box shows the last full run's outputs | Commit 5 (tick, BACKLOG, this log), CI, PR, merge. Test the app against a test workspace (steps in the Phase 5 tick). Then the `v1.0.0` pre-cut checklist with the `release` skill, CFG-1 decided there |
 | 2026-11-17 | Self-sync opened on `phase-5/self-sync`. **OD-9 settled as D-20** (ADR 0044), placed in Phase 5 rather than 6: removing `Pull scripts` is a breaking change, and left in a release it pulls the old repo's notebooks. Escape hatch chosen: a `custom/` folder plus `use_custom_notebooks`, over a file-picker parameter (a pipeline runs several notebooks); `_<CC>` variants stay automatic but are now logged and recorded. OD-10 narrowed to versioning; REL-6 opened (`shared/r/` on the template route). Commit 1 written | Commit 2, the `snt_utils` branch `self-sync-r-half`: see the [Phase 5 item](#phase-5--breaking-change-window-before-the-first-production-tag) |
 | 2026-11-18 | Phase 6 opened before `v1.0.0`, to show colleagues the new templates. Pre-release `v0.2.0` cut from `main` (not verified). Workspace `snt-templates` created; all 25 pipelines pushed from the tarball and published as templates by hand, codes `snt-<name>`, no suffixes. **D-21** (ADR 0045): names = `@pipeline` id; one workflow, `push_templates.yaml`, for every kind, with a manual trigger and an `allow_prerelease` box; `release.yaml`'s bootstrap job removed. On `phase-6/templates`: commit 1 (workflows, ADR, R23 fixes), commit 2 (this file) | CI, PR, merge. Then run `push_templates` by hand against `v0.2.0`, build the demo workspace from the templates, checker `match` — see the [Phase 6 items](#phase-6--new-template-set-for-teams-not-using-the-deployer) |
+| 2026-11-27 | **Phase 7 re-scoped, D-23** (team agreement): the workspace deployer is the main route for pipelines and webapps; the new SNT and support templates are parked as a backup (Phase 6), REL-7 still done; both webapps through the deployer, the config editor first; the editor ships English only from `app/`. The deploy connection was renamed `oh` → `openhexa-deploy` first (PR #22), and the docs now say its token is personal. On `phase-7/replan`: Phase 7 rewritten as an ordered checklist (S5 → results and ADR → editor into `app/` → deployer step), "scopes stay manual" dropped (the API sets them); BACKLOG REL-2 rewritten, new group `EDIT-*` (EDIT-1 language switch, EDIT-2 multi-file bundle). No code | REL-7 by hand; spike S5 in a test workspace — see [Phase 7](#phase-7--webapps-on-the-release-train-d-2-d-23). The editor move into `app/` can run alongside |
 
 ---
 
