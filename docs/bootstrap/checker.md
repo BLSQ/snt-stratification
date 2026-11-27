@@ -88,7 +88,8 @@ read the SDK's `download_pipeline_sourcecode()` performs.
 
 **Verified 2026-09-22:** a run's own `HEXA_TOKEN` reads that field in full, so the checker needs
 **no workspace credential**. Reading and deploying have different credential requirements, and only
-deploying needs the `oh` connection ([`openhexa_deployment.md`](openhexa_deployment.md) §7.3, [`HISTORY.md`](HISTORY.md) §2.4).
+deploying needs the `openhexa-deploy` connection ([`openhexa_deployment.md`](openhexa_deployment.md) §7.3,
+[`HISTORY.md`](HISTORY.md) §2.4).
 
 #### Which pipeline version is hashed, and why the version name is not evidence
 

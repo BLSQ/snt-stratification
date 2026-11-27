@@ -118,9 +118,9 @@ What has to be settled first:
    update itself from it.
 4. ~~**What "clean workspace" means.**~~ **Settled for release candidates (D-19 in
    [`MIGRATION_PLAN.md`](../MIGRATION_PLAN.md), 2026-11-16):** a new workspace per candidate, with
-   the `oh` connection set up each time ([`openhexa_deployment.md`](openhexa_deployment.md) §7.3b).
-   The previous release's workspace is kept as the comparison baseline. The deployer cannot delete
-   pipelines or files ([`deployer.md`](deployer.md) §7.5), so a reused workspace would keep strays.
+   the `openhexa-deploy` connection set up each time
+   ([`openhexa_deployment.md`](openhexa_deployment.md) §7.3b). The previous release's workspace is
+   kept as the comparison baseline. The deployer cannot delete pipelines or files ([`deployer.md`](deployer.md) §7.5), so a reused workspace would keep strays.
    This fits D25: one workspace per release. The procedure is the `release` skill
    ([`.claude/skills/release/`](../../.claude/skills/release/SKILL.md)). Per-PR staging is still
    open, with the rest of this proposal.

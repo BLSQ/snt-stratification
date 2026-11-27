@@ -47,7 +47,7 @@ standard SNT flags (`run_report_only`, `use_custom_notebooks`, `overwrite`) appl
   * **Description:** Slug of a **CUSTOM** connection holding a workspace API token in a secret field
     named `token`. A run's own `HEXA_TOKEN` is refused with `PERMISSION_DENIED` on `uploadPipeline`,
     so deployment cannot use the run's own credentials. Always required.
-  * **Default:** `oh`.
+  * **Default:** `openhexa-deploy`.
 * **`backup_existing`** (bool, Optional):
   * **Name:** Backup existing files
   * **Description:** Move any existing tracked file to `archive/[RELEASE_TAG]/` before overwriting

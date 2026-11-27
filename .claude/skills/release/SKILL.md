@@ -148,7 +148,7 @@ you cannot get is not verified for this release: name it in 3.11.
    `validate_config()` (the how-to shows
    how to check it): a copy that lacks a key the current `snt_lib` requires, such as
    `SNT_DATASET_IDENTIFIERS.SNT_POPULATION_USER_PROVIDED`, stops every pipeline.
-4. Connections → New → **Custom**, name `oh`, one field `token`, marked secret. Its value is the
+4. Connections → New → **Custom**, name `openhexa-deploy`, one field `token`, marked secret. Its value is the
    workspace token shown under Pipelines → Create → "From OpenHEXA CLI"
    ([`openhexa_deployment.md`](../../../docs/bootstrap/openhexa_deployment.md) §7.3b).
 
@@ -167,7 +167,7 @@ existing pipeline. Without it the CLI asks which pipeline to update: answer `1` 
 (that happened at `v0.1.0`), which is fine: 3.4 relabels it.
 
 **3.3 Deployer, dry run.** Run `snt-workspace-deployer` with GitHub repository
-`BLSQ/snt-stratification`, Release tag `<tag>`, OpenHEXA API connection `oh`, Backup existing files
+`BLSQ/snt-stratification`, Release tag `<tag>`, OpenHEXA API connection `openhexa-deploy`, Backup existing files
 on and **Dry run on**. **Expected:** a pre-release warning, "would …" lines, and the last line
 `Pipelines: P inspected, none registered (dry run).` Nothing changes.
 
@@ -199,7 +199,7 @@ unless one is the target (ADR 0034). Messages log `Left out … pre-release(s)`,
 What this step proves is the mode switch and the pre-release rule; 3.6 already scored every file.
 
 **3.8 Single-pipeline deployer, dry run.** Run `snt-pipeline-deployer` on one changed pipeline (else
-`snt_dhis2_extract`), Release tag `<tag>`, `oh`, Pull R scripts on, Dry run on. **Expected:** only
+`snt_dhis2_extract`), Release tag `<tag>`, `openhexa-deploy`, Pull R scripts on, Dry run on. **Expected:** only
 files under `pipelines/<that pipeline>/` are listed. The shared R line reads
 `Shared R library (shared/r/, …): all N file(s) match release <tag>.`, and it logs "No .snt_release
 marker written". Nothing changes.

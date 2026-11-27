@@ -93,7 +93,7 @@ needs no manual UI step.
 The **pipeline code** is the directory name with `_` → `-`. Cross-checked against all 20
 `push_snt_*.yaml` workflows: 20/20 match the `--code` slug CI already uses.
 
-## Authentication: use the `oh` connection token, not the run's token
+## Authentication: use the `openhexa-deploy` connection token, not the run's token
 
 `HEXA_SERVER_URL` and `HEXA_TOKEN` are injected into every cloud pipeline run
 (`openhexa/sdk/utils.py:90`, `openhexa/sdk/workspaces/current_workspace.py:45`), so it is tempting
@@ -102,15 +102,17 @@ to call the API as the run itself. **That does not work for deployment.**
 | Credential | `uploadPipeline` | `createPipeline` |
 |---|---|---|
 | The run's own `HEXA_TOKEN` | `PERMISSION_DENIED` | opaque HTTP 500 |
-| Workspace API token from the `oh` connection | allowed | allowed (bare and nested) |
+| Workspace API token from the `openhexa-deploy` connection | allowed | allowed (bare and nested) |
 
 It is a credential-*scope* problem, not a mechanism problem: the identical payload succeeds or
 fails purely on the header. Both tokens are 95 characters, so they are indistinguishable by shape.
 
-In practice, a **CUSTOM connection named `oh`** (slug `oh`, one secret field `token`):
+In practice, a **CUSTOM connection named `openhexa-deploy`** (slug `openhexa-deploy`, one secret field
+`token`; the deployers' `api_connection` parameter takes another slug if a workspace names it
+differently):
 
 ```python
-token = workspace.custom_connection("oh").token
+token = workspace.custom_connection("openhexa-deploy").token
 headers = {"Authorization": f"Bearer {token}"}
 ```
 
@@ -124,8 +126,8 @@ displays under *Pipelines → Create → "From OpenHEXA CLI"*, the string that
 * the UI reveals it only to members holding the **Editor** or **Admin** role.
 
 What is still manual is getting it there: someone copies it by hand into a CUSTOM connection named
-`oh`, per workspace, with no rotation story. That is the one genuinely new operational requirement
-this design adds. It is **deliberately parked as low priority** — see §7.3b.
+`openhexa-deploy`, per workspace, with no rotation story. That is the one genuinely new operational
+requirement this design adds. It is **deliberately parked as low priority** — see §7.3b.
 
 ### Reading is not deploying — reads need no connection
 
@@ -133,7 +135,7 @@ Verified 2026-09-22 in `snt-development-sandbox`: a run's own `HEXA_TOKEN` **can
 `pipelineByCode.currentVersion.zipfile` in full, for pipelines it did not deploy. So the asymmetry is
 specifically about *writing*:
 
-| Operation | Run's `HEXA_TOKEN` | `oh` connection token |
+| Operation | Run's `HEXA_TOKEN` | `openhexa-deploy` connection token |
 |---|---|---|
 | Read `currentVersion.zipfile` | **full zip** | full zip |
 | `uploadPipeline` | `PERMISSION_DENIED` | allowed |
@@ -200,8 +202,8 @@ into `snt-development-sandbox`, with correct pipeline codes, parameters round-tr
 
 1. **Run the full 20-pipeline bootstrap** once, to confirm nothing in the other 18 trips the
    deployer.
-2. **Automate getting the `oh` token into a country workspace** (minting, storage, rotation). What
-   the token *is* is now known (see Authentication above); placing it is still a manual copy-paste
+2. **Automate getting the `openhexa-deploy` token into a country workspace** (minting, storage,
+   rotation). What the token *is* is now known (see Authentication above); placing it is still a manual copy-paste
    per workspace. **Low priority** by the user's decision — a question for the OpenHEXA devs once
    there is a working checker and deployer to demonstrate. §7.3b.
 3. ~~**Establish whether *reading* a pipeline version needs the `oh` token too.**~~ **Closed
@@ -240,8 +242,8 @@ gotchas — is in **[`openhexa_deployment.md`](openhexa_deployment.md)**. In sho
 * No CLI and no Docker needed. `openhexa.sdk.pipelines.runtime.get_pipeline()` parses a pipeline's
   parameters by **AST**, not by importing it, so the deployer handles all 20 pipelines without their
   dependencies installed.
-* Authentication must use a **workspace API token read from the `oh` CUSTOM connection**. A run's
-  own `HEXA_TOKEN` is refused.
+* Authentication must use a **workspace API token read from the `openhexa-deploy` CUSTOM
+  connection**. A run's own `HEXA_TOKEN` is refused.
 * `createPipeline` accepts the nested form that creates a pipeline and its first version atomically,
   so **bootstrapping an empty workspace needs no manual UI step.**
 
@@ -252,18 +254,18 @@ the phase 1–4 sandbox runs since deployed the whole fixture release (21 pipeli
 
 Two questions, and the one that gated phase 1 is answered.
 
-**7.3a — does *reading* a pipeline version need the `oh` token? No. Closed 2026-09-22.** A run's own
-`HEXA_TOKEN` returns `currentVersion.zipfile` in full. The checker is therefore **credential-free**:
+**7.3a — does *reading* a pipeline version need the `openhexa-deploy` token? No. Closed
+2026-09-22.** A run's own `HEXA_TOKEN` returns `currentVersion.zipfile` in full. The checker is therefore **credential-free**:
 it can run unattended in a country workspace that holds no connection at all, which also keeps the
 daily-check story in [`checker.md`](checker.md) §7.6 alive. Evidence and method: [`HISTORY.md`](HISTORY.md) §2.4.
 
-**7.3b — where the `oh` token comes from in a country workspace. Open, deliberately low priority.**
-Only `snt_workspace_deployer` needs it. What it is, is now known: the **workspace access token** that
+**7.3b — where the `openhexa-deploy` token comes from in a country workspace. Open, deliberately
+low priority.** Only `snt_workspace_deployer` needs it. What it is, is now known: the **workspace access token** that
 OpenHEXA shows under *Pipelines → Create → "From OpenHEXA CLI"*, the same string
 `openhexa workspaces add <workspace>` asks for. It is workspace-scoped rather than personal, and the
 UI reveals it only to members with the **Editor** or **Admin** role. Today it is copy-pasted by hand
-into a CUSTOM connection named `oh` — which works, but means a manual step per country workspace and
-no rotation story.
+into a CUSTOM connection named `openhexa-deploy` — which works, but means a manual step per
+country workspace and no rotation story.
 
 Deliberately **not** being solved now: the goal is a working checker and deployer to demonstrate, and
 this is the kind of thing to take to the OpenHEXA devs once there is something to show. Revisit

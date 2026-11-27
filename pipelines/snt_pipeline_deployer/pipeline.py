@@ -114,7 +114,7 @@ class DeploymentAbortedError(RuntimeError):
         "A run's own credentials cannot deploy pipelines."
     ),
     type=str,
-    default="oh",
+    default="openhexa-deploy",
     required=True,
 )
 @parameter(

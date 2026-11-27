@@ -1252,12 +1252,12 @@ and a README would match the deployed version even before the generator re-runs.
 
 ### <a id="oh-7"></a>OH-7 · Getting the workspace token without the UI
 
-The deployer needs the workspace access token in a CUSTOM connection named `oh`, and today that is
-a copy-paste ([`bootstrap/openhexa_deployment.md`](bootstrap/openhexa_deployment.md) §7.3b). The
-GraphQL API has two untested mutations: `generateWorkspaceToken(slug)` and
+The deployer needs the workspace access token in a CUSTOM connection named `openhexa-deploy`, and
+today that is a copy-paste ([`bootstrap/openhexa_deployment.md`](bootstrap/openhexa_deployment.md)
+§7.3b). The GraphQL API has two untested mutations: `generateWorkspaceToken(slug)` and
 `issueWorkspaceToken(workspaceId or slug)`, which returns a JWT with an expiry. Ask: who may call
-them; does generating a new token invalidate the old one (which would break the `oh` connection);
-can the JWT deploy a pipeline version?
+them; does generating a new token invalidate the old one (which would break the `openhexa-deploy`
+connection); can the JWT deploy a pipeline version?
 
 **Source:** Giulia's OpenHEXA deployment notes (local), 2026-09.
 
