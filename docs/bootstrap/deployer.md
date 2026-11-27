@@ -6,7 +6,7 @@
 > [`openhexa_deployment.md`](openhexa_deployment.md). Section numbers are those of the former
 > `PRODUCT_SPEC.md`.
 
-## Workspace Deployer — built, changed 2026-09-30, **partly tested** (`v0.1.0`)
+## Workspace Deployer — built, changed 2026-09-30 and 2026-11-27 (webapps), **partly tested** (`v0.1.0`)
 
 [`snt_workspace_deployer/`](../../pipelines/snt_workspace_deployer/), an OpenHEXA pipeline that
 reads the releases of this repository, `BLSQ/snt-stratification` (manifest v2). Parameters:
@@ -26,7 +26,9 @@ some pipelines, or skip creating missing ones. It:
 4. deploys each pipeline through the OpenHEXA API (see below), zipping `pipelines.<name>.path` and
    creating any pipeline that is missing. Bootstrap pipelines only from a recent enough release (see
    below);
-5. writes `.snt_release`, naming the tag and the repository
+5. installs each webapp of the manifest's `webapps` block from its `webapp-<name>-<tag>.zip` asset,
+   found by slug, private, with its scopes (see below);
+6. writes `.snt_release`, naming the tag and the repository
    ([`snt_release_marker.md`](../../contracts/snt_release_marker.md)).
 
 `split_manifest()` takes the filesystem files from `filesystem_files` and the pipelines from the
@@ -63,6 +65,25 @@ version per unchanged pipeline per release. `+` in a version name is accepted by
 2026-09-30). The checker reads `<tag>+redeploy-<date>` as claiming `<tag>`, so it compares such a
 version with that release's files like any other.
 
+**Webapps (2026-11-27, [ADR 0048](../decisions/0048-workspace-deployer-installs-the-webapps.md)).**
+After the pipelines, `deploy_webapps()` installs every webapp the manifest lists, with the same
+`openhexa-deploy` token. Each manifest entry carries the app's name, slug and scopes, from
+`webapps/<name>/webapp.json` ([`release_manifest.md`](../../contracts/release_manifest.md)). The app
+is looked up by slug, never created blindly, because a create whose name slugs to a taken slug
+makes a silent `-<6 hex>` duplicate (spike S5). Then, as for pipelines, by content:
+
+| At the slug | Action |
+|---|---|
+| Nothing | `createWebapp`: static, private, the scopes, every file of the zip. A create that comes back under another slug fails the webapp |
+| A non-static app | Fails the webapp |
+| Exactly the zip's files, private, the scopes | Skip |
+| Anything else, a hand-uploaded app included | `updateWebapp`: changed files written, others deleted, private, the scopes, the tag as commit message; a warning when privacy or scopes changed |
+
+The zip's stamped `version.json` is compared too, so a new tag always gives each app a new version
+named after it. An entry without name, slug and scopes (a release built before this step) is
+skipped with a warning. A failing webapp joins the failures at the end of the run, like a pipeline.
+Step by step: the [readme](../../pipelines/snt_workspace_deployer/readme.md), step 8.
+
 **Failures reach the run's Messages (2026-10-01, D24).** OpenHEXA shows a raised exception only in
 the run's logs, so a run could stop with an `INFO` line as the last message and no reason given
 (observed with an empty tag resolving to `v0.4.0-test`, which has no manifest). Every anticipated
@@ -83,7 +104,9 @@ published release, only pre-releases, or unknown tag.
   `pipelines[].in_target: false` (report-and-leave, §7.5). Deleting it is a manual
   UI action. Not being fixed; the open question is whether OpenHEXA could offer a way (an API
   mutation callable from a pipeline, or a way to archive/hide a pipeline).
-* The same applies to analytics files a release removes: they remain on the filesystem.
+* The same applies to analytics files a release removes: they remain on the filesystem. And to a
+  webapp a release stops listing: the deployer never deletes an app, only files inside the apps it
+  installs.
 
 **Testing state.** The 2026-09-30 changes (D21, D22) pass `ruff` and an offline stub test of
 `deploy_new_version()` (seven cases). In a workspace, `v0.1.0` (manifest v2, slim tarball,
@@ -91,8 +114,10 @@ published release, only pre-releases, or unknown tag.
 §6.7 steps 1–2 passed (Phase 4 results in [`MIGRATION_PLAN.md`](../MIGRATION_PLAN.md#phase-4-results)).
 **Steps 3–9 are not yet tested**: relabelling on a newer tag, rollback, hand edits, error messages and
 the bootstrap guard's skip, which needs a full release. Still unverified from before:
-**`backup_existing`**, since every verified run so far was against an empty workspace. Past
-verification runs: [`HISTORY.md`](HISTORY.md) §4.2.
+**`backup_existing`**, since every verified run so far was against an empty workspace. The webapp
+step (2026-11-27) passes offline stub tests only (`tests/test_pipeline_deployer.py`: create,
+suffixed slug, skip, adopt, settings-only update, dry run, non-static app, zip check, old release);
+§6.7 step 10 is not yet run. Past verification runs: [`HISTORY.md`](HISTORY.md) §4.2.
 
 ## Single-pipeline deployer — built 2026-10-30, **dry run tested** (`v0.1.0`)
 
@@ -121,6 +146,7 @@ What it does differently from the deployer:
 | Its `filesystem_files` under `pipelines/<name>/` (notebooks, `utils/*.r`) | Every pipeline's | Only this pipeline's, and only with `pull_r_scripts` on |
 | `shared/r/**` (the R library shared by all pipelines) | Copied | **Never copied.** Compared with the release, and each file that differs is named in a warning |
 | `.snt_release` | Written | **Not written**: the workspace is not at the release |
+| Webapps | Installed (ADR 0048) | **Not installed** |
 | Version description | `Deployed by snt_workspace_deployer …` | `Deployed by snt_pipeline_deployer …` |
 
 **The shared R library in `shared/r/`: the risk you accept with a single-pipeline deploy.** Every
@@ -151,8 +177,8 @@ With `pull_r_scripts` off, the same reasoning extends to the pipeline's own note
   `release_tag` to check that one pipeline against it. That mixed reading is correct.
 * **Drift from the deployer.** The file is a copy. `tests/test_pipeline_deployer.py` fails when a
   function the two share differs, except `build_version_input` (description text) and `get_release`
-  (its pre-release warning cannot point at a `.snt_release`, and the latest tag is quoted). `deploy_all`
-  is not copied: for one pipeline, `deploy_one` is called directly and the run ends on
+  (its pre-release warning cannot point at a `.snt_release`, and the latest tag is quoted). The
+  webapp functions are not copied, and neither is `deploy_all`: for one pipeline, `deploy_one` is called directly and the run ends on
   `Pipeline <name> successfully deployed!` (also after an "already up to date, skipped"), not
   `Pipelines: 1/1 deployed.`. A change to the deployer is copied here in the same change.
 
@@ -234,6 +260,13 @@ by a human):
    error line `Cannot deploy: …` in Messages naming the cause.
 9. Bootstrap guard: once a full release exists, deploy an older pre-release. The bootstrap pipelines
    are skipped with an info message, the others deploy.
+10. Webapps (ADR 0048), on a release that carries their name, slug and scopes. Dry run on a
+    workspace without them: `DRY RUN would create webapp …` for both, last line
+    `Webapps: 2 inspected, none changed (dry run).` Then for real: both created, private, with
+    their scopes; the orchestrator boots (after `create_pipeline_cards` has run) and the config
+    editor loads. Same tag again: both "skipped". A newer tag: both updated, the tag as the newest
+    version's message. A workspace with a hand-uploaded orchestrator: adopted, with a warning if
+    its scopes differed.
 
 **Known consequences to check or decide:**
 

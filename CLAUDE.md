@@ -43,7 +43,7 @@ workspace runs from this repo yet.
 pipelines/<name>/        ← pipeline.py, requirements.txt, readme.md + R half code/ reporting/ utils/
 pipelines/registry.json  ← kind of each pipeline: snt (20) · support (3) · bootstrap (3)
 shared/r/                ← shared R library (was code/); same path in the workspace (ADR 0038)
-webapps/<name>/          ← app/ (the only deployed part), docs/, design/
+webapps/<name>/          ← app/ (the only deployed part), webapp.json (name, slug, scopes), docs/, design/
 contracts/  catalogs/    ← cross-unit schemas + prose; references shipped per release
 docs/                    ← docs spanning several units, decisions/ (ADRs), bootstrap/
 tests/  tools/  dev/     ← pytest (bootstrap + contracts), scripts, local setup

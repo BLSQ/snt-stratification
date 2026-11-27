@@ -25,7 +25,7 @@ editable, and OpenHEXA webapps are now git-backed with their own version history
 - No stale deployment tables; no repo commit after a deploy.
 - A question like "which workspaces have the app?" costs an API call rather than a file read.
 - What version a workspace runs is not knowable from the repo. Release versioning and a deployer
-  are backlog items ([REL-1](../BACKLOG.md#rel-1), [REL-2](../BACKLOG.md#rel-2)).
+  are backlog items ([REL-1](../BACKLOG.md#rel-1), [REL-2](0048-workspace-deployer-installs-the-webapps.md)).
 - Leftover webapps (Flowchart variants, spikes) are no longer listed anywhere; cleaning them up is
   tracked in [OPS-1](../BACKLOG.md#ops-1) and [OPS-3](../BACKLOG.md#ops-3).
 

@@ -6,7 +6,9 @@ Loaded by Claude Code only when files under `webapps/` are read; the root
 [`config_editor/`](config_editor/CLAUDE.md).
 
 Two webapps, each in `webapps/<name>/` with `app/` (the deployable bundle, the only part deployed),
-`docs/` and `design/` (R26):
+`webapp.json` (its OpenHEXA name, slug and scopes, which each release carries), `docs/` and
+`design/` (R26). `snt_workspace_deployer` installs both from a release
+([ADR 0048](../docs/decisions/0048-workspace-deployer-installs-the-webapps.md)):
 
 - **`orchestrator/`** — the SNT Pipelines Orchestrator: one static webapp, identical in every
   workspace, that presents the SNT pipelines as a guided, bilingual (EN/FR) walkthrough where users
@@ -25,7 +27,9 @@ Two webapps, each in `webapps/<name>/` with `app/` (the deployable bundle, the o
   confirming the running app, and **uploading a full bundle or a wholesale rewrite** (offer
   drag-and-drop from `webapps/<name>/app/` — wording in
   [`DEPLOYMENT.md`](orchestrator/docs/DEPLOYMENT.md#choosing-a-deploy-path)). Give a precise,
-  copy-pasteable instruction, then wait; do not proceed on an assumption.
+  copy-pasteable instruction, then wait; do not proceed on an assumption. A hand upload is for
+  development, a test workspace or a fallback: the next deployer run replaces whatever sits at an
+  app's release slug.
 - **Ask which workspace** before any deployment or pipeline operation.
 - Work is tracked in Jira (project `SNT25`, epic `SNT25-536`), managed by hand. Do not touch Jira
   unless asked in that session.

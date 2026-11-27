@@ -109,6 +109,12 @@ SCHEMA_BREAKS = {
         path="snt_map_extracts"
     ),
     "webapp without files": lambda m: m["webapps"]["orchestrator"].pop("files"),
+    "webapp without slug": lambda m: m["webapps"]["orchestrator"].pop("slug"),
+    "webapp without scopes": lambda m: m["webapps"]["orchestrator"].pop("scopes"),
+    "webapp slug with capitals": lambda m: m["webapps"]["orchestrator"].update(slug="SNT-cockpit"),
+    "webapp name not ASCII": lambda m: m["webapps"]["orchestrator"].update(name="Éditeur"),
+    "unknown webapp scope": lambda m: m["webapps"]["orchestrator"]["scopes"].append("PIPELINES_WRITE"),
+    "webapp scope twice": lambda m: m["webapps"]["orchestrator"]["scopes"].append("USER_READ"),
     "unknown top-level key": lambda m: m.update(extra=True),
 }
 
@@ -133,6 +139,9 @@ INVARIANT_BREAKS = {
     "file on no route": lambda m: m["filesystem_files"].remove("shared/r/snt_utils.r"),
     "webapp path does not match its key": lambda m: m["webapps"]["orchestrator"].update(
         path="webapps/config_editor/app"
+    ),
+    "webapp name does not slug to its slug": lambda m: m["webapps"]["orchestrator"].update(
+        name="SNT Pipelines Orchestrator"
     ),
 }
 

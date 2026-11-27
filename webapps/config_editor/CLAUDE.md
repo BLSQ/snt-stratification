@@ -18,7 +18,7 @@ copies drift.
 ## Current state
 
 [`app/index.html`](app/index.html) is the editor, in English: one standalone file, and the version
-people use. Each release carries it as `webapp-config_editor-<tag>.zip`. Uploaded as a private
+people use. Each release carries it as `webapp-config_editor-<tag>.zip`. Installed as a private
 OpenHEXA webapp, it publishes valid configs to the `SNT_CONFIGURATION` dataset by running the
 [`snt_config_publish`](../../pipelines/snt_config_publish/readme.md) pipeline
 ([ADR 0047](../../docs/decisions/0047-config-editor-publishes-to-snt-configuration.md)); opened from
@@ -30,10 +30,14 @@ retires `design/index_FR.html` ([EDIT-1](../../docs/BACKLOG.md#edit-1)), and a m
 (html + css + js, no build step) as the orchestrator is
 ([EDIT-2](../../docs/BACKLOG.md#edit-2)).
 
-**Deploying it:** a private static webapp whose only file is `index.html` (`app/index.html`, or
-`design/index_FR.html` uploaded under that name for French), with the scopes `PIPELINES_READ` and
-`PIPELINES_RUN`, in a workspace where `snt_config_publish` is installed. The webapp writes nothing
-itself: OpenHEXA is removing webapp writes
+**Deploying it:** a private static webapp whose only file is `index.html`, with the scopes
+`PIPELINES_READ` and `PIPELINES_RUN`, in a workspace where `snt_config_publish` is installed. The
+English editor is installed by `snt_workspace_deployer` from the release, at the slug
+`snt-config-editor` with the name and scopes in [`webapp.json`](webapp.json)
+([ADR 0048](../../docs/decisions/0048-workspace-deployer-installs-the-webapps.md)); the same run
+installs `snt_config_publish`. The French copy is uploaded by hand, as `index.html`, into a webapp
+with **another name**, e.g. "SNT Config Editor FR": the deployer replaces whatever sits at
+`snt-config-editor`. The webapp writes nothing itself: OpenHEXA is removing webapp writes
 ([runtime notes](../../docs/OPENHEXA_WEBAPP_RUNTIME.md#allowed_operations-scopes)).
 
 ## Decisions already made — do not relitigate

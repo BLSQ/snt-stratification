@@ -44,8 +44,10 @@ included.
 
 Out of scope, and to be stated as blind spots in the report:
 
-* **OpenHEXA web apps** (decision D8) — there is no deployment story for them yet; see
-  `release_strategy.md`.
+* **OpenHEXA web apps** (decision D8) — the workspace deployer installs them
+  ([ADR 0048](../decisions/0048-workspace-deployer-installs-the-webapps.md)), but the checker does
+  not compare them with a release yet; a later Phase 7 item of
+  [`MIGRATION_PLAN.md`](../MIGRATION_PLAN.md#phase-7--webapps-on-the-release-train-d-2-d-23).
 * **`configuration/`** — managed by the Config Editor web app.
 * **`data/`** — bootstrapped by the pipelines themselves.
 * **Country-specific notebook variants as *overrides*** (decision D5). A variant shipped in a

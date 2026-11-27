@@ -98,7 +98,8 @@ because OpenHEXA runs Python pipelines but not R ([Part 2](#part-2--openhexa-in-
 | | **Self-sync**: a pipeline copies its bundled notebooks and `utils/*.r` on every run, not `shared/r/` ([ADR 0044](decisions/0044-self-sync-replaces-pull-scripts.md), R6) | Built in all 20 SNT pipelines, tested in a test workspace (Phase 5); `shared/r/` gap: [REL-6](BACKLOG.md#rel-6) |
 | Country variants `<name>_<CC>.ipynb` and hooks `<CC>_<name>.ipynb` | The generic notebooks' routes: committed beside them, so in the pipeline version, delivered by the deployer, templates and self-sync; each runs only where `COUNTRY_CODE` matches | Two NER notebooks committed, neither ready to run ([VAR-2](BACKLOG.md#var-2), [VAR-3](BACKLOG.md#var-3)); [ADR 0046](decisions/0046-country-variants-in-the-repo.md) |
 | Custom notebooks `custom/<name>.ipynb` | None: edited in the workspace only; the sync never touches them | By design ([ADR 0044](decisions/0044-self-sync-replaces-pull-scripts.md)) |
-| Webapp bundle `webapps/<name>/app/` | Uploaded by hand (drag-and-drop or MCP), scopes set separately ([`DEPLOYMENT.md`](../webapps/orchestrator/docs/DEPLOYMENT.md)) | **Live**; release zips in Phase 7 |
+| Webapp bundle `webapps/<name>/app/` | Uploaded by hand (drag-and-drop or MCP), scopes set separately ([`DEPLOYMENT.md`](../webapps/orchestrator/docs/DEPLOYMENT.md)) | **Live**; the fallback, and the only route for the French config editor |
+| | **Deployer**: creates or updates each app from its release zip, found by slug, private, with the scopes in `webapps/<name>/webapp.json` ([ADR 0048](decisions/0048-workspace-deployer-installs-the-webapps.md)) | Built; not yet run in a workspace |
 | `catalogs/*.json` | Downloaded at run time from a GitHub release by the pipeline that needs it | **Live**, from the old repo |
 
 A workspace must not receive the same `snt` or `support` pipeline from a template subscription and
@@ -129,7 +130,7 @@ A unit's own docs live with the unit; docs that span several units live in `docs
 |---|---|
 | One pipeline | its `readme.md` — ships in the zip, so no `docs/` folder and no `CLAUDE.md` there |
 | Several pipelines of one area | `docs/<area>/`, e.g. [`docs/bootstrap/`](bootstrap/) |
-| One webapp | `webapps/<name>/docs/` and `design/`, beside the deployed `app/` |
+| One webapp | `webapps/<name>/docs/` and `design/`, beside the deployed `app/` and `webapp.json` (its OpenHEXA name, slug and scopes, read into each release) |
 | A contract | its folder in `contracts/` |
 | The whole system or several units | `docs/`: this file, `DATA_ARCHITECTURE.md`, `CONVENTIONS.md`, `GLOSSARY.md`, ADRs, `BACKLOG.md` |
 | Rules for agents and humans | root `CLAUDE.md`, plus `pipelines/CLAUDE.md`, `webapps/CLAUDE.md`, `webapps/<name>/CLAUDE.md` |

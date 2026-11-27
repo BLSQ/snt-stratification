@@ -138,14 +138,12 @@ Tracked and delivered:
 | `pipelines/**/utils/*.r` | copied into `workspace.files_path` |
 | `code/**/*.r` | copied into `workspace.files_path` |
 | `*/pipeline.py` (+ everything else in the pipeline directory) | **deployed via the OpenHEXA API** — never copied to the filesystem |
+| `webapps/*/app/**` | **installed via the OpenHEXA API** from each `webapp-<name>-<tag>.zip` asset: a private static webapp per bundle, found by slug, with its scopes ([ADR 0048](../decisions/0048-workspace-deployer-installs-the-webapps.md)) |
 
 Explicitly out of scope:
 
 * `data/` — bootstrapped by the pipelines themselves.
 * `configuration/` — managed by the Config Editor web app.
-* Web app deployment. How to deploy the two OH web apps programmatically from GitHub is an open
-  question for the OpenHEXA developers; for now it stays manual. What the API offers, and the
-  questions: [`roadmap.md`](roadmap.md) §4.
 
 ### The three operations
 

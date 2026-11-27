@@ -71,6 +71,8 @@ SNT Process/
 !catalogs/SNT_metadata_master.json
 # Webapp bundles: only files inside app/ are deployed.
 !webapps/*/app/**/*.json
+# Each webapp's name, slug and scopes, read into the release manifest (ADR 0048).
+!webapps/*/webapp.json
 # Test fixtures: sandbox artefacts, checked to hold no country data or credential.
 !tests/fixtures/*.json
 # Conda env and CI workflows.

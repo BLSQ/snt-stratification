@@ -1,9 +1,10 @@
 # Roadmap — toward the SNT workspace bootstrap
 
-> What comes after the move: the bootstrap's starting problem, and web apps. Nothing here is built;
-> each heading says which parts are proposals. §1 and §2 (several release sources) were
-> superseded in 2026-11 by the monorepo, and §3 is mostly solved by
-> [ADR 0042](../decisions/0042-bootstrap-pipelines-as-templates-on-release.md). A choice made from this file becomes an ADR in
+> What comes after the move: the bootstrap's starting problem, and web apps. Each heading says which
+> parts are proposals. §1 and §2 (several release sources) were
+> superseded in 2026-11 by the monorepo, §3 is mostly solved by
+> [ADR 0042](../decisions/0042-bootstrap-pipelines-as-templates-on-release.md), and §4 is built
+> ([ADR 0048](../decisions/0048-workspace-deployer-installs-the-webapps.md)). A choice made from this file becomes an ADR in
 > [`../decisions/`](../decisions/README.md) (or, for implementation detail, a `D<n>` in
 > [`decisions.md`](decisions.md)), and its text moves to the component's spec. Written 2026-10-02
 > (Session 5 of the move plan).
@@ -67,6 +68,11 @@ One manual step stays:
 
 ## 4. Web apps (D8)
 
+**Built (2026-11-27):** `snt_workspace_deployer` installs the web apps from the release
+([ADR 0048](../decisions/0048-workspace-deployer-installs-the-webapps.md); how: the deployer's
+[readme](../../pipelines/snt_workspace_deployer/readme.md), step 8). What follows is the research it
+rests on.
+
 **The API can create and update a static web app from files.** Read in `openhexa-sdk` 2.22.7's
 GraphQL schema (`openhexa/graphql/schema.generated.graphql`) on 2026-10-02, and called from a
 pipeline run by spike S5 on 2026-11-27 (results:
@@ -101,8 +107,8 @@ app, so only the `static` source and the `files` / `filesToDelete` updates matte
 4. Who decides `allowedOperations` per app, and are they part of a release? **They can be set by the
    deploy**: given at create, they read back exactly, and `updateWebapp` takes them too. The values
    are fixed per app: W8 for the orchestrator, [ADR 0047](../decisions/0047-config-editor-publishes-to-snt-configuration.md)
-   for the config editor. How a release carries them is the deployer work,
-   [REL-2](../BACKLOG.md#rel-2).
+   for the config editor. A release carries them in each manifest webapp entry, from
+   `webapps/<name>/webapp.json` ([`release_manifest.md`](../../contracts/release_manifest.md)).
 
 Also found: there is no slug input, and the slug is the name lower-cased with spaces turned into
 hyphens. A second create with a name already used is refused with `ALREADY_EXISTS`, but a different

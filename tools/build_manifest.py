@@ -24,6 +24,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -137,16 +138,55 @@ def matching_files(root: Path, patterns: tuple[str, ...]) -> list[str]:
     )
 
 
+def webapp_identity(webapp_dir: Path) -> dict:
+    """Read a webapp's name, slug and scopes from webapps/<name>/webapp.json.
+
+    The keys are copied as they are; the schema and the invariants check them once they are in the
+    manifest, so an unknown key or a bad value stops the build there.
+
+    Returns
+    -------
+    dict
+        `{name, slug, scopes}`, the scopes sorted.
+
+    Raises
+    ------
+    ManifestError
+        When the file is missing, is not valid JSON, or is not a JSON object.
+    """
+    path = webapp_dir / "webapp.json"
+    where = f"webapps/{webapp_dir.name}/webapp.json"
+    if not path.is_file():
+        raise ManifestError(
+            f"webapps/{webapp_dir.name}/app/ holds files but {where} is missing: it gives the "
+            "webapp's name, slug and scopes, which the release manifest carries (ADR 0048)"
+        )
+    try:
+        identity = json.loads(path.read_text(encoding="utf-8"))
+    except ValueError as error:
+        raise ManifestError(f"{where} is not valid JSON: {error}") from error
+    if not isinstance(identity, dict):
+        raise ManifestError(f"{where} must hold a JSON object with name, slug and scopes")
+    if isinstance(identity.get("scopes"), list):
+        identity["scopes"] = sorted(identity["scopes"], key=str)
+    return identity
+
+
 def webapp_bundles(root: Path, version: str) -> dict[str, dict]:
     """Describe every webapps/<name>/app/ bundle that holds at least one file.
 
     Hidden files (`.gitkeep`, `.DS_Store`) are not part of a bundle, so an app/ folder holding only
-    those is skipped.
+    those is skipped. Each bundle's name, slug and scopes come from its webapps/<name>/webapp.json.
 
     Returns
     -------
     dict[str, dict]
-        `{webapp name: {path, version, files}}`, sorted by name.
+        `{webapp name: {path, version, name, slug, scopes, files}}`, sorted by name.
+
+    Raises
+    ------
+    ManifestError
+        When a bundle's webapp.json is missing or unreadable.
     """
     bundles = {}
     for app_dir in sorted((root / "webapps").glob("*/app")):
@@ -157,8 +197,28 @@ def webapp_bundles(root: Path, version: str) -> dict[str, dict]:
         }
         if files:
             name = app_dir.parent.name
-            bundles[name] = {"path": f"webapps/{name}/app", "version": version, "files": files}
+            bundles[name] = {
+                "path": f"webapps/{name}/app",
+                "version": version,
+                **webapp_identity(app_dir.parent),
+                "files": files,
+            }
     return bundles
+
+
+def openhexa_slug(name: str) -> str:
+    """Derive the slug OpenHEXA gives a webapp created under this name.
+
+    OpenHEXA slugs the name with python-slugify (`create_webapp_slug` in openhexa-app,
+    backend/hexa/webapps/models.py): lower case, every run of other characters becomes one hyphen,
+    no hyphen at either end. This mirrors it for ASCII names, the only ones the schema allows.
+
+    Returns
+    -------
+    str
+        The slug, e.g. "snt-pipelines-orchestrator-cockpit" for "SNT Pipelines Orchestrator - Cockpit".
+    """
+    return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
 
 
 def build_manifest(root: Path, version: str, repo: str) -> dict:
@@ -223,6 +283,11 @@ def invariant_errors(manifest: dict) -> list[str]:
     for name, spec in manifest.get("webapps", {}).items():
         if spec["path"] != f"webapps/{name}/app":
             errors.append(f"webapp {name}: path {spec['path']!r} is not 'webapps/{name}/app'")
+        if openhexa_slug(spec["name"]) != spec["slug"]:
+            errors.append(
+                f"webapp {name}: OpenHEXA would slug the name {spec['name']!r} to "
+                f"{openhexa_slug(spec['name'])!r}, not to its slug {spec['slug']!r}"
+            )
     return errors
 
 
@@ -279,7 +344,11 @@ def main(argv: list[str] | None = None) -> int:
     for name, spec in manifest["pipelines"].items():
         print(f"  {spec['kind']:<9} {name} -> {spec['code']} ({len(spec['zip_files'])} files in zip)")
     print(f"  repository_files: {len(manifest['repository_files'])}")
-    print(f"  webapps: {', '.join(manifest['webapps']) or 'none'}")
+    for name, spec in manifest["webapps"].items():
+        scopes = ", ".join(spec["scopes"])
+        print(f"  webapp    {name} -> {spec['slug']} ({len(spec['files'])} files; {scopes})")
+    if not manifest["webapps"]:
+        print("  webapps: none")
     return 0
 
 

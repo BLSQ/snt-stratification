@@ -13,17 +13,22 @@ manifest (v2, contracts/release_manifest.schema.json) says which route each file
                   -> registered as a new pipeline VERSION through the OpenHEXA API.
                   Replaces the Template auto-update subscription.
 
+    Webapps       the manifest's `webapps`: webapps/<name>/app/
+                  -> created or updated as private static OpenHEXA webapps, found by slug,
+                  with their scopes (ADR 0048).
+
 The zip holds the pipeline's R half too, as the SDK's own zip does, but only the filesystem
 copy is what notebooks run. The Python half is deliberately NOT copied into the workspace
 filesystem. OpenHEXA runs each pipeline from the zip stored on its registered version, never
 from the bucket, so a pipeline.py sitting in workspace/files would look authoritative and
 never execute.
 
-The files come from the release's slim tarball asset, which holds exactly the manifest's files.
+The pipeline and analytics files come from the release's slim tarball asset, which holds
+exactly the manifest's files; each webapp from its own `webapp-<name>-<tag>.zip` asset.
 
 Credentials: a pipeline run's own HEXA_TOKEN can read the API but is refused
-(PERMISSION_DENIED) on uploadPipeline, so deployment reads a workspace API token from a
-CUSTOM connection instead - see the `api_connection` parameter.
+(PERMISSION_DENIED) on uploadPipeline and createWebapp, so deployment reads a workspace API
+token from a CUSTOM connection instead - see the `api_connection` parameter.
 """
 
 import base64
@@ -61,6 +66,13 @@ VERSION_NUMBER_SUFFIX = re.compile(r"\s*\[v\d+\]\s*$")
 # The error code OpenHEXA returns when a pipeline already has a version with that name.
 DUPLICATE_VERSION_NAME_ERROR = "DUPLICATE_PIPELINE_VERSION_NAME"
 
+# The file the release workflow stamps into each webapp zip. It is not in the manifest, which
+# hashes the committed bundle only (contracts/release_manifest.md).
+WEBAPP_VERSION_FILE = "version.json"
+
+# The manifest keys a webapp entry needs to be installed. Releases built before ADR 0048 lack them.
+WEBAPP_INSTALL_KEYS = ("name", "slug", "scopes")
+
 
 class DuplicateVersionNameError(RuntimeError):
     """The pipeline already has a version with the requested name."""
@@ -95,7 +107,7 @@ class DeploymentAbortedError(RuntimeError):
     name="OpenHEXA API connection",
     help=(
         "CUSTOM connection holding a workspace API token in a secret field named 'token'. "
-        "A run's own credentials cannot deploy pipelines."
+        "A run's own credentials cannot deploy pipelines or webapps."
     ),
     type=str,
     default="openhexa-deploy",
@@ -112,7 +124,7 @@ class DeploymentAbortedError(RuntimeError):
 @parameter(
     "dry_run",
     name="Dry run",
-    help="Report what would change without writing any file or registering any version",
+    help="Report what would change without writing any file, registering any version or changing any webapp",
     type=bool,
     default=False,
     required=False,
@@ -124,10 +136,11 @@ def snt_workspace_deployer(
     backup_existing: bool,
     dry_run: bool,
 ) -> None:
-    """Deploy one GitHub release's R analytics and Python orchestration into this workspace.
+    """Deploy one GitHub release's R analytics, Python orchestration and webapps into this workspace.
 
     Orchestration only: resolves the release, downloads its manifest and slim tarball,
-    then delegates the file sync and the pipeline deployment to plain helper functions.
+    then delegates the file sync, the pipeline deployment and the webapp installation to plain
+    helper functions.
 
     A raised exception reaches only the run's logs, not its Messages, so any failure that was
     not already reported through `abort_run()` is logged here before the run is stopped.
@@ -181,13 +194,20 @@ def deploy_release(
 
         failures = deploy_all(tarball_root, pipelines, release, token, dry_run)
 
+    webapp_failures = deploy_webapps(release, manifest, token, dry_run)
+
     if not dry_run:
         write_release_marker(snt_root_path, release_tag, manifest["repo"])
 
+    problems = []
     if failures:
+        problems.append(f"{len(failures)} pipeline(s) failed to deploy: {failures}")
+    if webapp_failures:
+        problems.append(f"{len(webapp_failures)} webapp(s) failed to install: {webapp_failures}")
+    if problems:
         abort_run(
-            f"{len(failures)} pipeline(s) failed to deploy: {failures}. The workspace is now "
-            "partially updated - fix the cause and re-run to converge on the release."
+            f"{'; '.join(problems)}. The workspace is now partially updated - fix the cause and "
+            "re-run to converge on the release."
         )
 
 
@@ -852,6 +872,269 @@ def create_pipeline_with_version(token: str, pipeline_name: str, version_input: 
     if not data["success"]:
         raise RuntimeError(f"createPipeline refused for '{pipeline_name}': {data['errors']}")
     return data["pipeline"]
+
+
+def deploy_webapps(release: dict, manifest: dict, token: str, dry_run: bool) -> list[str]:
+    """Install every webapp the release manifest lists, after its pipelines (ADR 0048).
+
+    As for pipelines, one webapp's failure does not stop the others. An entry without a name,
+    slug and scopes comes from a release built before the webapp step existed: it is skipped
+    with a warning, never guessed.
+
+    Returns
+    -------
+    list[str]
+        The names of the webapps that could not be installed.
+    """
+    webapps = manifest.get("webapps") or {}
+    if not webapps:
+        current_run.log_info("Webapps: the release lists none.")
+        return []
+
+    failures, installable = [], 0
+    for name in sorted(webapps):
+        spec = webapps[name]
+        missing = [key for key in WEBAPP_INSTALL_KEYS if key not in spec]
+        if missing:
+            current_run.log_warning(
+                f"Webapp {name} skipped: release {release['tag_name']} does not give its "
+                f"{', '.join(missing)}, so it predates the deployer's webapp step. Deploy a newer "
+                f"release, or upload webapp-{name}-{spec.get('version', release['tag_name'])}.zip by hand."
+            )
+            continue
+        installable += 1
+        try:
+            deploy_webapp(release, name, spec, token, dry_run)
+        except Exception as exception:  # one bad webapp must not stop the other
+            current_run.log_error(f"Webapp {name}: installation failed: {exception}")
+            failures.append(name)
+
+    if dry_run:
+        current_run.log_info(f"Webapps: {installable} inspected, none changed (dry run).")
+    else:
+        current_run.log_info(f"Webapps: {installable - len(failures)}/{installable} installed or up to date.")
+    return failures
+
+
+def deploy_webapp(release: dict, name: str, spec: dict, token: str, dry_run: bool) -> None:
+    """Make the webapp at the manifest's slug serve exactly this release's bundle, private, with its scopes.
+
+    The app is looked up by slug first, never created blindly: OpenHEXA derives a slug from the
+    name and, when that slug is taken, silently creates a duplicate with a random suffix (spike
+    S5). Then:
+
+    * no app at the slug: created as a private static webapp with the bundle and the scopes;
+    * an app at the slug serving exactly the bundle, private, with the scopes: skipped;
+    * otherwise: updated, the changed files written, the extra ones deleted, privacy and scopes
+      set, and the release tag as the commit message. An app uploaded by hand is adopted this way,
+      with a warning when its privacy or scopes had to change.
+    """
+    tag, slug, scopes = release["tag_name"], spec["slug"], sorted(spec["scopes"])
+    bundle = download_webapp_bundle(release, name, spec)
+    existing = get_webapp_by_slug(token, slug)
+
+    if existing is None:
+        if dry_run:
+            current_run.log_info(
+                f"DRY RUN would create webapp {slug} ({len(bundle)} files), private, {scopes}."
+            )
+            return
+        created = create_webapp(token, spec["name"], scopes, bundle)
+        if created["slug"] != slug:
+            raise ValueError(
+                f"OpenHEXA created the webapp under the slug '{created['slug']}', not '{slug}': the slug "
+                "is taken, possibly by a deleted webapp (OpenHEXA keeps deleted slugs). Delete the webapp "
+                f"'{created['slug']}' it just made, then free or restore '{slug}'."
+            )
+        current_run.log_info(
+            f"Webapp {slug}: created from release {tag} ({len(bundle)} files), private, {scopes}."
+        )
+        return
+
+    if existing["type"] != "STATIC":
+        raise ValueError(
+            f"the webapp at slug '{slug}' is a {existing['type']} webapp, not a static one, so its files "
+            "cannot be replaced. Delete it or change its name, then re-run."
+        )
+    served = served_webapp_files(token, slug)
+    wanted = {path: hashlib.sha256(content).hexdigest() for path, content in bundle.items()}
+    to_write = sorted(path for path in wanted if served.get(path) != wanted[path])
+    to_delete = sorted(set(served) - set(wanted))
+    current_scopes = sorted(existing["allowedOperations"])
+    settings_differ = existing["isPublic"] or current_scopes != scopes
+
+    if not to_write and not to_delete and not settings_differ:
+        current_run.log_info(f"Webapp {slug}: already serves release {tag}'s bundle, skipped.")
+        return
+
+    changes = f"{len(to_write)} file(s) to write, {len(to_delete)} to delete"
+    if dry_run:
+        settings = f"; privacy and scopes would be set (now public={existing['isPublic']}, {current_scopes})"
+        current_run.log_info(
+            f"DRY RUN would update webapp {slug}: {changes}{settings if settings_differ else ''}."
+        )
+        return
+
+    if settings_differ:
+        current_run.log_warning(
+            f"Webapp {slug}: was public={existing['isPublic']} with scopes {current_scopes}; set to private "
+            f"with {scopes}, as release {tag} requires. Change them in the release, not by hand."
+        )
+    update_webapp(token, existing["id"], {path: bundle[path] for path in to_write}, to_delete, scopes, tag)
+    current_run.log_info(
+        f"Webapp {slug}: updated to release {tag} "
+        f"({len(to_write)} file(s) written, {len(to_delete)} deleted)."
+    )
+
+
+def download_webapp_bundle(release: dict, name: str, spec: dict) -> dict[str, bytes]:
+    """Download a webapp's release zip and check it against the manifest.
+
+    The zip is the release asset `webapp-<name>-<version>.zip`: the committed bundle, which must
+    match the manifest's hashes file for file, plus the stamped version.json.
+
+    Returns
+    -------
+    dict[str, bytes]
+        {path inside the bundle: content}, version.json included.
+    """
+    asset_name = f"webapp-{name}-{spec['version']}.zip"
+    asset = next((a for a in release["assets"] if a["name"] == asset_name), None)
+    if asset is None:
+        raise ValueError(
+            f"release {release['tag_name']} has no {asset_name} asset. On GitHub, wait for the 'release' "
+            f"workflow run of this release to finish, or re-run it. Release page: {release['html_url']}"
+        )
+    response = github_get(asset["browser_download_url"])
+    if not response.ok:
+        raise ValueError(f"downloading {asset_name} failed ({response.status_code}: {response.text[:200]}).")
+
+    with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
+        bundle = {info.filename: archive.read(info) for info in archive.infolist() if not info.is_dir()}
+    committed = {
+        path: hashlib.sha256(content).hexdigest()
+        for path, content in bundle.items()
+        if path != WEBAPP_VERSION_FILE
+    }
+    if committed != spec["files"]:
+        differ = sorted(
+            p for p in set(committed) | set(spec["files"]) if committed.get(p) != spec["files"].get(p)
+        )
+        raise ValueError(f"{asset_name} does not match the release manifest (paths that differ: {differ}).")
+    return bundle
+
+
+def get_webapp_by_slug(token: str, slug: str) -> dict | None:
+    """Look up a webapp in this workspace by its slug.
+
+    Returns
+    -------
+    dict | None
+        The webapp's id, name, slug, type, isPublic and allowedOperations, or None if the
+        workspace has no webapp with that slug.
+    """
+    return call_graphql(
+        token,
+        "query ($ws: String!, $slug: String!) { webapp(workspaceSlug: $ws, slug: $slug)"
+        " { id name slug type isPublic allowedOperations } }",
+        {"ws": workspace.slug, "slug": slug},
+    )["webapp"]
+
+
+def served_webapp_files(token: str, slug: str) -> dict[str, str]:
+    """Hash every file a static webapp serves now.
+
+    Reads the published files (spike S5: their content hashes exactly to what was uploaded).
+
+    Returns
+    -------
+    dict[str, str]
+        {path: sha256 of its content}, directories left out.
+    """
+    nodes = call_graphql(
+        token,
+        "query ($ws: String!, $slug: String!) { webapp(workspaceSlug: $ws, slug: $slug)"
+        " { files { path type encoding content } } }",
+        {"ws": workspace.slug, "slug": slug},
+    )["webapp"]["files"]
+    served = {}
+    for node in nodes or []:
+        if node["type"] != "file":
+            continue
+        if node["content"] is None:
+            raise ValueError(f"OpenHEXA returned no content for the served file {node['path']}.")
+        raw = base64.b64decode(node["content"]) if node["encoding"] == "BASE64" else node["content"].encode()
+        served[node["path"]] = hashlib.sha256(raw).hexdigest()
+    return served
+
+
+def webapp_file_inputs(files: dict[str, bytes]) -> list[dict]:
+    """Turn bundle files into OpenHEXA WebappFileInput objects.
+
+    A file that is valid UTF-8 travels as TEXT; any other as BASE64, which OpenHEXA requires for
+    binary files.
+
+    Returns
+    -------
+    list[dict]
+        One {path, content, encoding} per file, sorted by path.
+    """
+    inputs = []
+    for path in sorted(files):
+        try:
+            inputs.append({"path": path, "content": files[path].decode("utf-8"), "encoding": "TEXT"})
+        except UnicodeDecodeError:
+            content = base64.b64encode(files[path]).decode("ascii")
+            inputs.append({"path": path, "content": content, "encoding": "BASE64"})
+    return inputs
+
+
+def create_webapp(token: str, name: str, scopes: list[str], bundle: dict[str, bytes]) -> dict:
+    """Create a private static webapp holding the bundle, with its scopes.
+
+    Returns
+    -------
+    dict
+        The created webapp (id, slug).
+    """
+    data = call_graphql(
+        token,
+        "mutation ($input: CreateWebappInput!) { createWebapp(input: $input)"
+        " { success errors webapp { id slug } } }",
+        {
+            "input": {
+                "workspaceSlug": workspace.slug,
+                "name": name,
+                "isPublic": False,
+                "allowedOperations": scopes,
+                "source": {"static": webapp_file_inputs(bundle)},
+            }
+        },
+    )["createWebapp"]
+    if not data["success"]:
+        raise RuntimeError(f"createWebapp refused for '{name}': {data['errors']}")
+    return data["webapp"]
+
+
+def update_webapp(
+    token: str, webapp_id: str, files: dict[str, bytes], to_delete: list[str], scopes: list[str], tag: str
+) -> None:
+    """Write and delete a static webapp's files and set it private with its scopes.
+
+    OpenHEXA publishes the new commit at once and keeps the commit message as the version's
+    message (spike S5). File keys are sent only when a file changes, so a settings-only update
+    makes no empty commit.
+    """
+    update = {"id": webapp_id, "isPublic": False, "allowedOperations": scopes}
+    if files or to_delete:
+        update |= {"files": webapp_file_inputs(files), "filesToDelete": to_delete, "commitMessage": tag}
+    data = call_graphql(
+        token,
+        "mutation ($input: UpdateWebappInput!) { updateWebapp(input: $input) { success errors } }",
+        {"input": update},
+    )["updateWebapp"]
+    if not data["success"]:
+        raise RuntimeError(f"updateWebapp refused: {data['errors']}")
 
 
 def call_graphql(token: str, operation: str, variables: dict) -> dict:

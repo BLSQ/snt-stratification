@@ -5,6 +5,20 @@ each workspace's bucket is the source of truth for its catalog; **nothing about 
 recorded in the repo** ([ADR 0020](../../../docs/decisions/0020-repo-is-not-a-deployment-record.md)) — webapp
 `id`, `slug`, URL, scopes and `isPublic` are always resolved live.
 
+## The main route: a release, through the workspace deployer
+
+`snt_workspace_deployer` installs the orchestrator from the release it deploys, after the
+pipelines ([ADR 0048](../../../docs/decisions/0048-workspace-deployer-installs-the-webapps.md)):
+it finds the app by its slug `snt-pipelines-orchestrator-cockpit`, creates it if it is missing,
+otherwise replaces its files with the release's `webapp-orchestrator-<tag>.zip` (the five files
+plus a stamped `version.json`), and sets it private with the four scopes. The slug, name and scopes
+come from [`../webapp.json`](../webapp.json). How it decides create, update or skip: the
+deployer's [readme](../../../pipelines/snt_workspace_deployer/readme.md), step 8.
+
+**The next deployer run overwrites any hand edit** to a deployed orchestrator, and resets its
+scopes. The hand routes below are for development, a test workspace, or a fallback when the
+deployer cannot run; a change reaches workspaces through a release.
+
 ## What gets deployed
 
 - **The webapp:** the five files in `webapps/orchestrator/app/`, flat, exactly as they are in the repo
@@ -133,7 +147,8 @@ open ([REL-3](../../../docs/BACKLOG.md#rel-3)).
 
 The app needs `PIPELINES_READ`, `PIPELINES_RUN`, `FILES_READ`, `USER_READ` (why:
 [`OPENHEXA_WEBAPP_RUNTIME.md`](../../../docs/OPENHEXA_WEBAPP_RUNTIME.md#allowed_operations-scopes)). Scopes are
-webapp metadata, set at create/update time, not sent with file deploys. Three ways:
+webapp metadata, set at create/update time, not sent with file deploys. The workspace deployer sets
+them on every run (above). By hand, three ways:
 
 - **OpenHEXA UI** — webapp → **API access** tab → one toggle per operation.
 - **MCP** — `allowed_operations` on `create_static_webapp` / `update_static_webapp`, as a **list**
@@ -157,10 +172,11 @@ webapp **private** — a public webapp cannot call the proxy.
 ## New workspace checklist
 
 1. Find the workspace slug (`list_workspaces`).
-2. **Create the webapp with the four scopes** and deploy the five files from
-   `webapps/orchestrator/app/`. Keep it private. Its slug should be
-   `snt-pipelines-orchestrator-cockpit` (the generator's `config.WEBAPP_SLUG`); if it differs, the
-   generator needs `WEBAPP_SLUG` edited and a redeploy.
+2. **Run `snt_workspace_deployer` on the release**, which creates the webapp, private, with the
+   four scopes, at slug `snt-pipelines-orchestrator-cockpit` (the generator's
+   `config.WEBAPP_SLUG`). By hand instead: create it with the four scopes from the release's zip,
+   keep it private, and check that its slug is exactly that one; if it differs, the generator needs
+   `WEBAPP_SLUG` edited and a redeploy.
 3. **Then** install `create_pipeline_cards` (template `Create pipeline_cards.json`, or CLI push from
    `pipelines/create_pipeline_cards/`) and **run it once** — no parameters. It fails if step 2 is
    not done, because it curates against the deployed map.

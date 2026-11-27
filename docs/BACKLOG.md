@@ -821,28 +821,6 @@ webapp release zip ([ADR 0037](decisions/0037-one-release-train.md)).
 
 **Source:** `snt_webapp_orchestrator` BACKLOG.
 
-### <a id="rel-2"></a>REL-2 · Webapp deployer
-
-`snt_workspace_deployer` installs **both** webapps (the orchestrator and the config editor; the
-editor first if only one) from the same release as the pipelines, with the token it already uses
-for pipelines: the CUSTOM connection `openhexa-deploy`
-([`bootstrap/openhexa_deployment.md`](bootstrap/openhexa_deployment.md#authentication-use-the-openhexa-deploy-connection-token-not-the-runs-token)).
-The manifest's webapp entries carry name, slug and scopes. The deployer fetches each
-`webapp-<name>-<tag>.zip` release asset (webapp files are not in the slim tarball), finds the app by
-slug, and creates it (`createWebapp`: static, private, `allowedOperations` set by the API) or
-updates it (`updateWebapp`: `files` + `filesToDelete`, the tag as commit message). It skips an app
-whose served files already hash to the manifest's. `createWebapp` has no slug input: the slug comes
-from the name, so the orchestrator's name must produce `snt-pipelines-orchestrator-cockpit`. The
-deployer must look an app up by slug before creating it: a create whose name slugs to a taken slug
-makes a duplicate with a random suffix, with no error.
-
-Planned: [`MIGRATION_PLAN.md`](MIGRATION_PLAN.md#phase-7--webapps-on-the-release-train-d-2-d-23)
-Phase 7 (D-23). No longer blocked: spike S5 passed
-([findings](MIGRATION_PLAN.md#phase-0-findings)), and a CLI/SDK command ([OH-4](#oh-4)) is not
-needed. Next: the ADR, then the deployer step.
-
-**Source:** `snt_webapp_orchestrator` BACKLOG.
-
 ### <a id="rel-3"></a>REL-3 · Tested rollback procedure
 
 `UpdateWebappInput.publishedVersionId` can pin the served commit (raw GraphQL / UI only; no MCP
