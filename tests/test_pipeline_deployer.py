@@ -24,13 +24,21 @@ ALLOWED_DIFFERENCES = {"build_version_input", "get_release"}
 # Deployer functions the variant replaces or drops. deploy_all's per-pipeline loop and its
 # "Pipelines: n/m deployed" line make no sense for one pipeline; deploy_one is called directly.
 # without_older_bootstrap skips bootstrap pipelines; the variant refuses one instead
-# (refuse_older_bootstrap), since it deploys nothing else.
+# (refuse_older_bootstrap), since it deploys nothing else. The variant installs no webapp (ADR 0048).
 NOT_IN_VARIANT = {
     "snt_workspace_deployer",
     "deploy_release",
     "deploy_all",
     "write_release_marker",
     "without_older_bootstrap",
+    "deploy_webapps",
+    "deploy_webapp",
+    "download_webapp_bundle",
+    "get_webapp_by_slug",
+    "served_webapp_files",
+    "webapp_file_inputs",
+    "create_webapp",
+    "update_webapp",
 }
 
 
@@ -397,3 +405,244 @@ def test_release_marker_records_tag_and_repository() -> None:
         deployer.write_release_marker(Path(tmp), "v0.1.0", "BLSQ/snt-stratification")
         marker = json.loads((Path(tmp) / ".snt_release").read_text())
     assert marker == {"snt_release": "v0.1.0", "repo": "BLSQ/snt-stratification"}
+
+
+# Webapps (ADR 0048): installed by the workspace deployer, after the pipelines, found by slug.
+
+COMMITTED = {"index.html": b"<html>cockpit</html>\n", "app.js": b"console.log('v1');\n"}
+STAMP = b'{"version": "v1.0.0", "commit": "abc", "built_at": "2026-12-01T09:00:00Z"}\n'
+SCOPES = ["FILES_READ", "PIPELINES_READ", "PIPELINES_RUN", "USER_READ"]
+WEBAPP_SPEC = {
+    "path": "webapps/orchestrator/app",
+    "version": "v1.0.0",
+    "name": "SNT Pipelines Orchestrator - Cockpit",
+    "slug": "snt-pipelines-orchestrator-cockpit",
+    "scopes": SCOPES,
+    "files": {path: hashlib.sha256(content).hexdigest() for path, content in COMMITTED.items()},
+}
+WEBAPP_RELEASE = {
+    "tag_name": "v1.0.0",
+    "html_url": "https://github.com/BLSQ/snt-stratification/releases/tag/v1.0.0",
+    "assets": [asset("release_manifest.json"), asset("webapp-orchestrator-v1.0.0.zip")],
+}
+# The bundle as the release zip holds it: the committed files and the stamped version.json.
+BUNDLE = {**COMMITTED, "version.json": STAMP}
+
+
+def zip_bytes(files: dict[str, bytes]) -> bytes:
+    """Zip files in memory, as the release workflow zips a webapp bundle.
+
+    Returns
+    -------
+    bytes
+        The zip archive.
+    """
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as archive:
+        for path, content in files.items():
+            archive.writestr(path, content)
+    return buffer.getvalue()
+
+
+class FakeOpenHexa:
+    """Stand-in for `call_graphql`: one webapp at most, its served files, and every call recorded."""
+
+    def __init__(
+        self, app: dict | None = None, served: dict[str, bytes] | None = None, created_slug: str | None = None
+    ) -> None:
+        self.app = app
+        self.served = served or {}
+        self.created_slug = created_slug or WEBAPP_SPEC["slug"]
+        self.calls = []
+
+    def __call__(self, token: str, operation: str, variables: dict) -> dict:
+        """Answer one GraphQL call from the fake state, and record it.
+
+        Returns
+        -------
+        dict
+            The `data` object call_graphql would return.
+        """
+        self.calls.append((operation, variables))
+        if "createWebapp" in operation:
+            webapp = {"id": "new-id", "slug": self.created_slug}
+            return {"createWebapp": {"success": True, "errors": [], "webapp": webapp}}
+        if "updateWebapp" in operation:
+            return {"updateWebapp": {"success": True, "errors": []}}
+        if "files {" in operation:
+            nodes = [{"path": "assets", "type": "directory", "encoding": None, "content": None}]
+            nodes += [
+                {
+                    "path": path,
+                    "type": "file",
+                    "encoding": "BASE64",
+                    "content": base64.b64encode(raw).decode(),
+                }
+                for path, raw in self.served.items()
+            ]
+            return {"webapp": {"files": nodes}}
+        return {"webapp": self.app}
+
+    def mutations(self) -> list[dict]:
+        """List the input of every mutation sent, in order.
+
+        Returns
+        -------
+        list[dict]
+            Each mutation's `input` variable.
+        """
+        return [variables["input"] for operation, variables in self.calls if operation.startswith("mutation")]
+
+
+def existing_app(is_public: bool = False, scopes: list[str] = SCOPES, kind: str = "STATIC") -> dict:
+    """Build the webapp lookup result for an app already at the orchestrator's slug.
+
+    Returns
+    -------
+    dict
+        The fields get_webapp_by_slug asks for.
+    """
+    return {
+        "id": "app-id",
+        "name": "SNT Pipelines Orchestrator - Cockpit",
+        "slug": WEBAPP_SPEC["slug"],
+        "type": kind,
+        "isPublic": is_public,
+        "allowedOperations": scopes,
+    }
+
+
+@pytest.fixture
+def openhexa(monkeypatch: pytest.MonkeyPatch) -> Callable[..., FakeOpenHexa]:
+    """Point the deployer at a fake API, a fake workspace and a release zip holding BUNDLE.
+
+    Returns
+    -------
+    Callable[..., FakeOpenHexa]
+        Builds the fake API with the given webapp state and installs it.
+    """
+    monkeypatch.setattr(deployer, "workspace", SimpleNamespace(slug="ws"))
+    monkeypatch.setattr(
+        deployer,
+        "github_get",
+        lambda url: SimpleNamespace(ok=True, status_code=200, content=zip_bytes(BUNDLE)),
+    )
+    deployer.current_run = Log()
+
+    def install(**state: object) -> FakeOpenHexa:
+        fake = FakeOpenHexa(**state)
+        monkeypatch.setattr(deployer, "call_graphql", fake)
+        return fake
+
+    return install
+
+
+def test_missing_webapp_is_created_private_with_its_scopes(openhexa: Callable[..., FakeOpenHexa]) -> None:
+    """No app at the slug: one createWebapp, private, the manifest's scopes, every bundle file."""
+    fake = openhexa()
+    deployer.deploy_webapp(WEBAPP_RELEASE, "orchestrator", WEBAPP_SPEC, "token", dry_run=False)
+    [created] = fake.mutations()
+    assert created["name"] == "SNT Pipelines Orchestrator - Cockpit"
+    assert (created["isPublic"], created["allowedOperations"]) == (False, SCOPES)
+    assert {f["path"]: f["content"].encode() for f in created["source"]["static"]} == BUNDLE
+    assert {f["encoding"] for f in created["source"]["static"]} == {"TEXT"}
+    assert deployer.current_run.lines[-1][1].startswith("Webapp snt-pipelines-orchestrator-cockpit: created")
+
+
+def test_create_under_another_slug_fails(openhexa: Callable[..., FakeOpenHexa]) -> None:
+    """A taken slug gives a suffixed duplicate: the step fails and names the app to delete."""
+    openhexa(created_slug="snt-pipelines-orchestrator-cockpit-fcb549")
+    with pytest.raises(ValueError, match="Delete the webapp 'snt-pipelines-orchestrator-cockpit-fcb549'"):
+        deployer.deploy_webapp(WEBAPP_RELEASE, "orchestrator", WEBAPP_SPEC, "token", dry_run=False)
+
+
+def test_webapp_serving_the_bundle_is_skipped(openhexa: Callable[..., FakeOpenHexa]) -> None:
+    """Same files, private, same scopes in any order: no mutation at all."""
+    fake = openhexa(app=existing_app(scopes=list(reversed(SCOPES))), served=BUNDLE)
+    deployer.deploy_webapp(WEBAPP_RELEASE, "orchestrator", WEBAPP_SPEC, "token", dry_run=False)
+    assert fake.mutations() == []
+    assert deployer.current_run.lines[-1][1].endswith("skipped.")
+
+
+def test_hand_uploaded_webapp_is_adopted(openhexa: Callable[..., FakeOpenHexa]) -> None:
+    """A public app with an old file and a stray one: changed files written, stray deleted, made private."""
+    served = {"index.html": b"<html>old</html>\n", "app.js": COMMITTED["app.js"], "notes.txt": b"hand\n"}
+    fake = openhexa(app=existing_app(is_public=True, scopes=["PIPELINES_READ"]), served=served)
+    deployer.deploy_webapp(WEBAPP_RELEASE, "orchestrator", WEBAPP_SPEC, "token", dry_run=False)
+    [update] = fake.mutations()
+    assert sorted(f["path"] for f in update["files"]) == ["index.html", "version.json"]
+    assert update["filesToDelete"] == ["notes.txt"]
+    assert (update["id"], update["commitMessage"]) == ("app-id", "v1.0.0")
+    assert (update["isPublic"], update["allowedOperations"]) == (False, SCOPES)
+    [warning] = [message for level, message in deployer.current_run.lines if level == "log_warning"]
+    assert "was public=True with scopes ['PIPELINES_READ']" in warning
+
+
+def test_settings_only_update_makes_no_commit(openhexa: Callable[..., FakeOpenHexa]) -> None:
+    """Right files but a scope removed by hand: scopes set back, no file keys, so no empty commit."""
+    fake = openhexa(app=existing_app(scopes=SCOPES[:2]), served=BUNDLE)
+    deployer.deploy_webapp(WEBAPP_RELEASE, "orchestrator", WEBAPP_SPEC, "token", dry_run=False)
+    [update] = fake.mutations()
+    assert update == {"id": "app-id", "isPublic": False, "allowedOperations": SCOPES}
+
+
+@pytest.mark.parametrize(
+    ("app", "expected"), [(None, "DRY RUN would create"), (True, "DRY RUN would update")]
+)
+def test_dry_run_changes_no_webapp(openhexa: Callable[..., FakeOpenHexa], app: object, expected: str) -> None:
+    """A dry run reads the workspace and the release, logs what it would do, and sends no mutation."""
+    fake = openhexa(app=existing_app() if app else None, served={"index.html": b"old"})
+    deployer.deploy_webapp(WEBAPP_RELEASE, "orchestrator", WEBAPP_SPEC, "token", dry_run=True)
+    assert fake.mutations() == []
+    assert deployer.current_run.lines[-1][1].startswith(expected)
+
+
+def test_non_static_webapp_at_the_slug_fails(openhexa: Callable[..., FakeOpenHexa]) -> None:
+    """An iframe app holding the slug cannot take files: the step fails before reading or writing any."""
+    fake = openhexa(app=existing_app(kind="IFRAME"))
+    with pytest.raises(ValueError, match="is a IFRAME webapp, not a static one"):
+        deployer.deploy_webapp(WEBAPP_RELEASE, "orchestrator", WEBAPP_SPEC, "token", dry_run=False)
+    assert len(fake.calls) == 1
+
+
+def test_bundle_must_match_the_manifest(openhexa: Callable[..., FakeOpenHexa]) -> None:
+    """A release zip whose committed files differ from the manifest's hashes is refused, naming the path."""
+    openhexa()
+    spec = {**WEBAPP_SPEC, "files": {**WEBAPP_SPEC["files"], "app.js": "0" * 64}}
+    with pytest.raises(ValueError, match=r"paths that differ: \['app.js'\]"):
+        deployer.download_webapp_bundle(WEBAPP_RELEASE, "orchestrator", spec)
+
+
+def test_binary_file_travels_as_base64() -> None:
+    """A file that is not UTF-8 is sent BASE64, the rest as TEXT."""
+    inputs = deployer.webapp_file_inputs({"logo.png": b"\x89PNG\x00\xff", "index.html": b"<p>ok</p>"})
+    assert [(i["path"], i["encoding"]) for i in inputs] == [("index.html", "TEXT"), ("logo.png", "BASE64")]
+    assert base64.b64decode(inputs[1]["content"]) == b"\x89PNG\x00\xff"
+
+
+def test_deploy_webapps_skips_old_entries_and_collects_failures(
+    openhexa: Callable[..., FakeOpenHexa],
+) -> None:
+    """An entry from before ADR 0048 is skipped with a warning; a missing zip fails only its webapp."""
+    fake = openhexa()
+    manifest = {
+        "webapps": {
+            "config_editor": {**WEBAPP_SPEC, "path": "webapps/config_editor/app"},  # no zip asset
+            "old_app": {"path": "webapps/old_app/app", "version": "v1.0.0", "files": {}},
+            "orchestrator": WEBAPP_SPEC,
+        }
+    }
+    failures = deployer.deploy_webapps(WEBAPP_RELEASE, manifest, "token", dry_run=False)
+    assert failures == ["config_editor"]
+    assert len(fake.mutations()) == 1
+    levels = [level for level, _ in deployer.current_run.lines]
+    assert levels.count("log_warning") == 1
+    assert levels.count("log_error") == 1
+    assert deployer.current_run.lines[-1][1] == "Webapps: 1/2 installed or up to date."
+
+
+def test_release_without_webapps_installs_none(openhexa: Callable[..., FakeOpenHexa]) -> None:
+    """A manifest with no webapps block asks OpenHEXA nothing."""
+    fake = openhexa()
+    assert deployer.deploy_webapps(WEBAPP_RELEASE, {"files": {}}, "token", dry_run=False) == []
+    assert fake.calls == []
