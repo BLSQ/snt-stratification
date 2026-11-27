@@ -758,8 +758,8 @@ code, and an upstream change reaches the pipelines only through a PR here that b
 
 | Dependency | Pin | Files |
 |---|---|---|
-| `snt_lib` | `git+https://git@github.com/BLSQ/snt_utils.git@v2.0.0` | all 21 that install it (every SNT and support pipeline) |
-| `openhexa.toolbox` | `git+https://github.com/BLSQ/openhexa-toolbox@v2.11.4` | 13 |
+| `snt_lib` | `git+https://git@github.com/BLSQ/snt_utils.git@v2.0.0` | all 22 that install it (every SNT and support pipeline) |
+| `openhexa.toolbox` | `git+https://github.com/BLSQ/openhexa-toolbox@v2.11.4` | 14 |
 | `openhexa.toolbox` | `…/openhexa-toolbox@v2.10.0` | `snt_era5_climate_data` |
 
 The other pipelines have no toolbox line and use the image's (§7.4). The config conformance test
@@ -844,7 +844,7 @@ decided here, not in this repo. Read from the registry manifest on 2026-08-27
 
 Two consequences worth knowing:
 
-- **⚠️ The image pins `openhexa.toolbox=2.11.3`; 14 `requirements.txt` in this repo override it**
+- **⚠️ The image pins `openhexa.toolbox=2.11.3`; 15 `requirements.txt` in this repo override it**
   with `v2.11.4`, or `v2.10.0` for ERA5 ([§7.1](#71-dependency-pins)). So a *notebook* run
   interactively in JupyterLab sees 2.11.3, while the same notebook run by its pipeline sees the
   pipeline's pin: the two halves of one pipeline run against different toolbox versions.
