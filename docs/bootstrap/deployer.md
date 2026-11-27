@@ -6,7 +6,7 @@
 > [`openhexa_deployment.md`](openhexa_deployment.md). Section numbers are those of the former
 > `PRODUCT_SPEC.md`.
 
-## Workspace Deployer — built, changed 2026-09-30 and 2026-11-27 (webapps), **partly tested** (`v0.1.0`)
+## Workspace Deployer — built, changed 2026-09-30 and 2026-11-27 (webapps), **partly tested** (`v0.1.0`, `v0.3.0`)
 
 [`snt_workspace_deployer/`](../../pipelines/snt_workspace_deployer/), an OpenHEXA pipeline that
 reads the releases of this repository, `BLSQ/snt-stratification` (manifest v2). Parameters:
@@ -115,9 +115,23 @@ published release, only pre-releases, or unknown tag.
 **Steps 3–9 are not yet tested**: relabelling on a newer tag, rollback, hand edits, error messages and
 the bootstrap guard's skip, which needs a full release. Still unverified from before:
 **`backup_existing`**, since every verified run so far was against an empty workspace. The webapp
-step (2026-11-27) passes offline stub tests only (`tests/test_pipeline_deployer.py`: create,
-suffixed slug, skip, adopt, settings-only update, dry run, non-static app, zip check, old release);
-§6.7 step 10 is not yet run. Past verification runs: [`HISTORY.md`](HISTORY.md) §4.2.
+step (2026-11-27) passes offline stub tests (`tests/test_pipeline_deployer.py`: create, suffixed
+slug, skip, adopt, settings-only update, dry run, non-static app, zip check, old release), and two
+workspace runs, both on 2026-11-27:
+- **Old release.** Before the merge, the branch's deployer against `v0.2.0` in `snt-app-dev`: both
+  webapps skipped with the warning for a release built before the step, the pipelines deployed as
+  before.
+- **§6.7 step 10, on pre-release `v0.3.0`** in the fresh workspace `snt-v030-test`. Dry run: `DRY
+  RUN would create webapp …` for both, last line `Webapps: 2 inspected, none changed (dry run).`,
+  nothing created. Real run: both created, private, with the scopes of their `webapp.json`, each
+  serving a `version.json` stamped `v0.3.0`; `Webapps: 2/2 installed or up to date.`; the config
+  editor loads, and the orchestrator boots after `create_pipeline_cards` (18 nodes read from its
+  `pipeline_map.json`, 18 pipelines included). Same tag again: both `already serves release v0.3.0's
+  bundle, skipped`, published versions unchanged. The pipelines and files of the same runs matched
+  §6.7 steps 1–2 (26/26, 92 files, `.snt_release`).
+
+Not yet run from step 10: a newer tag (both updated) and adopting a hand-uploaded orchestrator.
+Past verification runs: [`HISTORY.md`](HISTORY.md) §4.2.
 
 ## Single-pipeline deployer — built 2026-10-30, **dry run tested** (`v0.1.0`)
 
@@ -207,7 +221,7 @@ manifest v2 included, has been run in a workspace.
 4. Same again. "already up to date, skipped".
 5. `pull_r_scripts` off on another pipeline. A version is registered, no file is written.
 
-## 6.7 Phase 5, step 1 — the deployer on its own (written 2026-09-30, **steps 1–2 tested**)
+## 6.7 Phase 5, step 1 — the deployer on its own (written 2026-09-30, **steps 1–2 and part of 10 tested**)
 
 The deployer is treated as a standalone pipeline first; integration with the checker (before/after
 reports, enriched `.snt_release`) is the next step and has not been started. Changes made, all in
@@ -237,8 +251,11 @@ the tag, dry run, no current version. That stub was thrown away; recreate it bef
 latest release (`v0.4.0-test`), and its missing manifest now stops the run with an error message in
 Messages. **Verified at `v0.1.0`, in a fresh test workspace (2026-11-13 → 16):** steps 1 and 2 of
 the test plan below, the "same tag again" case included (Phase 4 results in
-[`MIGRATION_PLAN.md`](../MIGRATION_PLAN.md#phase-4-results)). **Not verified:** steps 3–9, nor the
-other D24 diagnoses (no release, only pre-releases, unknown tag, private repo).
+[`MIGRATION_PLAN.md`](../MIGRATION_PLAN.md#phase-4-results)). **Verified at `v0.3.0`, in a fresh test
+workspace (2026-11-27):** step 10's dry run, real run and same tag again (§ Workspace Deployer,
+"Testing state"). **Not verified:** steps 3–9; from step 10, a newer tag and the adoption of a
+hand-uploaded app; the other D24 diagnoses (no release, only pre-releases, unknown tag, private
+repo).
 
 **Test plan** (a test workspace, against pre-releases of this repository, D-18 in
 [`MIGRATION_PLAN.md`](../MIGRATION_PLAN.md); use tags never before deployed to these pipelines; run
