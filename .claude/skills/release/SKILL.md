@@ -174,9 +174,9 @@ on and **Dry run on**. **Expected:** a pre-release warning, "would …" lines, t
 webapp, and the last line `Webapps: W inspected, none changed (dry run).` Nothing changes.
 
 **3.4 Deployer, for real** (Dry run off). **Expected:** the same warning and no error.
-- `Pipelines: P/P deployed.`, then the last line `Webapps: W/W installed or up to date.`. The
-  bootstrap pipelines are included, because a pre-release target counts as newer than the latest
-  full release (ADR 0042).
+- `Pipelines: P/P deployed.`, then `Webapps: W/W installed or up to date.`, and the last line
+  `Wrote release marker: … (BLSQ/snt-stratification@<tag>).`. The bootstrap pipelines are
+  included, because a pre-release target counts as newer than the latest full release (ADR 0042).
 - Webapps → `snt-config-editor` and `snt-pipelines-orchestrator-cockpit`, both private, with the
   scopes of their `webapps/<name>/webapp.json` (API access tab). The config editor opens. Before
   `create_pipeline_cards` has run, the orchestrator explains the missing catalog (W3), which is
@@ -189,8 +189,9 @@ webapp, and the last line `Webapps: W inspected, none changed (dry run).` Nothin
   `BLSQ/snt-stratification`.
 
 **3.5 Same tag again.** **Expected:** every pipeline logs "already up to date, skipped", and so does
-every webapp ("already serves release `<tag>`'s bundle, skipped"); `Pipelines: P/P deployed.`, the
-last line `Webapps: W/W installed or up to date.`, and no new pipeline or webapp versions appear.
+every webapp ("already serves release `<tag>`'s bundle, skipped"); `Pipelines: P/P deployed.`,
+`Webapps: W/W installed or up to date.`, the marker line last, and no new pipeline or webapp
+versions appear.
 
 Run 3.6–3.8 **before** 3.9, because the chain's report files show up as `untracked`.
 
