@@ -832,10 +832,14 @@ The manifest's webapp entries carry name, slug and scopes. The deployer fetches 
 slug, and creates it (`createWebapp`: static, private, `allowedOperations` set by the API) or
 updates it (`updateWebapp`: `files` + `filesToDelete`, the tag as commit message). It skips an app
 whose served files already hash to the manifest's. `createWebapp` has no slug input: the slug comes
-from the name, so the orchestrator's name must produce `snt-pipelines-orchestrator-cockpit`.
+from the name, so the orchestrator's name must produce `snt-pipelines-orchestrator-cockpit`. The
+deployer must look an app up by slug before creating it: a create whose name slugs to a taken slug
+makes a duplicate with a random suffix, with no error.
 
 Planned: [`MIGRATION_PLAN.md`](MIGRATION_PLAN.md#phase-7--webapps-on-the-release-train-d-2-d-23)
-Phase 7 (D-23). **Blocked on** spike S5 only; a CLI/SDK command ([OH-4](#oh-4)) is not needed.
+Phase 7 (D-23). No longer blocked: spike S5 passed
+([findings](MIGRATION_PLAN.md#phase-0-findings)), and a CLI/SDK command ([OH-4](#oh-4)) is not
+needed. Next: the ADR, then the deployer step.
 
 **Source:** `snt_webapp_orchestrator` BACKLOG.
 
@@ -880,17 +884,6 @@ write the same files), let one pipeline own it, or an R package (migration plan 
 before relying on the template route ([`MIGRATION_PLAN.md`](MIGRATION_PLAN.md) Phase 6).
 
 **Source:** self-sync discussion, 2026-11-17; self-sync pilot test in `snt-testing`, 2026-11-17.
-
-### <a id="rel-7"></a>REL-7 · Publish `snt_config_publish` as a template before the next full release
-
-`snt_config_publish` is a new support pipeline
-([ADR 0047](decisions/0047-config-editor-publishes-to-snt-configuration.md)). Before the next full
-release, push it once by hand to `snt-templates` and publish it as a template named after its
-`@pipeline` id ([adding a pipeline, step 7](CONVENTIONS.md#adding-or-changing-a-pipeline)). Until
-then [`push_templates.yaml`](../.github/workflows/push_templates.yaml) fails on it, because `--code`
-only selects a pipeline that already exists there.
-
-**Source:** config editor dataset write, 2026-11-26.
 
 ---
 
