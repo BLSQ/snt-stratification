@@ -112,48 +112,6 @@ separate. Decide, then set it in the `main` ruleset.
 
 ## Dependencies & reproducibility
 
-### <a id="dep-1"></a>DEP-1 · Pin the Git dependencies to fixed refs
-
-Every `requirements.txt` installs `snt_lib` from a Git ref, and 13 of the 20 also install
-`openhexa.toolbox` from `@main`. Nothing records which commit was actually installed. So
-(a) redeploying an identical `pipeline.py` a month later can produce a different runtime; (b) a
-change to `snt_utils`, such as a new required argument on `run_notebook()`, reaches every SNT pipeline
-on its next deploy, with no PR here and no CI signal; (c) "which version of `snt_lib` did this run
-use?" cannot be answered afterwards.
-
-The fix is to name a fixed point instead of a moving branch: a tag (`…/snt_utils.git@v1.4.0`) or a
-commit SHA. Upgrades then become a reviewable, revertible one-line PR. The cost is that someone has
-to bump the refs. Tags are the usual compromise.
-
-**Current repo state (checked 2026-11-18):** of the 21 files that install `snt_lib`, the 20 SNT
-pipelines pin `snt_utils.git@ca74b54aa31601f501f1f8f109c0b9268acadf35`, the head of the
-`snt_utils` branch `self-sync-r-half`
-([ADR 0044](decisions/0044-self-sync-replaces-pull-scripts.md)), and `snt_metadata_json_trim`
-pins its parent line's `44f59462846ecbb35e86c4daa8b2f434584036b3` on `cfg-4-config-from-dataset`
-([ADR 0043](decisions/0043-config-read-from-snt-configuration-dataset.md)). Both branches start
-from `release-v1`, and no tag contains either commit. For `snt_lib`, (a)–(c) no longer hold, but
-each commit is reachable only through its branch: deleting or rewriting the branch can break every
-install. **Before `v1.0.0`:** tag the head of the [CFG-1](#cfg-1) branch, which starts from
-`self-sync-r-half` (for example `v2.0.0`: configs with the old keys no longer validate), and point
-all 21 files and `tests/requirements-conformance.txt` at the tag (a step in
-[`MIGRATION_PLAN.md`](MIGRATION_PLAN.md) Phase 5). A tag keeps the commit reachable without any
-branch. **Never merge this line into `release-v1`:** the old `snt_development` repo, which live
-countries run, installs `snt_lib` from that branch itself (`snt_utils.git@release-v1` in its 21
-`requirements.txt`, checked 2026-11-25 in a local clone), so a merge reaches live countries, and
-after CFG-1 their configs fail `validate_config()`. `release-v1` itself is a branch
-(checked 2026-11-12 in a local clone); annotated tag `v1.0.2` → `23b8340` was its head that day,
-and the config conformance test pins it (`tests/requirements-conformance.txt`).
-`openhexa.toolbox @main` remains in 13 files, so (a)–(c) still hold for it. Left: a tag for the
-`snt_lib` pin, and a fixed ref for `openhexa.toolbox`. See [DOC-3](#doc-3).
-
-Related: the workspace image pins `openhexa.toolbox=2.11.3`, which `@main` overrides at pipeline
-run time, so a notebook run interactively and the same notebook run by the pipeline can see
-different toolbox versions. Decide whether that split is worth closing as part of this item.
-Facts: [`DATA_ARCHITECTURE.md` §7.1](DATA_ARCHITECTURE.md#71-dependency-resolution-is-not-reproducible),
-[§7.4](DATA_ARCHITECTURE.md#74-the-workspace-runtime-image).
-
-**Source:** CLAUDE.md *Suggestions*; DATA_ARCHITECTURE §9 #8 and #13.
-
 ### <a id="dep-2"></a>DEP-2 · A reproducible local environment for the R half
 
 The Python desk tools are covered (`dev/environment.yml` + `pyproject.toml`). Reproducing the **R**
@@ -222,12 +180,12 @@ outdated example config and are **ignored**. Related: [META-5](#meta-5).
 15 current key names as required and fails every pipeline at startup if one is missing. Nothing
 else in `snt_lib` uses the keys. The validator must change **before** the keys do. `snt_lib` is
 maintained by a colleague; the agreed route while they are unavailable: a branch of
-`BLSQ/snt_utils` off `self-sync-r-half` at `ca74b54`, the commit this repo's pipelines pin today
+`BLSQ/snt_utils` off tag `v2.0.0`, the tag this repo's pipelines pin today
 (e.g. `cfg-1-dataset-keys`; names starting with `release-v1` are blocked by the `snt_utils`
 ruleset `protect-release-branches`), and this repo's pipelines pin that branch, so the change is
 easy to undo. Not off `release-v1`: that would drop the config-from-dataset and self-sync changes.
-The branch is never merged into `release-v1`, which live countries install from
-([DEP-1](#dep-1)); it is tagged instead. `snt_development` is left untouched.
+The branch is never merged into `release-v1`, which live countries install from;
+it is tagged instead. `snt_development` is left untouched.
 
 **Where the old keys appear** (84 files mention `SNT_DATASET_IDENTIFIERS`): 20 `pipeline.py`;
 about 25 notebooks under `code/` and `.r` files under `utils/` (`config_json$SNT_DATASET_IDENTIFIERS$<KEY>`);
@@ -242,7 +200,7 @@ the `release` skill, `docs/MIGRATION_PLAN.md`; the config editor's `docs/PRODUCT
 
 **Commit plan (agreed 2026-11-16), one commit at a time:**
 
-1. **`snt_utils`, new branch off `self-sync-r-half` (`ca74b54`):** the `required_dataset_keys` list in
+1. **`snt_utils`, new branch off tag `v2.0.0`:** the `required_dataset_keys` list in
    `validate_config()`, and the one expected message in `tests/test_snt_pipeline_utils.py` that
    names `DHIS2_DATASET_EXTRACTS`. Push the branch; note its name and commit SHA.
 2. **This repo, the contract:** `SNT_config.skeleton.json`; the 16 fixtures (the
@@ -269,7 +227,7 @@ configs installed from this repo before the rename need the 11 keys renamed by h
 Every config has `"METRICS": {"ACTUAL_REPORTS": "float", "EXPECTED_REPORTS": "float"}`. The value is
 always `"float"`, which looks like a placeholder that only avoids an empty value. It may be used during
 extraction: no such use is visible in this repo, but if it exists it is probably in `snt_lib`
-(external, unpinned). A search of this repo cannot settle it, so "no usage found" is not proof that
+(external). A search of this repo cannot settle it, so "no usage found" is not proof that
 the value is unused.
 
 **Source:** the `snt_development` version of [`contracts/snt_config/README.md`](../contracts/snt_config/README.md) (formerly `configuration/README.md`).
@@ -783,7 +741,8 @@ ticket key alone (`SNT25-363`) or a short description, in the country notebooks 
 `sync_pipeline_scripts` in `snt_lib/snt_pipeline_utils.py` (`BLSQ/snt_utils`) says country variants
 are never touched. Since ADR 0046 that holds only for a variant **not** shipped in the pipeline
 version: a shipped one is copied, and a hand edit to it archived, like any notebook. Correct the
-docstring on the branch this repo pins ([DEP-1](#dep-1)).
+docstring in a new `snt_utils` tag, and bump the `snt_lib` pin in the pipelines'
+`requirements.txt` to it.
 
 Optional, in the same change: when `resolve_notebook()` picks a variant, compare its
 `snt_variant.base_sha256` with the generic notebook's sha256 and log a `[WARNING]` when they differ,

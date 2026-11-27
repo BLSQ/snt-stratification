@@ -747,7 +747,7 @@ section exists so that risk is managed rather than discovered.
 
 | Upstream component | Where it lives | How this app uses it | What breaks here if it changes |
 |---|---|---|---|
-| **`snt_lib.validate_config()`** | `github.com/BLSQ/snt_utils` → `snt_pipeline_utils`. The pipelines pin commit `44f5946` on the `snt_utils` branch `cfg-4-config-from-dataset` (DEP-1); the conformance test pins tag `v1.0.2` | **Reimplemented in JavaScript** as spec §5.1 rules 1–7. The single most important reuse. | The app declares a file valid that the pipelines reject, or blocks a file they would accept. **Silent** — nothing tells us. See §12.2 |
+| **`snt_lib.validate_config()`** | `github.com/BLSQ/snt_utils` → `snt_pipeline_utils`. The pipelines and the conformance test both pin tag `v2.0.0` | **Reimplemented in JavaScript** as spec §5.1 rules 1–7. The single most important reuse. | The app declares a file valid that the pipelines reject, or blocks a file they would accept. **Silent** — nothing tells us. See §12.2 |
 | **No R-side gate** | — | This table assumed an R `validate_required_config_keys()` equivalent to the Python gate. It does not exist (checked 2026-11-17, [`EXTERNAL_CHECKS.md`](EXTERNAL_CHECKS.md) item 2): notebooks load the config without a shared check, so `validate_config()` is the only gate to match | If an R gate is ever added, it is a second contract to match |
 | **`load_configuration_snt_from_dataset()`** (Python) and **`load_snt_config_from_dataset()`** (R) | `snt_lib`; [`shared/r/snt_utils.r`](../../../shared/r/snt_utils.r) in this repo | Define the location contract: exactly `SNT_config.json` in the latest version of the `SNT_CONFIGURATION` dataset (slug `snt-configuration`), [ADR 0043](../../../docs/decisions/0043-config-read-from-snt-configuration-dataset.md). Whatever the app publishes as a new version is what the next run reads. §6.1–6.2 were designed for the old disk path, read by `load_configuration_snt()` | If they read a different dataset, file or version, the app's save target moves with them |
 | **`SNT_config.skeleton.json`** | [`docs/`](../../../contracts/snt_config/SNT_config.skeleton.json) in *this* repo | Drives the form: section order, key order, key sets, placeholder conventions. Acceptance criterion §10.2 compares against it | It is a **derived artefact** — see §12.3 |
@@ -764,8 +764,8 @@ section exists so that risk is managed rather than discovered.
 ### 12.2 The duplication problem — say it plainly
 
 **`validate_config()` exists twice: in Python upstream, and reimplemented in JavaScript here.** There
-is no mechanism today that keeps them in agreement, and the upstream dependency is unpinned, so it
-can tighten under any redeploy with no PR in either repo and no CI signal.
+is no mechanism today that keeps them in agreement. The upstream dependency is pinned to a tag, so
+it changes only through a PR here that bumps the pin, but nothing makes that PR update this app.
 
 The failure is silent in both directions. The worse one: upstream adds a required field, this app
 keeps exporting files without it, and every country the app touched produces a config that no

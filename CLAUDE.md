@@ -180,9 +180,9 @@ defects): [`pipelines/CLAUDE.md`](pipelines/CLAUDE.md#pipeline-traps). Webapp tr
   today.
 - **Say "ADM1" / "ADM2", never "region" / "district"** in generic text: layer labels, readmes, docs,
   log and report messages ([glossary](docs/GLOSSARY.md)). File names like `…_district_year_*` stay.
-- **`snt_lib`** (`github.com/BLSQ/snt_utils`) is **external**, pinned to one commit on a branch, not
-  to a tag ([DEP-1](docs/BACKLOG.md#dep-1)). Do not guess its signatures; read the upstream repo at
-  the pinned commit, or an existing call site.
+- **`snt_lib`** (`github.com/BLSQ/snt_utils`) is **external**, pinned to a tag in each
+  `requirements.txt` ([`DATA_ARCHITECTURE.md` §7.1](docs/DATA_ARCHITECTURE.md#71-dependency-pins)).
+  Do not guess its signatures; read the upstream repo at the pinned tag, or an existing call site.
 - **Not imported:** `deprecated/`, `.github/`, and two country notebooks left out on purpose
   ([VAR-4](docs/BACKLOG.md#var-4), [VAR-5](docs/BACKLOG.md#var-5)). Read them in the old repos at
   the SHAs in [`README.md`](README.md).

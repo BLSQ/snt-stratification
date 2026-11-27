@@ -1143,10 +1143,9 @@ the final contract. The form and validation (`LocalStore`, download only) can pr
       `snt_healthcare_access` check their run parameters before the sync, so a run they reject
       syncs nothing. Still to verify at the next pre-release cut: the full DHIS2 chain against the
       baseline (`release` skill).
-- [ ] **Pin `snt_lib` to a tag** ([DEP-1](BACKLOG.md#dep-1)): in `snt_utils`, tag the head of
-      the CFG-1 branch, which starts from `self-sync-r-half` (`ca74b54`). Never merge it into
-      `release-v1`: the old repo's live pipelines install from that branch. Point the 21
-      `requirements.txt` and `tests/requirements-conformance.txt` here at the tag, in one PR.
+- [x] **Pin `snt_lib` to a tag** (DEP-1, removed from the BACKLOG): the 21 `requirements.txt`
+      that install `snt_lib` pin `snt_utils` tag `v2.0.0`, and 13 of the 14 that
+      install `openhexa.toolbox` pin `v2.11.4` (`snt_era5_climate_data` keeps `v2.10.0`), in one PR.
       Then the `v1.0.0` release candidate tests what ships.
 - [ ] Cut **`v1.0.0`** (first production release). Phase 6 ran first, so promoting it fires
       `push_templates.yaml` and publishes a template version of all 25 pipelines from

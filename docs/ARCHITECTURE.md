@@ -199,7 +199,7 @@ Each run gets a fresh container, which is deleted when the run ends. So:
 
 - The packages a run sees come from the image (for SNT,
   [`DATA_ARCHITECTURE.md` §7.4](DATA_ARCHITECTURE.md#74-the-workspace-runtime-image)) plus the
-  pipeline's `requirements.txt` (how that is resolved: [DEP-1](BACKLOG.md#dep-1)).
+  pipeline's `requirements.txt` (its pins: [`DATA_ARCHITECTURE.md` §7.1](DATA_ARCHITECTURE.md#71-dependency-pins)).
 - Anything written outside the Files area is lost when the run ends. The Files area is cloud
   storage that exists without any container; OpenHEXA connects it to a folder inside each
   container, and Jupyter is another container connected to the same storage. That is why pipeline
