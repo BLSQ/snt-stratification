@@ -22,7 +22,7 @@ How the builder routes each file:
 | Zip | Every file under `pipelines/<name>/` whose suffix (case-insensitive) is `.py .ipynb .txt .md .r .sql`, minus `pipelines/<name>/workspace/`: a mirror of the SDK's `generate_zip_file()`, R half and `country_specific/` included. `<name>` must be in [`registry.json`](../pipelines/registry.json) and hold a `pipeline.py`, or the build stops | `files` + `pipelines.<name>.zip_files` |
 | Filesystem | `pipelines/*/code/*.ipynb`, `pipelines/*/reporting/*.ipynb`, `pipelines/*/utils/*.r`, `shared/r/**/*.r` | `files` + `filesystem_files` |
 | Fetched at run time | `catalogs/*.json` | `repository_files` |
-| Webapp bundle | Every non-hidden file under `webapps/<name>/app/`; an `app/` with none (only `.gitkeep`) gets no entry | `webapps.<name>.files` |
+| Webapp bundle | Every non-hidden file under `webapps/<name>/app/`; an `app/` with none (only `.gitkeep`) gets no entry. Its name, slug and scopes come from `webapps/<name>/webapp.json`, which must exist, or the build stops | `webapps.<name>.files`, `.name`, `.slug`, `.scopes` |
 
 Anything else (docs, `tools/`, `tests/`, design files) is not in the manifest. The builder checks its
 output against the schema and the invariants before it writes anything, so a release never carries
@@ -44,7 +44,12 @@ python tools/build_manifest.py --version v0.1.0 --repo BLSQ/snt-stratification  
                          "zip_files": ["pipeline.py", "reporting/snt_map_extracts_report.ipynb", "…"]}
   },
   "repository_files": {"catalogs/SNT_metadata_master.json": "<sha256>"},
-  "webapps": {"orchestrator": {"path": "webapps/orchestrator/app", "version": "v0.1.0", "files": {"index.html": "<sha256>"}}}
+  "webapps": {
+    "orchestrator": {"path": "webapps/orchestrator/app", "version": "v0.1.0",
+                     "name": "SNT Pipelines Orchestrator - Cockpit", "slug": "snt-pipelines-orchestrator-cockpit",
+                     "scopes": ["FILES_READ", "PIPELINES_READ", "PIPELINES_RUN", "USER_READ"],
+                     "files": {"index.html": "<sha256>", "…": "…"}}
+  }
 }
 ```
 
@@ -67,6 +72,13 @@ Why the shape is what it is:
 - **`webapps`.** One entry per `webapps/<name>/app/` bundle that holds a file, with its files hashed
   relative to `app/`. The release attaches each bundle as `webapp-<name>-<tag>.zip` with a stamped
   `version.json` (not listed). No consumer reads the block until Phase 7.
+- **`webapps.<name>.name`, `slug` and `scopes`**, copied from `webapps/<name>/webapp.json`, are
+  what a deployer needs to install the app ([ADR 0048](../docs/decisions/0048-workspace-deployer-installs-the-webapps.md)):
+  it looks the app up by `slug`, creates it under `name` if absent, and keeps it private with
+  `scopes` as its OpenHEXA `allowedOperations`. OpenHEXA has no slug input and derives the slug
+  from the name (python-slugify), so the builder checks that `name` slugs to exactly `slug`
+  (invariant 7). Releases built before these keys existed lack them; a consumer must skip such
+  an entry rather than guess.
 - **`repository_files`** holds `{path: sha256}` for files a pipeline **fetches from the repository
   at run time** instead of receiving them by deployment: `catalogs/SNT_metadata_master.json`, which
   `snt_metadata_json_trim` downloads at the requested release tag. They are not in `files`, because

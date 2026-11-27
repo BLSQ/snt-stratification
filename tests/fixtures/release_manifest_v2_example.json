@@ -54,9 +54,18 @@
     "orchestrator": {
       "path": "webapps/orchestrator/app",
       "version": "v0.1.0",
+      "name": "SNT Pipelines Orchestrator - Cockpit",
+      "slug": "snt-pipelines-orchestrator-cockpit",
+      "scopes": [
+        "FILES_READ",
+        "PIPELINES_READ",
+        "PIPELINES_RUN",
+        "USER_READ"
+      ],
       "files": {
         "app.js": "7ec8e09484d77f9e885ef1d0c13b725deaed98650a582453295c5b81ec949e23",
         "index.html": "28aac89a8c8427dd8f5799bed4a7663529e11ea068d7b25f8934b52941f7835a",
+        "pipeline_descriptions.json": "590ec86a363bc4353acb1c584c82fc921fe01d553bdce6996950efba5362ef9d",
         "pipeline_map.json": "d84481eac766d1c7d634e5b2dc124c8badb91d711dabbcbfc7198c306751120b",
         "styles.css": "064f2bff5acb80501b576772d41592f56b19953fa0004c4c608ae88fd8cf1b39"
       }

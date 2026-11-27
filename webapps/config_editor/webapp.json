@@ -1,0 +1,5 @@
+{
+  "name": "SNT Config Editor",
+  "slug": "snt-config-editor",
+  "scopes": ["PIPELINES_READ", "PIPELINES_RUN"]
+}

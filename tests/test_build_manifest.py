@@ -50,6 +50,14 @@ TREE = [
 
 REGISTRY = {"pipelines": {"snt_alpha": {"kind": "snt"}, "snt_workspace_checker": {"kind": "bootstrap"}}}
 
+# The orchestrator bundle's identity, written as webapps/orchestrator/webapp.json. Scopes unsorted on
+# purpose: the builder sorts them. The config_editor bundle holds only a dotfile, so it needs none.
+ORCHESTRATOR_IDENTITY = {
+    "name": "SNT Pipelines Orchestrator - Cockpit",
+    "slug": "snt-pipelines-orchestrator-cockpit",
+    "scopes": ["USER_READ", "PIPELINES_READ", "PIPELINES_RUN", "FILES_READ"],
+}
+
 
 def sha(path: str) -> str:
     """Hash a synthetic file, whose content is its own path.
@@ -75,6 +83,9 @@ def make_tree(root: Path, registry: dict = REGISTRY) -> Path:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(path.encode())
     (root / "pipelines" / "registry.json").write_text(json.dumps(registry), encoding="utf-8")
+    (root / "webapps" / "orchestrator" / "webapp.json").write_text(
+        json.dumps(ORCHESTRATOR_IDENTITY), encoding="utf-8"
+    )
     return root
 
 
@@ -130,6 +141,9 @@ EXPECTED = {
         "orchestrator": {
             "path": "webapps/orchestrator/app",
             "version": "v9.9.9",
+            "name": "SNT Pipelines Orchestrator - Cockpit",
+            "slug": "snt-pipelines-orchestrator-cockpit",
+            "scopes": ["FILES_READ", "PIPELINES_READ", "PIPELINES_RUN", "USER_READ"],
             "files": {
                 "data/pipeline_map.json": sha("webapps/orchestrator/app/data/pipeline_map.json"),
                 "index.html": sha("webapps/orchestrator/app/index.html"),
@@ -163,6 +177,48 @@ def test_registered_folder_missing_is_refused(tmp_path: Path) -> None:
     registry = {"pipelines": {**REGISTRY["pipelines"], "snt_gone": {"kind": "snt"}}}
     with pytest.raises(build_manifest.ManifestError, match="snt_gone"):
         build_manifest.build_manifest(make_tree(tmp_path, registry), "v9.9.9", "BLSQ/snt-stratification")
+
+
+def test_bundle_without_webapp_json_is_refused(tmp_path: Path) -> None:
+    """A bundle with files but no webapp.json has no slug to be installed under, so the build stops."""
+    root = make_tree(tmp_path)
+    (root / "webapps" / "orchestrator" / "webapp.json").unlink()
+    with pytest.raises(build_manifest.ManifestError, match=r"webapps/orchestrator/webapp\.json is missing"):
+        build_manifest.build_manifest(root, "v9.9.9", "BLSQ/snt-stratification")
+
+
+def test_unreadable_webapp_json_is_refused(tmp_path: Path) -> None:
+    """A webapp.json that is not JSON stops the build, naming the file."""
+    root = make_tree(tmp_path)
+    (root / "webapps" / "orchestrator" / "webapp.json").write_text("{name:", encoding="utf-8")
+    with pytest.raises(build_manifest.ManifestError, match=r"webapps/orchestrator/webapp\.json is not valid"):
+        build_manifest.build_manifest(root, "v9.9.9", "BLSQ/snt-stratification")
+
+
+def test_main_refuses_a_name_that_does_not_slug_to_the_slug(tmp_path: Path) -> None:
+    """OpenHEXA derives the slug from the name, so a name giving another slug fails and writes nothing."""
+    root = make_tree(tmp_path / "repo")
+    identity = {**ORCHESTRATOR_IDENTITY, "name": "SNT Cockpit"}
+    (root / "webapps" / "orchestrator" / "webapp.json").write_text(json.dumps(identity), encoding="utf-8")
+    out = tmp_path / "m.json"
+    args = ["--root", str(root), "--version", "v9.9.9", "--repo", "BLSQ/snt-stratification"]
+    assert build_manifest.main([*args, "--output", str(out)]) == 1
+    assert not out.exists()
+
+
+@pytest.mark.parametrize(
+    ("name", "slug"),
+    [
+        ("SNT Pipelines Orchestrator - Cockpit", "snt-pipelines-orchestrator-cockpit"),
+        ("SNT Config Editor", "snt-config-editor"),
+        ("snt-pipelines-orchestrator-cockpit", "snt-pipelines-orchestrator-cockpit"),
+        ("  Spike S5 Title Case 202611271200 ", "spike-s5-title-case-202611271200"),
+        ("A/B (test) v2.0", "a-b-test-v2-0"),
+    ],
+)
+def test_openhexa_slug(name: str, slug: str) -> None:
+    """The slug rule gives what spike S5 saw and what python-slugify gives for ASCII names."""
+    assert build_manifest.openhexa_slug(name) == slug
 
 
 def test_main_writes_a_deterministic_file(tmp_path: Path) -> None:
@@ -204,3 +260,16 @@ def test_this_repo_builds_a_valid_manifest() -> None:
     assert any(p.startswith("shared/r/") for p in manifest["filesystem_files"])
     assert set(manifest["webapps"]) == {"config_editor", "orchestrator"}
     assert list(manifest["webapps"]["config_editor"]["files"]) == ["index.html"]
+
+
+def test_this_repo_webapps_keep_their_runtime_slug_and_scopes() -> None:
+    """The repo's two webapps keep the slug and scopes the workspaces rely on.
+
+    The orchestrator keeps the slug create_pipeline_cards reads and its W8 scopes; the config editor
+    needs only to run snt_config_publish (ADR 0047).
+    """
+    webapps = build_manifest.build_manifest(ROOT, "v0.0.0-test", "BLSQ/snt-stratification")["webapps"]
+    config = (ROOT / "pipelines" / "create_pipeline_cards" / "config.py").read_text(encoding="utf-8")
+    assert f'WEBAPP_SLUG = "{webapps["orchestrator"]["slug"]}"' in config
+    assert webapps["orchestrator"]["scopes"] == ["FILES_READ", "PIPELINES_READ", "PIPELINES_RUN", "USER_READ"]
+    assert webapps["config_editor"]["scopes"] == ["PIPELINES_READ", "PIPELINES_RUN"]

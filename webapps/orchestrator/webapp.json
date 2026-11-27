@@ -1,0 +1,5 @@
+{
+  "name": "SNT Pipelines Orchestrator - Cockpit",
+  "slug": "snt-pipelines-orchestrator-cockpit",
+  "scopes": ["FILES_READ", "PIPELINES_READ", "PIPELINES_RUN", "USER_READ"]
+}
