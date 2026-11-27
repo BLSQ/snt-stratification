@@ -51,8 +51,8 @@ and documented separately:
 **Success:**
 - A fresh test workspace can be bootstrapped end to end from a GitHub release of the new repo:
   pipelines, R half, webapps, with a version marker, and the checker reports `match`.
-- A second fresh workspace can be set up from the **new template set**. Its pipeline codes equal
-  `snt-<name>`, so the deployer and checker can take it over later.
+- The **new template set** stays a working emergency backup (parked, D-23): a workspace set up from
+  it gets pipeline codes equal to `snt-<name>`, so the deployer and checker can take it over.
 - One CLAUDE.md router, one Register, one BACKLOG and one ADR sequence for everything.
 
 ---
