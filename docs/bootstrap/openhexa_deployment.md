@@ -116,14 +116,17 @@ token = workspace.custom_connection("openhexa-deploy").token
 headers = {"Authorization": f"Bearer {token}"}
 ```
 
-This is the same class of credential CI already uses for `openhexa pipelines push` — not a new
-trust assumption, just an explicit one. It is literally the **workspace access token** OpenHEXA
-displays under *Pipelines → Create → "From OpenHEXA CLI"*, the string that
-`openhexa workspaces add <workspace>` prompts for. Two properties follow, both good:
+This is the same credential `openhexa pipelines push` uses — not a new trust assumption, just an
+explicit one. It is the workspace **API key** OpenHEXA shows on the Pipelines page under "+"
+(*Create → "From OpenHEXA CLI"*), the string `openhexa workspaces add <workspace>` prompts for
+([OpenHEXA CLI docs](https://docs.openhexa.com/cli/#how-do-i-get-the-api-key-for-a-workspace)).
+Two properties follow:
 
-* it is **workspace-scoped**, not personal — so it is not one person's credential spread across 20
-  workspaces;
-* the UI reveals it only to members holding the **Editor** or **Admin** role.
+* it is issued for one workspace but is **personal**: OpenHEXA shows the member whose key it is as
+  the person who deployed each pipeline version (seen with the CLI, 2026-11-27). Every deploy is
+  therefore attributed to the member who set up the connection. Whether the key stops working when
+  that member leaves the workspace or loses the Editor role is not verified;
+* only members with at least the **Editor** role can see it, and it is a secret.
 
 What is still manual is getting it there: someone copies it by hand into a CUSTOM connection named
 `openhexa-deploy`, per workspace, with no rotation story. That is the one genuinely new operational
@@ -260,10 +263,11 @@ it can run unattended in a country workspace that holds no connection at all, wh
 daily-check story in [`checker.md`](checker.md) §7.6 alive. Evidence and method: [`HISTORY.md`](HISTORY.md) §2.4.
 
 **7.3b — where the `openhexa-deploy` token comes from in a country workspace. Open, deliberately
-low priority.** Only `snt_workspace_deployer` needs it. What it is, is now known: the **workspace access token** that
-OpenHEXA shows under *Pipelines → Create → "From OpenHEXA CLI"*, the same string
-`openhexa workspaces add <workspace>` asks for. It is workspace-scoped rather than personal, and the
-UI reveals it only to members with the **Editor** or **Admin** role. Today it is copy-pasted by hand
+low priority.** Only `snt_workspace_deployer` needs it. What it is, is now known: the workspace
+**API key** OpenHEXA shows on the Pipelines page under "+", the same string
+`openhexa workspaces add <workspace>` asks for. It is personal to the member who copies it (deploys
+are attributed to them, see Authentication above), and only members with at least the **Editor**
+role can see it. Today it is copy-pasted by hand
 into a CUSTOM connection named `openhexa-deploy` — which works, but means a manual step per
 country workspace and no rotation story.
 
