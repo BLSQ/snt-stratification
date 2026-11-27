@@ -118,9 +118,9 @@ The config editor must write empty values the same way: an empty string is `null
 ## Where configuration is heading: the config editor
 
 Filling in `SNT_config.json` is moving to an OpenHEXA webapp, the config editor, in
-[`webapps/config_editor/`](../../webapps/config_editor/CLAUDE.md) (docs and a design prototype; no
-app code yet). It must emit exactly the shape and key order of `SNT_config.skeleton.json`, and keeps
-no copy of its own. The skeleton is the pipelines' contract, so a change to it is a pipeline change:
+[`webapps/config_editor/`](../../webapps/config_editor/CLAUDE.md) (one file, `app/index.html`,
+shipped in every release; a French copy in `design/`). It must emit exactly the shape and key
+order of `SNT_config.skeleton.json`, and keeps no copy of its own. The skeleton is the pipelines' contract, so a change to it is a pipeline change:
 update the skeleton first, then the editor's form
 ([editor spec §12.3](../../webapps/config_editor/docs/PRODUCT_SPEC.md#123-the-skeleton-is-a-derived-artefact)).
 For how to fill in the country-specific values, read [`config_analysis_notes.md`](config_analysis_notes.md).

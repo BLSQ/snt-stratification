@@ -27,7 +27,7 @@ A **unit** is something deployed on its own. Each is one folder (R26).
 | **Support pipelines** (3, `kind: support`) | `pipelines/create_pipeline_cards/`, `pipelines/snt_metadata_json_trim/`, `pipelines/snt_config_publish/` | Build the orchestrator's catalog; trim the SNT Explorer master list to one workspace; publish a valid `SNT_config.json` for the config editor |
 | **Bootstrap pipelines** (3, `kind: bootstrap`) | `pipelines/snt_workspace_deployer/`, `snt_pipeline_deployer/`, `snt_workspace_checker/` | Install a release (whole, or one pipeline) into a workspace; check which release a workspace matches |
 | **Orchestrator webapp** | `webapps/orchestrator/` | Guided, bilingual cockpit: see the status of each SNT pipeline, configure it and run it |
-| **Config editor webapp** | `webapps/config_editor/` | Produce a valid `SNT_config.json` and publish it to `SNT_CONFIGURATION`. A single-file prototype in `design/`; `app/` empty |
+| **Config editor webapp** | `webapps/config_editor/` | Produce a valid `SNT_config.json` and publish it to `SNT_CONFIGURATION`. A single file, `app/index.html`, in English; its French copy stays in `design/` |
 
 Kinds are recorded in [`pipelines/registry.json`](../pipelines/registry.json), not in the path:
 the repo path of every file that lands in a workspace equals its workspace path

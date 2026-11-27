@@ -160,11 +160,12 @@ def test_main_fails_without_writing_on_drift(tmp_path: Path) -> None:
 
 
 def test_this_repo_builds_its_assets(tmp_path: Path) -> None:
-    """The checkout packs: every manifest file in the tarball, and an orchestrator zip."""
+    """The checkout packs: every manifest file in the tarball, and a config editor and orchestrator zip."""
     manifest = build_manifest.build_manifest(ROOT, "v0.0.0-test", REPO)
     written = build(ROOT, manifest, tmp_path)
     assert [p.name for p in written] == [
         "snt-stratification-v0.0.0-test.tar.gz",
+        "webapp-config_editor-v0.0.0-test.zip",
         "webapp-orchestrator-v0.0.0-test.zip",
     ]
     with tarfile.open(written[0]) as tar:

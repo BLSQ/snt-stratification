@@ -15,8 +15,8 @@ Two webapps, each in `webapps/<name>/` with `app/` (the deployable bundle, the o
   [`create_pipeline_cards`](../pipelines/create_pipeline_cards/README.md). The repo is the reference
   source for the latest version, **not a record of what is deployed where**.
 - **`config_editor/`** — produces a valid `SNT_config.json` and publishes it to the
-  `SNT_CONFIGURATION` dataset by running the `snt_config_publish` pipeline (ticket SNT25-661). A single-file prototype in `design/`; `app/` is
-  empty.
+  `SNT_CONFIGURATION` dataset by running the `snt_config_publish` pipeline (ticket SNT25-661). A
+  single file, `app/index.html`, in English; its French copy stays in `design/`.
 
 ## Working here
 

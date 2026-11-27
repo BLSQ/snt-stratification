@@ -17,19 +17,24 @@ copies drift.
 
 ## Current state
 
-`app/` is empty. [`design/index.html`](design/index.html) is a standalone single-file prototype,
-and the version people use: uploaded as a private OpenHEXA webapp, it publishes valid configs to
-the `SNT_CONFIGURATION` dataset by running the
+[`app/index.html`](app/index.html) is the editor, in English: one standalone file, and the version
+people use. Each release carries it as `webapp-config_editor-<tag>.zip`. Uploaded as a private
+OpenHEXA webapp, it publishes valid configs to the `SNT_CONFIGURATION` dataset by running the
 [`snt_config_publish`](../../pipelines/snt_config_publish/readme.md) pipeline
 ([ADR 0047](../../docs/decisions/0047-config-editor-publishes-to-snt-configuration.md)); opened from
 disk, it only downloads. [`design/index_FR.html`](design/index_FR.html) is its French copy (only
-user-facing text differs); change both files together, by hand, until the real app in `app/`
-replaces them.
+user-facing text differs). It is in no release. Change both files together, by hand.
 
-**Deploying it:** a private static webapp whose only file is the chosen `index*.html`, uploaded as
-`index.html`, with the scopes `PIPELINES_READ` and `PIPELINES_RUN`, in a workspace where
-`snt_config_publish` is installed. The webapp writes nothing itself: OpenHEXA is removing webapp
-writes ([runtime notes](../../docs/OPENHEXA_WEBAPP_RUNTIME.md#allowed_operations-scopes)).
+**Where it is heading:** one app with an English/French switch like the orchestrator's, which
+retires `design/index_FR.html` ([EDIT-1](../../docs/BACKLOG.md#edit-1)), and a multi-file bundle
+(html + css + js, no build step) as the orchestrator is
+([EDIT-2](../../docs/BACKLOG.md#edit-2)).
+
+**Deploying it:** a private static webapp whose only file is `index.html` (`app/index.html`, or
+`design/index_FR.html` uploaded under that name for French), with the scopes `PIPELINES_READ` and
+`PIPELINES_RUN`, in a workspace where `snt_config_publish` is installed. The webapp writes nothing
+itself: OpenHEXA is removing webapp writes
+([runtime notes](../../docs/OPENHEXA_WEBAPP_RUNTIME.md#allowed_operations-scopes)).
 
 ## Decisions already made — do not relitigate
 
@@ -49,8 +54,8 @@ writes ([runtime notes](../../docs/OPENHEXA_WEBAPP_RUNTIME.md#allowed_operations
   `SNT_config.json` + `SNT_config.log.json`. `DatasetStore` is used only when `window.OPENHEXA` is
   set; otherwise `LocalStore` downloads. **Lockstep:** the parameter codes, the log line the editor
   reads the version name from (`as version '…'`) and the pipeline's name live in both
-  [`pipeline.py`](../../pipelines/snt_config_publish/pipeline.py) and the two `index*.html`; change
-  them together.
+  [`pipeline.py`](../../pipelines/snt_config_publish/pipeline.py), `app/index.html` and
+  `design/index_FR.html`; change them together.
 - **All persistence goes through the `ConfigStore` interface** (spec §7). No form or validation code
   may touch `localStorage`, `fetch`, or a path directly.
 - **`SNT_config.json` is published only when valid**, as a new version of `SNT_CONFIGURATION`.
