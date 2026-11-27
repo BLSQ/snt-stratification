@@ -274,9 +274,10 @@ in **new test workspaces** (names TBD, e.g. `snt-mono-test`, `snt-mono-templates
 - [x] Spike S4 — can the orchestrator read `PipelineRun.config` (the run's `run_report_only` value)
       through the webapp proxy with `PIPELINES_READ`? Grep `reference/openhexa/schema.generated.graphql`
       first. → **yes**, 2026-11-03.
-- [ ] Spike S5 (Phase 7 input; no longer optional, D-23) — can the deployer's `openhexa-deploy`
+- [x] Spike S5 (Phase 7 input; no longer optional, D-23) — can the deployer's `openhexa-deploy`
       token create and update static webapps (`createWebapp`, `updateWebapp(files:)`)? The checks
       and the pass rule are in [Phase 7](#phase-7--webapps-on-the-release-train-d-2-d-23).
+      → **passed** 2026-11-27; see [Phase 0 findings](#phase-0-findings).
 - [x] Pre-publication audit list (first pass done 2026-11-03; second pass **passed** 2026-11-05, P1-7; see findings): which files in the source trees are unfit for a public repo? Known
       candidates: the persona questionnaire (`docs/research/personas/…`, answers from real people),
       country-specific `_<CC>` notebooks with DHIS2 UIDs, workspace slugs, Jira references,
@@ -369,6 +370,41 @@ observed installed. The display names have been renumbered over time ("A.5 DHIS2
 Transformation" is now "A.6 …"), so older workspaces carry older numbers. Consequences: the bullets
 above that say "code" mean "display name" (Phase 6 item updated), and the `b-2-…` codes are
 explained.
+
+**S5 passed (2026-11-27, `snt-app-dev`, throwaway pipeline `spike_webapp_deploy`, one run).** The
+spike code is in this repo's git-ignored `ignore/spikes/spike_webapp_deploy/`. It recorded every raw
+GraphQL response, and each app it made was named `spike-s5-…` and deleted afterwards. The workspace
+already held the real dev orchestrator at slug `snt-pipelines-orchestrator-cockpit`, so check 2 used
+a throwaway name for the exact-slug test, plus a probe with the orchestrator's name.
+- **Check 1, tokens.** `createWebapp` with the run's own `HEXA_TOKEN`: `PERMISSION_DENIED`. With
+  the `openhexa-deploy` token: created. `createdBy`, and the author of every version, is the member
+  whose key is in the connection; `permissions` gives that token `update` and `delete`.
+- **Check 3, private and scopes.** `isPublic: false` and `allowedOperations` given at create read
+  back exactly. Scopes need no manual step.
+- **Check 2, slugs.** There is no slug input; the slug comes from the name, lower-cased, spaces to
+  `-`. `spike-s5-slug-…` gave exactly that slug, and `Spike S5 Title Case …` gave
+  `spike-s5-title-case-…`. A second create with the same name: `ALREADY_EXISTS`. A create whose
+  name differs but slugs to an existing app's slug (the probe, named
+  `snt-pipelines-orchestrator-cockpit` beside the app named "SNT Pipelines Orchestrator - Cockpit")
+  **succeeded silently** with slug `snt-pipelines-orchestrator-cockpit-fcb549`. So a deployer must
+  look an app up by slug before creating it.
+- **Check 4, update.** `updateWebapp(files, filesToDelete, commitMessage)` succeeded. The live
+  server accepts `commitMessage`, which our vendored schema (SDK 2.22.7) lacks, and it becomes the
+  version's message. A version id is a git commit SHA; the first commit's message is "Initial
+  content". The update was **published at once** (`GitSource.publishedVersion` = the newest
+  commit; the browser showed the new page), so `publishedVersionId` is not needed. A deleted file
+  reads back as `PATH_NOT_FOUND`. Without a session, a private app's URL answers 302 to OpenHEXA's
+  `auth-token` page.
+- **Check 5, size.** The orchestrator's `app.js` (136,813 bytes) went in one call, 2.8 s.
+- **Check 6, reading back.** `webapp { files(ref) }` and `readWebappFile` both work with the run's
+  own `HEXA_TOKEN`, and every file's sha256 equals the uploaded bytes'. The checker can hash a
+  served webapp without a credential.
+- **Check 7, real bundles.** The `v0.2.0` orchestrator zip (6 files, scopes per W8) created as a new
+  app boots on the workspace's catalog. The config editor (`design/index.html` from `main`,
+  95,918 characters) loads.
+- **Not verified:** whether another workspace member can edit an app the token created, and
+  whether the deployed editor finds `snt_config_publish` (it looks only when publishing, and
+  nothing was published).
 
 **Pre-publication audit (2026-11-03, first pass).** A text scan of the four local source trees.
 It found no credentials, `.env` files or raw country data files. The UID scan only catches 11-character
@@ -1223,15 +1259,17 @@ skipped; manifest 25 pipelines, 259 checker entries).
       without duplicates. For the `v0.2.0` demo: R image, `SNT_CONFIGURATION` dataset, `shared/r/`
       uploaded by hand from the tarball (REL-6), pipelines from the templates with auto-update on,
       the checker with tag `v0.2.0`, one pipeline run.
-- [ ] [REL-7](BACKLOG.md#rel-7) · Publish `snt_config_publish` as a template before the next full
-      release: pushed by hand once to `snt-templates` and published as a template. The one item
-      still done while this phase is parked.
+- [x] REL-7 · Publish `snt_config_publish` as a template before the next full release: pushed by
+      hand once to `snt-templates` and published as a template. The one item still done while this
+      phase is parked. Done 2026-11-27 from `main`: code `snt-config-publish`, template
+      `snt_config_publish`, template version 1.
 
 ### Phase 7 — Webapps on the release train (D-2, D-23)
 The workspace deployer installs both webapps from the release, the config editor first if only one
 fits (D-23). In this order:
 
-- [ ] **Spike S5** (no repo code; `ignore/spikes/spike_webapp_deploy/`, git-ignored, like S1/S2).
+- [x] **Spike S5** (no repo code; `ignore/spikes/spike_webapp_deploy/`, git-ignored, like S1/S2).
+      → **passed** 2026-11-27 in `snt-app-dev`; results in [Phase 0 findings](#phase-0-findings).
       A throwaway pipeline in a test workspace reads the `openhexa-deploy` token and records the raw
       GraphQL response of each check. The questions are those of
       [`bootstrap/roadmap.md` §4](bootstrap/roadmap.md#4-web-apps-d8).
@@ -1254,11 +1292,13 @@ fits (D-23). In this order:
 
       **S5 passes** if checks 1, 3, 4 (served) and 5 work. If it fails: the OH-4 question goes to
       the OpenHEXA developers, and the manual zip route becomes this phase's route.
-- [ ] S5 results recorded: Phase 0 findings, the `roadmap.md` §4 questions answered, the
+- [x] S5 results recorded: Phase 0 findings, the `roadmap.md` §4 questions answered, the
       authentication section of `bootstrap/openhexa_deployment.md` (webapps). If S5 passed, an ADR
       "the workspace deployer installs the webapps", superseding the "manual, scopes set
       separately" stance (bootstrap D8 for the deployer; the checker stays blind until its own
       item below). It records whether the webapp step goes into `v1.0.0`.
+      → [ADR 0048](decisions/0048-workspace-deployer-installs-the-webapps.md), 2026-11-27: the
+      webapp step ships in `v1.0.0`.
 - [ ] Config editor into `app/`: `webapps/config_editor/design/index.html` becomes `app/index.html`
       (English only, D-23), so each release carries `webapp-config_editor-<tag>.zip`. The French
       copy `design/index_FR.html` stays, kept in step by hand and uploaded by hand until
@@ -1313,7 +1353,7 @@ Later, each its own ticket:
 | Deployer downloads the whole repo tarball | Slim release tarball asset (Phase 3) |
 | Everyone with write access can change everything | Branch protection. CODEOWNERS per area declined for now (D-15); to be discussed with the team |
 | `.gitignore` `*.json` trap silently drops webapp/contract JSON | Allowlist + `git check-ignore` check in Phase 1 |
-| Webapp deployment by the deployer is unproven until spike S5 (no CLI/SDK route, OH-4) | Not caused or fixed by the monorepo. S5 (Phase 7) tests the deployer's `openhexa-deploy` token against `createWebapp` / `updateWebapp`. If it fails, OH-4 goes to the OpenHEXA developers, and stamped zips keep the manual route reproducible |
+| Webapp deployment by the deployer is not built yet (no CLI/SDK route, OH-4) | Not caused or fixed by the monorepo. Spike S5 proved the route: the deployer's `openhexa-deploy` token creates and updates the static webapps through the GraphQL API ([Phase 0 findings](#phase-0-findings)). What remains is building the deployer step (REL-2, Phase 7). Until then, stamped zips keep the manual route reproducible |
 | Two live systems (old repo/templates + new) for a long period | D-4 maintenance-only + explicit archive criteria |
 | `snt_lib` stays external for now: config, Pull-scripts and path changes still need cross-repo PRs | Pin a tag (D-3). Plan `snt_lib` releases as named steps in Phases 1, 5 and 6. Long term: bring it in (§10) |
 
@@ -1387,6 +1427,7 @@ Later, each its own ticket:
 | 2026-11-17 | Self-sync opened on `phase-5/self-sync`. **OD-9 settled as D-20** (ADR 0044), placed in Phase 5 rather than 6: removing `Pull scripts` is a breaking change, and left in a release it pulls the old repo's notebooks. Escape hatch chosen: a `custom/` folder plus `use_custom_notebooks`, over a file-picker parameter (a pipeline runs several notebooks); `_<CC>` variants stay automatic but are now logged and recorded. OD-10 narrowed to versioning; REL-6 opened (`shared/r/` on the template route). Commit 1 written | Commit 2, the `snt_utils` branch `self-sync-r-half`: see the [Phase 5 item](#phase-5--breaking-change-window-before-the-first-production-tag) |
 | 2026-11-18 | Phase 6 opened before `v1.0.0`, to show colleagues the new templates. Pre-release `v0.2.0` cut from `main` (not verified). Workspace `snt-templates` created; all 25 pipelines pushed from the tarball and published as templates by hand, codes `snt-<name>`, no suffixes. **D-21** (ADR 0045): names = `@pipeline` id; one workflow, `push_templates.yaml`, for every kind, with a manual trigger and an `allow_prerelease` box; `release.yaml`'s bootstrap job removed. On `phase-6/templates`: commit 1 (workflows, ADR, R23 fixes), commit 2 (this file) | CI, PR, merge. Then run `push_templates` by hand against `v0.2.0`, build the demo workspace from the templates, checker `match` — see the [Phase 6 items](#phase-6--new-template-set-for-teams-not-using-the-deployer) |
 | 2026-11-27 | **Phase 7 re-scoped, D-23** (team agreement): the workspace deployer is the main route for pipelines and webapps; the new SNT and support templates are parked as a backup (Phase 6), REL-7 still done; both webapps through the deployer, the config editor first; the editor ships English only from `app/`. The deploy connection was renamed `oh` → `openhexa-deploy` first (PR #22), and the docs now say its token is personal. On `phase-7/replan`: Phase 7 rewritten as an ordered checklist (S5 → results and ADR → editor into `app/` → deployer step), "scopes stay manual" dropped (the API sets them); BACKLOG REL-2 rewritten, new group `EDIT-*` (EDIT-1 language switch, EDIT-2 multi-file bundle). No code | REL-7 by hand; spike S5 in a test workspace — see [Phase 7](#phase-7--webapps-on-the-release-train-d-2-d-23). The editor move into `app/` can run alongside |
+| 2026-11-27 | REL-7 done by hand (template `snt_config_publish`, version 1, in `snt-templates`); deleted from the BACKLOG. **Spike S5 passed** in `snt-app-dev`: the `openhexa-deploy` token creates and updates private static webapps with their scopes; updates are published at once and carry the commit message; the run's own token is refused for writes but reads the files, which hash exactly. Found: a slug taken under another name gives a silent `-<6 hex>` duplicate. Results in [Phase 0 findings](#phase-0-findings), `roadmap.md` §4 and `openhexa_deployment.md`. On `phase-7/s5-results`: commit 1, then commit 2, [ADR 0048](decisions/0048-workspace-deployer-installs-the-webapps.md): the workspace deployer installs both webapps, looked up by slug, private, scopes from the manifest; **the webapp step ships in `v1.0.0`**; bootstrap D8 superseded for the deployer | The editor into `app/` (PR 3, `phase-7/config-editor-app`), then the deployer step (PR 4, `phase-7/deployer-webapps`), whose three questions are asked at its start |
 
 ---
 

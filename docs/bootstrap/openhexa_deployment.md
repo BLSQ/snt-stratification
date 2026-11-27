@@ -147,6 +147,22 @@ specifically about *writing*:
 The checker therefore needs no credential at all. Method and raw result:
 [`HISTORY.md`](HISTORY.md) §2.4.
 
+### Static webapps: the same split
+
+Verified 2026-11-27 in `snt-app-dev` by spike S5 (results:
+[`MIGRATION_PLAN.md`](../MIGRATION_PLAN.md#phase-0-findings)), for static webapps created from files:
+
+| Operation | Run's `HEXA_TOKEN` | `openhexa-deploy` connection token |
+|---|---|---|
+| `createWebapp` (static source) | `PERMISSION_DENIED` | allowed |
+| `updateWebapp` (`files`, `filesToDelete`, `commitMessage`) | not tried | allowed |
+| Read `webapp { files(ref) }`, `readWebappFile` | **full content** | full content |
+
+The app's `createdBy` and the author of each version are the member whose key is in the connection,
+as for pipeline versions. The content read back hashes (sha256) to exactly what was uploaded, so a
+checker could compare served webapp files with a release without a credential, as it does for
+pipeline zips.
+
 ## Gotchas
 
 1. **`pipelines` is a root-level query, not a field on `workspace`.** `query { workspace(slug:) {

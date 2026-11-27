@@ -23,7 +23,7 @@ Recorded so they are not re-litigated. Taken by Giulia in review, 2026-09-18 (D1
 | D5 | Country-specific variant override detection is **out of scope for v1**. |
 | D6 | Untracked files are **reported** in their own bucket, never acted on. |
 | D7 | Both sources — filesystem and pipeline version zips — are read from v1. |
-| D8 | Web apps are out of scope for v1, and named as a blind spot in the report. |
+| D8 | Web apps are out of scope for v1, and named as a blind spot in the report. **For the deployer, superseded by [ADR 0048](../decisions/0048-workspace-deployer-installs-the-webapps.md)**; the checker keeps the blind spot. |
 | D9 | **Promoted to [ADR 0028](../decisions/0028-hash-raw-bytes-no-notebook-normalisation.md)**, the repo-wide record. |
 | D10 | The manifest gap is closed **before** the checker is built (phase 0). |
 | D11 | Two modes, driven by whether a target release is given: attribution (factual inventory) and verification (qualitative verdicts). |

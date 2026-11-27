@@ -67,13 +67,15 @@ One manual step stays:
 
 ## 4. Web apps (D8)
 
-**The API can create and update a static web app from files. Read in `openhexa-sdk` 2.22.7's
-GraphQL schema (`openhexa/graphql/schema.generated.graphql`) on 2026-10-02; never called.**
+**The API can create and update a static web app from files.** Read in `openhexa-sdk` 2.22.7's
+GraphQL schema (`openhexa/graphql/schema.generated.graphql`) on 2026-10-02, and called from a
+pipeline run by spike S5 on 2026-11-27 (results:
+[`MIGRATION_PLAN.md`](../MIGRATION_PLAN.md#phase-0-findings)).
 
 | Operation | Takes | Notes |
 |---|---|---|
 | `createWebapp(input: CreateWebappInput!)` | `workspaceSlug`, `name`, `source`, optional `allowedOperations`, `isPublic`, `description`, `icon` | `source` is one of `static: [WebappFileInput!]` (the files), `iframe`, `superset`. Only `static` concerns the bootstrap (below) |
-| `updateWebapp(input: UpdateWebappInput!)` | `id`, then optionally `files`, `filesToDelete`, `allowedOperations`, `publishedVersionId`, `name`, `subdomain`, … | Incremental: files left out are kept |
+| `updateWebapp(input: UpdateWebappInput!)` | `id`, then optionally `files`, `filesToDelete`, `commitMessage`, `allowedOperations`, `publishedVersionId`, `name`, `subdomain`, … | Incremental: files left out are kept. `commitMessage` is accepted by the live server but missing from the 2.22.7 schema |
 | `deleteWebapp(input: DeleteWebappInput!)` | `id` | |
 | `webapp(slug, workspaceSlug)`, `webapps(workspaceSlug, …)` | | A `Webapp` has `versions`, `commitDiff(ref)`, `files(ref)` and a `GitSource { repository, publishedVersion }`: OpenHEXA keeps a static app's files in a git repository of its own |
 
@@ -84,18 +86,28 @@ of a web app's repository could, in principle, be uploaded file by file, like a 
 orchestrator, the SNT_config editor, and any later one. It never deploys an `iframe` or `superset`
 app, so only the `static` source and the `files` / `filesToDelete` updates matter here.
 
-**Not known yet: test first in the sandbox, ask the OpenHEXA devs only if a test hits a wall.**
+**Answered by spike S5** (2026-11-27, `snt-app-dev`):
 
-1. Which token may call `createWebapp` / `updateWebapp` from inside a pipeline run: the run's own
-   `HEXA_TOKEN`, or only the `openhexa-deploy` workspace token? The same question for pipelines had
-   a non-obvious answer ([`openhexa_deployment.md`](openhexa_deployment.md), Authentication), and
-   was settled the same way, by trying both.
-2. Can a web app's files be hashed as they are served (through `files(ref)`)? The checker needs that
-   to tell which release an app is at, the way it reads a pipeline version's zip.
-3. How should a deploy name a version? `updateWebapp` takes a `publishedVersionId`. Can a version
-   carry the release tag, the way pipeline versions do (D22)?
-4. `allowedOperations` grants the app's own GraphQL scopes. Who decides those per app, and are they
-   part of a release?
+1. Which token may call `createWebapp` / `updateWebapp` from inside a pipeline run? **Only the
+   `openhexa-deploy` token**: the run's own `HEXA_TOKEN` gets `PERMISSION_DENIED` on
+   `createWebapp`, as for pipelines ([`openhexa_deployment.md`](openhexa_deployment.md#static-webapps-the-same-split)).
+2. Can a web app's files be hashed as they are served? **Yes**: `webapp { files(ref) }` and
+   `readWebappFile` return the content, with the run's own token, and it hashes to exactly what was
+   uploaded.
+3. How should a deploy name a version? **By its commit message**: `updateWebapp(commitMessage:)`
+   becomes the version's message, so a version can carry the release tag. Each version's id is a git
+   commit SHA. An update is published at once (the published version becomes the newest commit), so
+   `publishedVersionId` is not needed to deploy.
+4. Who decides `allowedOperations` per app, and are they part of a release? **They can be set by the
+   deploy**: given at create, they read back exactly, and `updateWebapp` takes them too. The values
+   are fixed per app: W8 for the orchestrator, [ADR 0047](../decisions/0047-config-editor-publishes-to-snt-configuration.md)
+   for the config editor. How a release carries them is the deployer work,
+   [REL-2](../BACKLOG.md#rel-2).
+
+Also found: there is no slug input, and the slug is the name lower-cased with spaces turned into
+hyphens. A second create with a name already used is refused with `ALREADY_EXISTS`, but a different
+name whose slug is taken creates a duplicate with a random suffix (`<slug>-fcb549`), with no error.
+A deploy must therefore look an app up by slug before creating it.
 
 Also for the devs, already written up elsewhere: deleting or archiving a pipeline from a run
 ([`deployer.md`](deployer.md) §7.5), and minting the `openhexa-deploy` token

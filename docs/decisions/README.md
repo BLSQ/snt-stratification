@@ -70,6 +70,7 @@ who made it move on. Format after Michael Nygard's
 | [0045](0045-how-the-new-templates-are-published.md) | How the new templates are published: `snt-templates`, named after the `@pipeline` id, one workflow | Accepted | 2026-11-18 |
 | [0046](0046-country-variants-in-the-repo.md) | Country variants are committed beside their generic notebook | Accepted | 2026-11-23 |
 | [0047](0047-config-editor-publishes-to-snt-configuration.md) | The config editor publishes to `SNT_CONFIGURATION` through a pipeline, with its log beside the config | Accepted | 2026-11-26 |
+| [0048](0048-workspace-deployer-installs-the-webapps.md) | The workspace deployer installs the webapps | Accepted | 2026-11-27 |
 
 ## Imported ADRs: old number → new number
 
