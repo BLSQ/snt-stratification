@@ -50,7 +50,7 @@ release source of their own. Points to evaluate:
 * **D20.** The template mechanism is being retired for the `snt_development` pipelines. Weigh whether
   that applies to these two as well, or only to pipelines that ship R alongside their Python.
 
-## 3. The starting problem — solved by ADR 0042, except the `oh` connection
+## 3. The starting problem — solved by ADR 0042, except the `openhexa-deploy` connection
 
 **The bootstrap cannot deploy itself into an empty workspace**: nothing exists there to run it.
 [ADR 0042](../decisions/0042-bootstrap-pipelines-as-templates-on-release.md) solves this without the
@@ -62,8 +62,8 @@ working tree. The deployer then deploys everything else, including newer version
 
 One manual step stays:
 
-* **The `oh` connection.** Deploying needs the workspace access token in a CUSTOM connection named
-  `oh` ([`openhexa_deployment.md`](openhexa_deployment.md) §7.3b). Today that is a copy-paste.
+* **The `openhexa-deploy` connection.** Deploying needs the workspace access token in a CUSTOM
+  connection named `openhexa-deploy` ([`openhexa_deployment.md`](openhexa_deployment.md) §7.3b). Today that is a copy-paste.
 
 ## 4. Web apps (D8)
 
@@ -87,9 +87,9 @@ app, so only the `static` source and the `files` / `filesToDelete` updates matte
 **Not known yet: test first in the sandbox, ask the OpenHEXA devs only if a test hits a wall.**
 
 1. Which token may call `createWebapp` / `updateWebapp` from inside a pipeline run: the run's own
-   `HEXA_TOKEN`, or only the `oh` workspace token? The same question for pipelines had a non-obvious
-   answer ([`openhexa_deployment.md`](openhexa_deployment.md), Authentication), and was settled the
-   same way, by trying both.
+   `HEXA_TOKEN`, or only the `openhexa-deploy` workspace token? The same question for pipelines had
+   a non-obvious answer ([`openhexa_deployment.md`](openhexa_deployment.md), Authentication), and
+   was settled the same way, by trying both.
 2. Can a web app's files be hashed as they are served (through `files(ref)`)? The checker needs that
    to tell which release an app is at, the way it reads a pipeline version's zip.
 3. How should a deploy name a version? `updateWebapp` takes a `publishedVersionId`. Can a version
@@ -98,7 +98,7 @@ app, so only the `static` source and the `files` / `filesToDelete` updates matte
    part of a release?
 
 Also for the devs, already written up elsewhere: deleting or archiving a pipeline from a run
-([`deployer.md`](deployer.md) §7.5), and minting the `oh` token
+([`deployer.md`](deployer.md) §7.5), and minting the `openhexa-deploy` token
 ([`openhexa_deployment.md`](openhexa_deployment.md) §7.3b).
 
 ## 5. Tracked elsewhere
